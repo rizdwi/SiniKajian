@@ -18,3 +18,7 @@ Thumbs.db
 rendered_dom.html
 dump_mobile.html
 test_vp.html
+
+.vercel
+.env*
+supabase/.temp
