@@ -1,0 +1,1848 @@
+import os
+
+html_content = r'''<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>SiniKajian | Temukan Majelis Ilmu Terdekat</title>
+  
+  <!-- PWA & Mobile Web App Meta -->
+  <meta name="description" content="Aplikasi pencari majelis ilmu kajian Islam sunnah terdekat, jadwal sholat presisi, dan penunjuk arah kiblat.">
+  <meta name="theme-color" content="#064E3B">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SiniKajian">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="https://images.unsplash.com/photo-1542838132-92c53300491e?w=192&auto=format&fit=crop&q=80">
+
+  <!-- Tailwind CSS & Inter / Plus Jakarta Sans Font -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Amiri:wght@700&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            arabic: ['Amiri', 'serif']
+          },
+          colors: {
+            brand: {
+              50: '#F0FDF4',
+              100: '#DCFCE7',
+              200: '#BBF7D0',
+              300: '#86EFAC',
+              400: '#4ADE80',
+              500: '#22C55E',
+              600: '#16A34A',
+              700: '#15803D',
+              800: '#166534',
+              900: '#14532D',
+              950: '#052E16'
+            },
+            accent: {
+              amber: '#D97706',
+              gold: '#B45309'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Native App Mobile UX Standards */
+    * {
+      -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      max-width: 100vw;
+      overflow-x: hidden;
+      overscroll-behavior-y: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    
+    input, textarea, select {
+      user-select: auto;
+      -webkit-user-select: auto;
+    }
+
+    /* Clean Cross-Browser Scrollbar Concealment */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Tactile Touch Feedback */
+    .touch-btn {
+      transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.12s ease;
+    }
+    .touch-btn:active {
+      transform: scale(0.96);
+      opacity: 0.88;
+    }
+
+    /* Sheet animations */
+    .sheet-backdrop {
+      transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .sheet-panel {
+      transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Smooth Compass Dial */
+    .compass-dial {
+      transition: transform 0.15s ease-out;
+    }
+
+    /* Safe Area Padding for Modern Mobile Devices */
+    .safe-top {
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+    .safe-bottom {
+      padding-bottom: env(safe-area-inset-bottom, 16px);
+    }
+  </style>
+</head>
+<body class="h-full bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col font-sans overflow-hidden">
+
+  <!-- ========================================== -->
+  <!-- NATIVE APP TOP BAR (CLEAN SLICK APP HEADER) -->
+  <!-- ========================================== -->
+  <header class="safe-top bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 z-30 shrink-0 w-full">
+    <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+      
+      <!-- Brand & Location Dropdown -->
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-xl bg-brand-800 dark:bg-brand-700 flex items-center justify-center text-white shadow-sm shadow-brand-700/20 shrink-0">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-.778.099-1.533.284-2.253" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span class="font-extrabold text-base tracking-tight text-slate-900 dark:text-white">SiniKajian</span>
+          </div>
+          <!-- Location Picker Button -->
+          <button onclick="openLocationSheet()" class="flex items-center gap-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400 hover:text-brand-700 transition" aria-label="Ganti Kota">
+            <svg class="w-3 h-3 text-brand-600 dark:text-brand-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span id="currentLocationLabel" class="truncate max-w-[130px] sm:max-w-[200px]">Jakarta Pusat</span>
+            <svg class="w-3 h-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Desktop Navigation Tabs (Hidden on Mobile) -->
+      <nav class="hidden md:flex items-center gap-1 bg-slate-100 dark:bg-slate-800/60 p-1 rounded-xl">
+        <button onclick="switchTab('kajian')" id="desktop-nav-kajian" class="desktop-tab-btn px-3 py-1.5 text-xs font-bold rounded-lg text-brand-700 dark:text-brand-400 bg-white dark:bg-slate-700 shadow-sm transition">
+          Kajian
+        </button>
+        <button onclick="switchTab('peta')" id="desktop-nav-peta" class="desktop-tab-btn px-3 py-1.5 text-xs font-medium rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 transition">
+          Peta
+        </button>
+        <button onclick="switchTab('sholat')" id="desktop-nav-sholat" class="desktop-tab-btn px-3 py-1.5 text-xs font-medium rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 transition">
+          Sholat
+        </button>
+        <button onclick="switchTab('kiblat')" id="desktop-nav-kiblat" class="desktop-tab-btn px-3 py-1.5 text-xs font-medium rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 transition">
+          Kiblat
+        </button>
+        <button onclick="switchTab('saved')" id="desktop-nav-saved" class="desktop-tab-btn px-3 py-1.5 text-xs font-medium rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 transition">
+          Tersimpan
+        </button>
+      </nav>
+
+      <!-- Right App Bar Actions (Submit & Dark Mode) -->
+      <div class="flex items-center gap-2">
+        <!-- Next Prayer Compact Chip (Desktop/Tablet) -->
+        <button onclick="switchTab('sholat')" class="touch-btn hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-50 dark:bg-brand-950/60 border border-brand-200/80 dark:border-brand-800/60 text-brand-900 dark:text-brand-300 text-xs font-medium">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span id="headerPrayerName">Dzuhur</span>
+          <span id="headerPrayerTime" class="font-bold">11:51</span>
+        </button>
+
+        <!-- Submit Kajian Button -->
+        <button onclick="openSubmitSheet()" class="touch-btn p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="Kirim Info Kajian">
+          <svg class="w-4 h-4 text-brand-700 dark:text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+
+        <!-- Dark Mode Toggle -->
+        <button onclick="toggleDarkMode()" id="themeToggleBtn" class="touch-btn p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition" aria-label="Ganti Tema">
+          <svg id="moonIcon" class="w-4 h-4 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <svg id="sunIcon" class="w-4 h-4 block dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- MAIN APPLICATION BODY (MULTI-TAB VIEW)    -->
+  <!-- ========================================== -->
+  <main class="flex-1 relative overflow-hidden flex flex-col w-full">
+
+    <!-- ======================================== -->
+    <!-- TAB 1: KAJIAN (EXPLORE / FEED VIEW)      -->
+    <!-- ======================================== -->
+    <div id="view-kajian" class="tab-view flex-1 flex flex-col overflow-y-auto no-scrollbar pb-24 md:pb-6 w-full">
+      <div class="max-w-4xl w-full mx-auto px-4 pt-3 space-y-3">
+        
+        <!-- Compact Prayer & Hijri Ticker Card -->
+        <div class="bg-gradient-to-r from-brand-900 to-slate-900 text-white rounded-2xl p-3.5 shadow-sm border border-brand-800/40 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+              <svg class="w-5 h-5 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span id="quickNextPrayerName" class="font-bold text-sm text-emerald-200">Dzuhur 11:51</span>
+                <span class="text-[10px] text-emerald-300/90 bg-white/10 px-1.5 py-0.5 rounded-full" id="quickCountdown">1j 42m lagi</span>
+              </div>
+              <p class="text-[11px] text-slate-300 truncate" id="quickHijriDate">15 Rabiul Awwal 1448 H • Jadwal Presisi</p>
+            </div>
+          </div>
+          <button onclick="switchTab('sholat')" class="touch-btn text-xs font-semibold text-emerald-300 hover:text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-xl shrink-0 transition">
+            Jadwal →
+          </button>
+        </div>
+
+        <!-- Sticky Search & Filter Bar -->
+        <div class="sticky top-0 z-10 pt-1 pb-1 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-sm space-y-2">
+          
+          <!-- Search Input with Embedded Filter Button -->
+          <div class="flex items-center gap-2">
+            <div class="relative flex-1">
+              <svg class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input 
+                type="text" 
+                id="searchInput" 
+                placeholder="Cari ustadz, masjid, atau topik kajian..." 
+                class="w-full pl-9 pr-8 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs sm:text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-600 focus:border-transparent transition shadow-sm text-slate-800 dark:text-slate-100"
+                oninput="onSearchChange()"
+              />
+              <button onclick="clearSearch()" id="clearSearchBtn" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <!-- Open Filter Sheet Button -->
+            <button onclick="openFilterSheet()" class="touch-btn relative flex items-center justify-center w-11 h-10 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 shadow-sm hover:border-brand-500 transition shrink-0" aria-label="Buka Filter">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              <span id="activeFilterBadge" class="hidden absolute -top-1 -right-1 w-4 h-4 rounded-full bg-brand-600 text-white text-[9px] font-bold flex items-center justify-center">1</span>
+            </button>
+          </div>
+
+          <!-- Horizontal Swipeable Category Chips -->
+          <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+            <button onclick="selectCategory('Semua')" data-cat="Semua" class="cat-chip touch-btn shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold bg-brand-700 text-white shadow-sm transition">
+              Semua Topik
+            </button>
+            <button onclick="selectCategory('Tazkiyatun Nufus')" data-cat="Tazkiyatun Nufus" class="cat-chip touch-btn shrink-0 px-3 py-1.5 rounded-full text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-500 transition">
+              Tazkiyatun Nufus
+            </button>
+            <button onclick="selectCategory('Fiqih')" data-cat="Fiqih" class="cat-chip touch-btn shrink-0 px-3 py-1.5 rounded-full text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-500 transition">
+              Fiqih & Muamalah
+            </button>
+            <button onclick="selectCategory('Aqidah')" data-cat="Aqidah" class="cat-chip touch-btn shrink-0 px-3 py-1.5 rounded-full text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-500 transition">
+              Aqidah
+            </button>
+            <button onclick="selectCategory('Sirah')" data-cat="Sirah" class="cat-chip touch-btn shrink-0 px-3 py-1.5 rounded-full text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-500 transition">
+              Sirah Nabawiyah
+            </button>
+            <button onclick="selectCategory('Tematik')" data-cat="Tematik" class="cat-chip touch-btn shrink-0 px-3 py-1.5 rounded-full text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-500 transition">
+              Tematik Keluarga
+            </button>
+            <button onclick="selectCategory('Bahasa Arab')" data-cat="Bahasa Arab" class="cat-chip touch-btn shrink-0 px-3 py-1.5 rounded-full text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-500 transition">
+              Bahasa Arab
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Status & Result Count Bar -->
+        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1 pt-0.5">
+          <div class="flex items-center gap-1.5">
+            <span>Ditemukan</span>
+            <span id="resultsCount" class="font-bold text-slate-800 dark:text-slate-200">0</span>
+            <span>majelis ilmu</span>
+            <span id="filterRadiusLabel" class="text-[11px] px-1.5 py-0.5 rounded-md bg-slate-200 dark:bg-slate-800 font-medium">Radius: 25 km</span>
+          </div>
+          <button onclick="openFilterSheet()" class="text-brand-600 dark:text-brand-400 font-semibold hover:underline">
+            Ubah Radius
+          </button>
+        </div>
+
+        <!-- Kajian Event Cards Container -->
+        <div id="kajianListContainer" class="space-y-3">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden text-center py-12 px-4 space-y-3 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
+          <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 class="font-bold text-sm text-slate-800 dark:text-slate-200">Tidak ada kajian yang cocok</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto">Coba perlebar radius pencarian atau gunakan kata kunci ustadz / masjid yang berbeda.</p>
+          <button onclick="resetFilters()" class="touch-btn px-4 py-2 rounded-xl bg-brand-700 text-white text-xs font-semibold shadow-sm">
+            Reset Semua Filter
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ======================================== -->
+    <!-- TAB 2: PETA (INTERACTIVE MAP VIEW)       -->
+    <!-- ======================================== -->
+    <div id="view-peta" class="tab-view flex-1 hidden flex flex-col relative pb-20 md:pb-0 w-full h-full">
+      <!-- Fullscreen Leaflet Container -->
+      <div id="mapContainer" class="flex-1 w-full h-full z-0 bg-slate-200 dark:bg-slate-900"></div>
+
+      <!-- Floating Map Header Control -->
+      <div class="absolute top-3 left-3 right-3 z-10 pointer-events-none flex items-center justify-between">
+        <div class="pointer-events-auto bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-md flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-brand-600"></span>
+          <span class="text-xs font-bold text-slate-800 dark:text-slate-100" id="mapPinCounter">6 Majelis di Peta</span>
+        </div>
+        <button onclick="centerUserLocation()" class="touch-btn pointer-events-auto w-10 h-10 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-brand-700 dark:text-brand-300 shadow-md flex items-center justify-center" title="Pusatkan ke Lokasi Saya">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Floating Bottom Card Preview for Selected Marker -->
+      <div id="mapEventPreviewCard" class="absolute bottom-24 md:bottom-6 left-4 right-4 z-10 hidden transition-all duration-300">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 shadow-xl flex items-center justify-between gap-3 max-w-lg mx-auto">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <span id="mapCardCategory" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-100 text-brand-800 dark:bg-brand-900/50 dark:text-brand-300">Fiqih</span>
+              <span id="mapCardDistance" class="text-[10px] font-semibold text-slate-500">2.1 km</span>
+            </div>
+            <h4 id="mapCardTitle" class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">Kajian Rutin</h4>
+            <p id="mapCardUstadz" class="text-xs text-brand-700 dark:text-brand-400 font-medium truncate">Ustadz Pembina</p>
+            <p id="mapCardMasjid" class="text-[11px] text-slate-500 truncate">Masjid Al-Barkah</p>
+          </div>
+          <div class="flex flex-col gap-1.5 shrink-0">
+            <button id="mapCardDetailBtn" class="touch-btn px-3 py-1.5 rounded-xl bg-brand-700 text-white text-xs font-semibold shadow-sm">
+              Detail
+            </button>
+            <button id="mapCardRouteBtn" class="touch-btn px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold">
+              Rute
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================== -->
+    <!-- TAB 3: SHOLAT (PRAYER TIMES & IBADAH)    -->
+    <!-- ======================================== -->
+    <div id="view-sholat" class="tab-view flex-1 hidden flex flex-col overflow-y-auto no-scrollbar pb-24 md:pb-6 w-full">
+      <div class="max-w-xl w-full mx-auto px-4 pt-4 space-y-4">
+        
+        <!-- Hero Prayer Card -->
+        <div class="bg-gradient-to-br from-brand-900 via-brand-950 to-slate-950 text-white rounded-3xl p-5 shadow-lg border border-brand-800/40 relative overflow-hidden">
+          <div class="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-brand-500/10 blur-2xl pointer-events-none"></div>
+          
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <span class="text-xs font-semibold text-emerald-300 tracking-wide uppercase">Waktu Sholat Berikutnya</span>
+              <h2 id="heroPrayerName" class="text-3xl font-extrabold tracking-tight mt-0.5">Dzuhur</h2>
+            </div>
+            <div class="text-right">
+              <span class="text-xs text-slate-400">Pukul</span>
+              <div id="heroPrayerTargetTime" class="text-2xl font-black text-amber-400">11:51</div>
+            </div>
+          </div>
+
+          <!-- Countdown Pill -->
+          <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span class="text-xs font-medium text-slate-200">Menuju azan:</span>
+            <span id="heroPrayerCountdown" class="text-xs font-bold text-emerald-300 font-mono">01:42:15</span>
+          </div>
+
+          <!-- Hijri Date Info -->
+          <div class="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-slate-300">
+            <span id="sholatMasehiDate">Selasa, 13 Oktober 2026</span>
+            <span id="sholatHijriDate" class="font-bold text-amber-300 font-arabic text-sm">15 Rabiul Awwal 1448 H</span>
+          </div>
+        </div>
+
+        <!-- 5 Waktu Sholat Grid List -->
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
+          <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider px-2 mb-2">Jadwal Sholat Hari Ini</h3>
+          
+          <!-- Subuh -->
+          <div id="row-subuh" class="prayer-row flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 transition">
+            <div class="flex items-center gap-3">
+              <span class="w-8 h-8 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center font-bold text-xs">01</span>
+              <div>
+                <p class="font-bold text-sm text-slate-900 dark:text-white">Subuh</p>
+                <p class="text-[11px] text-slate-500">Imsak: 04:21 WIB</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="font-extrabold text-base text-slate-900 dark:text-slate-100" id="time-subuh">04:31</span>
+            </div>
+          </div>
+
+          <!-- Terbit (Syuruq) -->
+          <div id="row-terbit" class="prayer-row flex items-center justify-between p-2.5 px-3 rounded-2xl bg-transparent opacity-80 transition">
+            <div class="flex items-center gap-3">
+              <span class="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center font-bold text-xs">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+              </span>
+              <div>
+                <p class="font-semibold text-xs text-slate-700 dark:text-slate-300">Terbit (Syuruq)</p>
+                <p class="text-[10px] text-slate-500">Batas akhir Subuh</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="font-bold text-sm text-slate-700 dark:text-slate-300" id="time-terbit">05:46</span>
+            </div>
+          </div>
+
+          <!-- Dzuhur -->
+          <div id="row-dzuhur" class="prayer-row flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 transition">
+            <div class="flex items-center gap-3">
+              <span class="w-8 h-8 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center font-bold text-xs">02</span>
+              <div>
+                <p class="font-bold text-sm text-slate-900 dark:text-white">Dzuhur</p>
+                <p class="text-[11px] text-slate-500">Matahari tergelincir</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="font-extrabold text-base text-slate-900 dark:text-slate-100" id="time-dzuhur">11:51</span>
+            </div>
+          </div>
+
+          <!-- Ashar -->
+          <div id="row-ashar" class="prayer-row flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 transition">
+            <div class="flex items-center gap-3">
+              <span class="w-8 h-8 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center font-bold text-xs">03</span>
+              <div>
+                <p class="font-bold text-sm text-slate-900 dark:text-white">Ashar</p>
+                <p class="text-[11px] text-slate-500">Bayangan sama panjang</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="font-extrabold text-base text-slate-900 dark:text-slate-100" id="time-ashar">15:02</span>
+            </div>
+          </div>
+
+          <!-- Maghrib -->
+          <div id="row-maghrib" class="prayer-row flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 transition">
+            <div class="flex items-center gap-3">
+              <span class="w-8 h-8 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center font-bold text-xs">04</span>
+              <div>
+                <p class="font-bold text-sm text-slate-900 dark:text-white">Maghrib</p>
+                <p class="text-[11px] text-slate-500">Matahari terbenam</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="font-extrabold text-base text-slate-900 dark:text-slate-100" id="time-maghrib">17:56</span>
+            </div>
+          </div>
+
+          <!-- Isya -->
+          <div id="row-isya" class="prayer-row flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 transition">
+            <div class="flex items-center gap-3">
+              <span class="w-8 h-8 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center font-bold text-xs">05</span>
+              <div>
+                <p class="font-bold text-sm text-slate-900 dark:text-white">Isya</p>
+                <p class="text-[11px] text-slate-500">Syafaq merah hilang</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="font-extrabold text-base text-slate-900 dark:text-slate-100" id="time-isya">19:05</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Kalender Sunnah & Ayyamul Bidh Widget -->
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+              <svg class="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+              <span>Kalender Puasa Sunnah</span>
+            </h3>
+            <span class="text-[11px] font-semibold text-brand-700 dark:text-brand-400 bg-brand-50 dark:bg-brand-950 px-2 py-0.5 rounded-full">Bulan Ini</span>
+          </div>
+          
+          <div class="grid grid-cols-3 gap-2 text-center">
+            <div class="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+              <span class="text-[10px] text-slate-500 block">13 Hijriyah</span>
+              <span class="font-bold text-xs text-slate-800 dark:text-slate-200 block mt-0.5">Ayyamul Bidh 1</span>
+              <span class="text-[9px] text-brand-600 dark:text-brand-400 mt-1 block font-medium">Sunnah Muakkad</span>
+            </div>
+            <div class="p-2.5 rounded-2xl bg-brand-50 dark:bg-brand-950/60 border border-brand-200 dark:border-brand-800">
+              <span class="text-[10px] text-brand-600 dark:text-brand-400 font-bold block">14 Hijriyah</span>
+              <span class="font-bold text-xs text-brand-900 dark:text-brand-200 block mt-0.5">Ayyamul Bidh 2</span>
+              <span class="text-[9px] text-brand-700 dark:text-brand-300 mt-1 block font-bold">Hari Ini</span>
+            </div>
+            <div class="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+              <span class="text-[10px] text-slate-500 block">15 Hijriyah</span>
+              <span class="font-bold text-xs text-slate-800 dark:text-slate-200 block mt-0.5">Ayyamul Bidh 3</span>
+              <span class="text-[9px] text-slate-500 mt-1 block font-medium">Besok</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mutiara Hadits Card -->
+        <div class="p-4 rounded-3xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/40 text-amber-900 dark:text-amber-200 space-y-1.5">
+          <div class="flex items-center gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-300">
+            <svg class="w-4 h-4 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+            <span>Hadits Menuntut Ilmu</span>
+          </div>
+          <p class="text-xs leading-relaxed italic text-amber-950 dark:text-amber-100">
+            "Barangsiapa menempuh suatu jalan untuk menuntut ilmu, maka Allah akan memudahkan baginya jalan menuju surga."
+          </p>
+          <div class="text-[10px] text-amber-800/80 dark:text-amber-300/80 font-medium pt-1">
+            HR. Muslim No. 2699
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ======================================== -->
+    <!-- TAB 4: KIBLAT (QIBLA COMPASS NATIVE UI)  -->
+    <!-- ======================================== -->
+    <div id="view-kiblat" class="tab-view flex-1 hidden flex flex-col overflow-y-auto no-scrollbar pb-24 md:pb-6 items-center justify-center w-full">
+      <div class="max-w-md w-full mx-auto px-4 py-6 flex flex-col items-center text-center space-y-6">
+        
+        <div>
+          <span class="text-xs font-bold text-brand-700 dark:text-brand-400 uppercase tracking-widest">Penunjuk Arah</span>
+          <h2 class="text-2xl font-black text-slate-900 dark:text-white mt-1">Kompas Kiblat Presisi</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Arah Ka'bah dari lokasi koordinat Anda saat ini</p>
+        </div>
+
+        <!-- Compass Visual Instrument -->
+        <div class="relative w-64 h-64 sm:w-72 sm:h-72 rounded-full bg-white dark:bg-slate-900 border-4 border-slate-200 dark:border-slate-800 shadow-2xl flex items-center justify-center select-none">
+          
+          <!-- Outer Compass Markings -->
+          <div class="absolute inset-2 rounded-full border border-dashed border-slate-300 dark:border-slate-700 pointer-events-none"></div>
+
+          <!-- Degree Numbers -->
+          <span class="absolute top-3 font-extrabold text-xs text-rose-500">U</span>
+          <span class="absolute bottom-3 font-bold text-xs text-slate-400">S</span>
+          <span class="absolute right-3 font-bold text-xs text-slate-400">T</span>
+          <span class="absolute left-3 font-bold text-xs text-slate-400">B</span>
+
+          <!-- Rotating Compass Dial -->
+          <div id="compassDial" class="compass-dial relative w-48 h-48 sm:w-52 sm:h-52 rounded-full flex items-center justify-center">
+            
+            <!-- Kaaba Pointer (Green & Gold Arrow) -->
+            <div class="absolute top-2 w-8 h-8 rounded-full bg-gradient-to-tr from-brand-700 to-amber-500 text-white flex items-center justify-center shadow-lg -translate-y-2">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z" />
+              </svg>
+            </div>
+
+            <!-- Kaaba Cube Icon in Center -->
+            <div class="w-14 h-14 rounded-2xl bg-slate-900 text-amber-400 border-2 border-amber-500 flex flex-col items-center justify-center shadow-md">
+              <svg class="w-6 h-6 text-amber-400" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 4H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zm-1 3v2H6V7h12zm-12 4h12v6H6v-6z"/>
+              </svg>
+            </div>
+            
+            <!-- Needle Line -->
+            <div class="absolute top-10 bottom-10 w-0.5 bg-gradient-to-b from-brand-600 via-transparent to-red-400 pointer-events-none"></div>
+          </div>
+        </div>
+
+        <!-- Compass Info Card -->
+        <div class="w-full bg-white dark:bg-slate-900 rounded-3xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+          <div class="flex items-center justify-around divide-x divide-slate-100 dark:divide-slate-800 text-center">
+            <div class="px-3">
+              <span class="text-[10px] text-slate-400 uppercase font-bold block">Derajat Azimuth</span>
+              <span id="qiblaDegreeText" class="text-lg font-black text-brand-700 dark:text-brand-400 block mt-0.5">295.15°</span>
+              <span class="text-[10px] text-slate-500">Barat Laut</span>
+            </div>
+            <div class="px-3">
+              <span class="text-[10px] text-slate-400 uppercase font-bold block">Jarak ke Ka'bah</span>
+              <span id="qiblaDistanceText" class="text-lg font-black text-slate-900 dark:text-white block mt-0.5">7.912 km</span>
+              <span class="text-[10px] text-slate-500">Garis Lurus</span>
+            </div>
+          </div>
+          
+          <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-center gap-2">
+            <button onclick="calibrateCompass()" class="touch-btn text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 transition flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span>Kalibrasi Sensor HP</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ======================================== -->
+    <!-- TAB 5: TERSIMPAN (BOOKMARKS & RSVP)      -->
+    <!-- ======================================== -->
+    <div id="view-saved" class="tab-view flex-1 hidden flex flex-col overflow-y-auto no-scrollbar pb-24 md:pb-6 w-full">
+      <div class="max-w-4xl w-full mx-auto px-4 pt-4 space-y-4">
+        
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">Kajian Tersimpan</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Daftar majelis ilmu yang Anda tandai dan ikuti</p>
+          </div>
+          <span id="savedCountBadge" class="text-xs font-bold px-2.5 py-1 rounded-full bg-brand-100 dark:bg-brand-900/60 text-brand-800 dark:text-brand-300">0 Disimpan</span>
+        </div>
+
+        <!-- Saved Kajian Cards Container -->
+        <div id="savedCardsContainer" class="space-y-3">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <!-- Empty State for Saved Tab -->
+        <div id="emptySavedState" class="text-center py-16 px-4 space-y-3 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
+          <div class="w-14 h-14 rounded-2xl bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center mx-auto">
+            <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+            </svg>
+          </div>
+          <h3 class="font-bold text-base text-slate-800 dark:text-slate-200">Belum ada kajian tersimpan</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto">Tandai kajian favorit Anda dengan menekan tombol simpan pada kartu majelis ilmu.</p>
+          <button onclick="switchTab('kajian')" class="touch-btn px-4 py-2 rounded-xl bg-brand-700 text-white text-xs font-semibold shadow-sm">
+            Eksplorasi Kajian Terdekat
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- NATIVE BOTTOM NAVIGATION BAR (MOBILE 5 TABS) -->
+  <!-- ========================================== -->
+  <nav class="safe-bottom md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800/80 px-2 py-1 shadow-lg w-full" aria-label="Navigasi Utama">
+    <div class="grid grid-cols-5 items-center justify-items-center w-full">
+      
+      <!-- Tab 1: Kajian -->
+      <button onclick="switchTab('kajian')" id="mob-nav-kajian" class="mob-nav-btn touch-btn w-full py-1.5 flex flex-col items-center justify-center text-brand-700 dark:text-brand-400">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+        </svg>
+        <span class="text-[10px] font-bold mt-1">Kajian</span>
+      </button>
+
+      <!-- Tab 2: Peta -->
+      <button onclick="switchTab('peta')" id="mob-nav-peta" class="mob-nav-btn touch-btn w-full py-1.5 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+        </svg>
+        <span class="text-[10px] font-medium mt-1">Peta</span>
+      </button>
+
+      <!-- Tab 3: Sholat -->
+      <button onclick="switchTab('sholat')" id="mob-nav-sholat" class="mob-nav-btn touch-btn w-full py-1.5 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span class="text-[10px] font-medium mt-1">Sholat</span>
+      </button>
+
+      <!-- Tab 4: Kiblat -->
+      <button onclick="switchTab('kiblat')" id="mob-nav-kiblat" class="mob-nav-btn touch-btn w-full py-1.5 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+        </svg>
+        <span class="text-[10px] font-medium mt-1">Kiblat</span>
+      </button>
+
+      <!-- Tab 5: Tersimpan -->
+      <button onclick="switchTab('saved')" id="mob-nav-saved" class="mob-nav-btn touch-btn w-full py-1.5 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 relative">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+        </svg>
+        <span class="text-[10px] font-medium mt-1">Simpan</span>
+        <span id="mobSavedBadge" class="hidden absolute top-1 right-3 w-3.5 h-3.5 rounded-full bg-brand-600 text-white text-[8px] font-bold flex items-center justify-center">1</span>
+      </button>
+
+    </div>
+  </nav>
+
+  <!-- ========================================== -->
+  <!-- BOTTOM SHEET 1: FILTER MODAL               -->
+  <!-- ========================================== -->
+  <div id="filterSheet" class="fixed inset-0 z-50 pointer-events-none flex flex-col justify-end">
+    <!-- Backdrop -->
+    <div onclick="closeFilterSheet()" class="sheet-backdrop absolute inset-0 bg-slate-900/50 backdrop-blur-xs opacity-0"></div>
+    
+    <!-- Sheet Panel -->
+    <div class="sheet-panel relative w-full max-w-xl mx-auto bg-white dark:bg-slate-900 rounded-t-3xl p-5 shadow-2xl border-t border-slate-200 dark:border-slate-800 transform translate-y-full safe-bottom space-y-4">
+      
+      <!-- Drag Handle -->
+      <div class="w-12 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto"></div>
+
+      <div class="flex items-center justify-between pt-1">
+        <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Filter Kajian</h3>
+        <button onclick="resetFilters()" class="text-xs font-semibold text-brand-700 dark:text-brand-400">Reset</button>
+      </div>
+
+      <!-- Radius Selector -->
+      <div>
+        <label class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Jarak Maksimal</label>
+        <div class="grid grid-cols-5 gap-2 mt-2">
+          <button onclick="setRadius(3)" data-radius="3" class="radius-btn touch-btn py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">3 km</button>
+          <button onclick="setRadius(5)" data-radius="5" class="radius-btn touch-btn py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">5 km</button>
+          <button onclick="setRadius(10)" data-radius="10" class="radius-btn touch-btn py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">10 km</button>
+          <button onclick="setRadius(25)" data-radius="25" class="radius-btn touch-btn py-2 rounded-xl text-xs font-semibold bg-brand-700 text-white border-transparent">25 km</button>
+          <button onclick="setRadius(999)" data-radius="999" class="radius-btn touch-btn py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">Semua</button>
+        </div>
+      </div>
+
+      <!-- Audience / Jamaah -->
+      <div>
+        <label class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Target Jamaah</label>
+        <div class="grid grid-cols-3 gap-2 mt-2">
+          <button onclick="setAudience('Semua')" data-aud="Semua" class="aud-btn touch-btn py-2 rounded-xl text-xs font-semibold bg-brand-700 text-white">Semua</button>
+          <button onclick="setAudience('Umum')" data-aud="Umum" class="aud-btn touch-btn py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">Ikhwan & Akhawat</button>
+          <button onclick="setAudience('Akhawat')" data-aud="Akhawat" class="aud-btn touch-btn py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">Khusus Muslimah</button>
+        </div>
+      </div>
+
+      <!-- Apply Button -->
+      <button onclick="closeFilterSheet()" class="touch-btn w-full py-3 rounded-2xl bg-brand-700 hover:bg-brand-800 text-white font-bold text-sm shadow-md mt-2">
+        Terapkan Filter
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- BOTTOM SHEET 2: DETAIL KAJIAN MODAL        -->
+  <!-- ========================================== -->
+  <div id="detailSheet" class="fixed inset-0 z-50 pointer-events-none flex flex-col justify-end">
+    <!-- Backdrop -->
+    <div onclick="closeDetailSheet()" class="sheet-backdrop absolute inset-0 bg-slate-900/50 backdrop-blur-xs opacity-0"></div>
+    
+    <!-- Sheet Panel -->
+    <div class="sheet-panel relative w-full max-w-xl mx-auto bg-white dark:bg-slate-900 rounded-t-3xl p-5 shadow-2xl border-t border-slate-200 dark:border-slate-800 transform translate-y-full safe-bottom max-h-[85vh] overflow-y-auto no-scrollbar space-y-4">
+      
+      <!-- Drag Handle -->
+      <div class="w-12 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto"></div>
+
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span id="detailCategoryBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-100 text-brand-800 dark:bg-brand-900/60 dark:text-brand-300">Kategori</span>
+            <span id="detailAudienceBadge" class="text-[10px] font-semibold text-slate-500">Umum</span>
+          </div>
+          <h3 id="detailTitle" class="text-lg font-extrabold text-slate-900 dark:text-white leading-snug">Judul Kajian</h3>
+        </div>
+        <button onclick="closeDetailSheet()" class="p-1 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Pemateri Info -->
+      <div class="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+        <div class="w-10 h-10 rounded-xl bg-brand-700 text-white flex items-center justify-center shrink-0">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-[10px] text-slate-400 font-bold uppercase">Pemateri / Ustadz</p>
+          <p id="detailUstadz" class="font-bold text-sm text-brand-800 dark:text-brand-300">Ustadz Pembina</p>
+        </div>
+      </div>
+
+      <!-- Waktu & Tempat -->
+      <div class="space-y-2 text-xs">
+        <div class="flex items-start gap-2.5 text-slate-700 dark:text-slate-300">
+          <svg class="w-4 h-4 text-slate-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <p class="font-bold text-slate-900 dark:text-white" id="detailTime">Ba'da Maghrib (18:15 WIB)</p>
+            <p class="text-slate-500" id="detailDate">Setiap Hari Rabu</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-2.5 text-slate-700 dark:text-slate-300">
+          <svg class="w-4 h-4 text-slate-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+          <div>
+            <p class="font-bold text-slate-900 dark:text-white" id="detailMasjid">Masjid Al-Ikhlas</p>
+            <p class="text-slate-500" id="detailAddress">Jl. Cipete Raya No. 12</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Deskripsi / Kitab -->
+      <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 text-xs space-y-1">
+        <p class="font-bold text-slate-800 dark:text-slate-200">Keterangan Majelis</p>
+        <p id="detailDescription" class="text-slate-600 dark:text-slate-400 leading-relaxed">
+          Kajian ini terbuka untuk umum ikhwan dan akhawat. Disediakan modul materi gratis dan sesi tanya jawab interaktif ba'da kajian.
+        </p>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="grid grid-cols-2 gap-2 pt-2">
+        <button id="detailRouteBtn" class="touch-btn py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold text-xs flex items-center justify-center gap-1.5">
+          <svg class="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+          </svg>
+          Buka Google Maps
+        </button>
+        <button id="detailRsvpBtn" class="touch-btn py-2.5 rounded-xl bg-brand-700 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-sm">
+          <span>Konfirmasi Hadir</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- BOTTOM SHEET 3: KIRIM INFO KAJIAN MODAL   -->
+  <!-- ========================================== -->
+  <div id="submitSheet" class="fixed inset-0 z-50 pointer-events-none flex flex-col justify-end">
+    <!-- Backdrop -->
+    <div onclick="closeSubmitSheet()" class="sheet-backdrop absolute inset-0 bg-slate-900/50 backdrop-blur-xs opacity-0"></div>
+    
+    <!-- Sheet Panel -->
+    <div class="sheet-panel relative w-full max-w-xl mx-auto bg-white dark:bg-slate-900 rounded-t-3xl p-5 shadow-2xl border-t border-slate-200 dark:border-slate-800 transform translate-y-full safe-bottom max-h-[90vh] overflow-y-auto no-scrollbar space-y-4">
+      
+      <!-- Drag Handle -->
+      <div class="w-12 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto"></div>
+
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Kirim Info Kajian</h3>
+          <p class="text-xs text-slate-500">Bantu jamaah menemukan majelis ilmu di sekitar Anda</p>
+        </div>
+        <button onclick="closeSubmitSheet()" class="p-1 rounded-xl text-slate-400">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <form id="submitKajianForm" onsubmit="handleFormSubmit(event)" class="space-y-3 text-xs">
+        <div>
+          <label class="font-bold text-slate-700 dark:text-slate-300 block mb-1">Judul / Topik Kajian *</label>
+          <input type="text" id="formTitle" required placeholder="Contoh: Bedah Kitab Tauhid" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-600">
+        </div>
+
+        <div>
+          <label class="font-bold text-slate-700 dark:text-slate-300 block mb-1">Nama Pemateri / Ustadz *</label>
+          <input type="text" id="formUstadz" required placeholder="Contoh: Ustadz Firanda Andirja, Lc., M.A." class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-600">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="font-bold text-slate-700 dark:text-slate-300 block mb-1">Kategori *</label>
+            <select id="formCategory" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-600">
+              <option value="Fiqih">Fiqih</option>
+              <option value="Tazkiyatun Nufus">Tazkiyatun Nufus</option>
+              <option value="Aqidah">Aqidah</option>
+              <option value="Sirah">Sirah Nabawiyah</option>
+              <option value="Tematik">Tematik</option>
+              <option value="Bahasa Arab">Bahasa Arab</option>
+            </select>
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 dark:text-slate-300 block mb-1">Target Jamaah *</label>
+            <select id="formAudience" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-600">
+              <option value="Umum">Ikhwan & Akhawat</option>
+              <option value="Akhawat">Khusus Muslimah</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="font-bold text-slate-700 dark:text-slate-300 block mb-1">Nama Masjid / Lokasi *</label>
+            <input type="text" id="formMasjid" required placeholder="Contoh: Masjid Al-Ikhlas" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-600">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 dark:text-slate-300 block mb-1">Waktu Pelaksanaan *</label>
+            <input type="text" id="formTime" required placeholder="Ba'da Maghrib (18:15 WIB)" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-600">
+          </div>
+        </div>
+
+        <div>
+          <label class="font-bold text-slate-700 dark:text-slate-300 block mb-1">Alamat Lengkap *</label>
+          <input type="text" id="formAddress" required placeholder="Jl. Raya Cipete No. 3, Jakarta Selatan" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-600">
+        </div>
+
+        <button type="submit" class="touch-btn w-full py-3 rounded-2xl bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs shadow-md mt-2">
+          Kirim Usulan Kajian
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- BOTTOM SHEET 4: PILIH LOKASI KOTA          -->
+  <!-- ========================================== -->
+  <div id="locationSheet" class="fixed inset-0 z-50 pointer-events-none flex flex-col justify-end">
+    <!-- Backdrop -->
+    <div onclick="closeLocationSheet()" class="sheet-backdrop absolute inset-0 bg-slate-900/50 backdrop-blur-xs opacity-0"></div>
+    
+    <!-- Sheet Panel -->
+    <div class="sheet-panel relative w-full max-w-xl mx-auto bg-white dark:bg-slate-900 rounded-t-3xl p-5 shadow-2xl border-t border-slate-200 dark:border-slate-800 transform translate-y-full safe-bottom space-y-4">
+      
+      <div class="w-12 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto"></div>
+
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Pilih Wilayah Acuan</h3>
+        <button onclick="closeLocationSheet()" class="text-xs text-slate-400">Tutup</button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <button onclick="selectCity('Jakarta Pusat', -6.2088, 106.8456)" class="touch-btn p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-left hover:border-brand-600 flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
+          <span>Jakarta Pusat</span>
+        </button>
+        <button onclick="selectCity('Jakarta Selatan', -6.2615, 106.8106)" class="touch-btn p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-left hover:border-brand-600 flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
+          <span>Jakarta Selatan</span>
+        </button>
+        <button onclick="selectCity('Depok & Cibubur', -6.4025, 106.7942)" class="touch-btn p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-left hover:border-brand-600 flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
+          <span>Depok / Cibubur</span>
+        </button>
+        <button onclick="selectCity('Bekasi', -6.2383, 106.9756)" class="touch-btn p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-left hover:border-brand-600 flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
+          <span>Bekasi</span>
+        </button>
+        <button onclick="selectCity('Tangerang Selatan', -6.2888, 106.7179)" class="touch-btn p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-left hover:border-brand-600 flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
+          <span>BSD / Tangsel</span>
+        </button>
+        <button onclick="selectCity('Bandung', -6.9175, 107.6191)" class="touch-btn p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-left hover:border-brand-600 flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
+          <span>Bandung Kota</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- TOAST NOTIFICATION                         -->
+  <!-- ========================================== -->
+  <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all duration-300 opacity-0 -translate-y-2">
+    <div class="px-4 py-2 rounded-2xl bg-slate-900/90 dark:bg-white/90 text-white dark:text-slate-900 backdrop-blur-md shadow-lg text-xs font-bold flex items-center gap-2">
+      <span id="toastIcon">✨</span>
+      <span id="toastText">Notifikasi</span>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- APPLICATION SCRIPTS (PURE ES6+ ENGINE)     -->
+  <!-- ========================================== -->
+  <script>
+    // ------------------------------------------
+    // 1. DATA STATE & CORE CONSTANTS
+    // ------------------------------------------
+    const KAABA_COORDS = { lat: 21.4225, lon: 39.8262 };
+    
+    // Default User Coordinate (Jakarta Pusat)
+    let userCoords = { lat: -6.2088, lon: 106.8456, name: "Jakarta Pusat" };
+    
+    // Initial Verified Study Events
+    const INITIAL_EVENTS = [
+      {
+        id: 1,
+        title: "Kajian Rutin: Kitab Riyadhus Shalihin",
+        ustadz: "Ustadz Dr. Firanda Andirja, Lc., M.A.",
+        category: "Tazkiyatun Nufus",
+        audience: "Umum",
+        masjid: "Masjid Al-Ikhlas",
+        address: "Jl. Cipete III No.3, Cipete Selatan, Cilandak, Jakarta Selatan",
+        lat: -6.2785,
+        lon: 106.8041,
+        day: "Rabu",
+        time: "Ba'da Maghrib (18:15 WIB)",
+        dateInfo: "Malam Ini",
+        verified: true,
+        description: "Pembahasan bab Keikhlasan dan Niat dalam beramal dari kitab karya Al-Imam An-Nawawi rahimahullah. Dilengkapi sesi tanya jawab interaktif."
+      },
+      {
+        id: 2,
+        title: "Kajian Fiqih Muamalah: Kaidah Jual Beli Modern",
+        ustadz: "Ustadz Dr. Erwandi Tarmizi, M.A.",
+        category: "Fiqih",
+        audience: "Umum",
+        masjid: "Masjid Nurul Iman",
+        address: "Komp. Mall Blok M Square Lt. 7, Kebayoran Baru, Jakarta Selatan",
+        lat: -6.2443,
+        lon: 106.7997,
+        day: "Sabtu",
+        time: "Ba'da Ashar (15:30 WIB)",
+        dateInfo: "Sabtu Pekan Ini",
+        verified: true,
+        description: "Kaidah praktis menghindari riba, gharar, dan maisir dalam transaksi digital, paylater, dan investasi syariah kontemporer."
+      },
+      {
+        id: 3,
+        title: "Tafsir Surah Al-Kahfi & Tadabbur Akhir Zaman",
+        ustadz: "Ustadz Muhammad Nuzul Dzikri, Lc.",
+        category: "Aqidah",
+        audience: "Umum",
+        masjid: "Masjid Nurul Falah",
+        address: "Jl. Radio Dalam Raya No. 14, Gandaria Utara, Kebayoran Baru",
+        lat: -6.2559,
+        lon: 106.7915,
+        day: "Ahad",
+        time: "09:00 - 11:30 WIB",
+        dateInfo: "Ahad Pagi",
+        verified: true,
+        description: "Menyelami hikmah empat kisah agung dalam Surah Al-Kahfi sebagai benteng kokoh menghadapi fitnah zaman."
+      },
+      {
+        id: 4,
+        title: "Sirah Nabawiyah: Perang Uhud & Ibrah Kesabaran",
+        ustadz: "Ustadz Khalid Basalamah, M.A.",
+        category: "Sirah",
+        audience: "Umum",
+        masjid: "Masjid Baitul Ihsan",
+        address: "Jl. Budi Kemuliaan No. 23, Gambir, Jakarta Pusat",
+        lat: -6.1802,
+        lon: 106.8211,
+        day: "Kamis",
+        time: "Ba'da Isya (19:30 WIB)",
+        dateInfo: "Kamis Malam",
+        verified: true,
+        description: "Mempelajari kronologi Perang Uhud, kepatuhan terhadap komando Rasulullah, dan hikmah dibalik ujian kekalahan sementara."
+      },
+      {
+        id: 5,
+        title: "Kajian Khusus Muslimah: Fiqih Thaharah & Sholat",
+        ustadz: "Ustadzah Ummu Ihsan Choiriyah",
+        category: "Fiqih",
+        audience: "Akhawat",
+        masjid: "Masjid Al-Barkah",
+        address: "Jl. Pahlawan Komarudin No. 1, Cakung, Jakarta Timur",
+        lat: -6.2038,
+        lon: 106.9452,
+        day: "Jumat",
+        time: "09:00 - 11:00 WIB",
+        dateInfo: "Jumat Pagi",
+        verified: true,
+        description: "Kajian khusus akhawat dan ummahat membahas panduan praktis bersuci dari hadats besar dan penyempurnaan sholat sesuai sunnah."
+      },
+      {
+        id: 6,
+        title: "Bahasa Arab Dasar: Memahami I'rab Kitab Al-Ajurumiyyah",
+        ustadz: "Ustadz Hamzah Abbas, Lc.",
+        category: "Bahasa Arab",
+        audience: "Umum",
+        masjid: "Masjid Al-Azhar Summarecon",
+        address: "Komp. Summarecon Bekasi, Jl. Bulevar Utara, Bekasi Utara",
+        lat: -6.2238,
+        lon: 106.9994,
+        day: "Selasa",
+        time: "Ba'da Maghrib (18:15 WIB)",
+        dateInfo: "Selasa Malam",
+        verified: true,
+        description: "Belajar kaidah tata bahasa Arab dasar dari matan Al-Ajurumiyyah untuk pemula yang ingin memahami bacaan sholat dan Al-Quran."
+      }
+    ];
+
+    // Local Storage State
+    let events = [];
+    let bookmarks = [];
+    let rsvps = [];
+    let activeTab = 'kajian';
+    let activeCategory = 'Semua';
+    let activeRadius = 25; // km
+    let activeAudience = 'Semua';
+    let searchQuery = '';
+
+    // Leaflet Map Object
+    let map = null;
+    let mapMarkers = [];
+
+    // ------------------------------------------
+    // 2. MATHEMATICAL & ASTRONOMICAL FORMULAS
+    // ------------------------------------------
+    function calculateHaversine(lat1, lon1, lat2, lon2) {
+      const R = 6371; // Earth radius in km
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    function calculateQibla(lat, lon) {
+      const phi1 = lat * Math.PI / 180;
+      const phi2 = KAABA_COORDS.lat * Math.PI / 180;
+      const deltaLambda = (KAABA_COORDS.lon - lon) * Math.PI / 180;
+      
+      const y = Math.sin(deltaLambda);
+      const x = Math.cos(phi1) * Math.tan(phi2) - Math.sin(phi1) * Math.cos(deltaLambda);
+      let qiblaRad = Math.atan2(y, x);
+      let qiblaDeg = qiblaRad * 180 / Math.PI;
+      return (qiblaDeg + 360) % 360;
+    }
+
+    function calculatePrayerTimes(date, lat, lon) {
+      const dayOfYear = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
+      const b = 2 * Math.PI * (dayOfYear - 81) / 365;
+      const eot = 9.87 * Math.sin(2 * b) - 7.53 * Math.cos(b) - 1.5 * Math.sin(b);
+      const declination = 23.45 * Math.sin(2 * Math.PI * (284 + dayOfYear) / 365) * Math.PI / 180;
+
+      const timezone = 7;
+      const solarNoon = 12 + (timezone * 15 - lon) / 15 - (eot / 60);
+
+      function hourAngle(altitudeAngle) {
+        const altRad = altitudeAngle * Math.PI / 180;
+        const latRad = lat * Math.PI / 180;
+        const cosHA = (Math.sin(altRad) - Math.sin(latRad) * Math.sin(declination)) / (Math.cos(latRad) * Math.cos(declination));
+        if (cosHA > 1) return 0;
+        if (cosHA < -1) return Math.PI;
+        return Math.acos(cosHA) * 180 / Math.PI / 15;
+      }
+
+      const haFajr = hourAngle(-20);
+      const haSunrise = hourAngle(-0.833);
+      const asharAlt = Math.atan(1 / (1 + Math.tan(Math.abs(lat * Math.PI / 180 - declination)))) * 180 / Math.PI;
+      const haAshar = hourAngle(asharAlt);
+      const haMaghrib = hourAngle(-0.833);
+      const haIsha = hourAngle(-18);
+
+      function fmt(hours) {
+        let h = Math.floor(hours);
+        let m = Math.floor((hours - h) * 60);
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+      }
+
+      return {
+        subuh: fmt(solarNoon - haFajr),
+        terbit: fmt(solarNoon - haSunrise),
+        dzuhur: fmt(solarNoon + (2/60)),
+        ashar: fmt(solarNoon + haAshar),
+        maghrib: fmt(solarNoon + haMaghrib),
+        isya: fmt(solarNoon + haIsha)
+      };
+    }
+
+    // ------------------------------------------
+    // 3. UI STATE & TAB SWITCHING
+    // ------------------------------------------
+    function switchTab(tabName) {
+      activeTab = tabName;
+      
+      document.querySelectorAll('.tab-view').forEach(view => {
+        view.classList.add('hidden');
+        view.classList.remove('flex');
+      });
+      const activeView = document.getElementById(`view-${tabName}`);
+      if (activeView) {
+        activeView.classList.remove('hidden');
+        activeView.classList.add('flex');
+      }
+
+      // Update Mobile Nav
+      document.querySelectorAll('.mob-nav-btn').forEach(btn => {
+        btn.classList.remove('text-brand-700', 'dark:text-brand-400');
+        btn.classList.add('text-slate-500', 'dark:text-slate-400');
+      });
+      const mobBtn = document.getElementById(`mob-nav-${tabName}`);
+      if (mobBtn) {
+        mobBtn.classList.add('text-brand-700', 'dark:text-brand-400');
+        mobBtn.classList.remove('text-slate-500', 'dark:text-slate-400');
+      }
+
+      // Update Desktop Nav
+      document.querySelectorAll('.desktop-tab-btn').forEach(btn => {
+        btn.classList.remove('bg-white', 'dark:bg-slate-700', 'text-brand-700', 'dark:text-brand-400', 'shadow-sm');
+        btn.classList.add('text-slate-600', 'dark:text-slate-300');
+      });
+      const deskBtn = document.getElementById(`desktop-nav-${tabName}`);
+      if (deskBtn) {
+        deskBtn.classList.add('bg-white', 'dark:bg-slate-700', 'text-brand-700', 'dark:text-brand-400', 'shadow-sm');
+        deskBtn.classList.remove('text-slate-600', 'dark:text-slate-300');
+      }
+
+      if (tabName === 'peta') {
+        setTimeout(initOrRefreshMap, 100);
+      } else if (tabName === 'kiblat') {
+        updateQiblaDisplay();
+      } else if (tabName === 'saved') {
+        renderSavedCards();
+      }
+    }
+
+    // ------------------------------------------
+    // 4. KAJIAN FEED RENDERING
+    // ------------------------------------------
+    function renderKajianList() {
+      const container = document.getElementById('kajianListContainer');
+      const emptyState = document.getElementById('emptyState');
+      if (!container) return;
+
+      let filtered = events.map(ev => {
+        const dist = calculateHaversine(userCoords.lat, userCoords.lon, ev.lat, ev.lon);
+        return { ...ev, distance: dist };
+      });
+
+      filtered = filtered.filter(ev => ev.distance <= activeRadius);
+
+      if (activeCategory !== 'Semua') {
+        filtered = filtered.filter(ev => ev.category === activeCategory);
+      }
+
+      if (activeAudience !== 'Semua') {
+        filtered = filtered.filter(ev => ev.audience === activeAudience);
+      }
+
+      if (searchQuery.trim() !== '') {
+        const q = searchQuery.toLowerCase();
+        filtered = filtered.filter(ev => 
+          ev.title.toLowerCase().includes(q) ||
+          ev.ustadz.toLowerCase().includes(q) ||
+          ev.masjid.toLowerCase().includes(q) ||
+          ev.address.toLowerCase().includes(q)
+        );
+      }
+
+      filtered.sort((a, b) => a.distance - b.distance);
+
+      document.getElementById('resultsCount').innerText = filtered.length;
+      document.getElementById('mapPinCounter').innerText = `${filtered.length} Majelis di Peta`;
+
+      if (filtered.length === 0) {
+        container.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+
+      container.innerHTML = filtered.map(ev => {
+        const isBookmarked = bookmarks.includes(ev.id);
+        const isRsvped = rsvps.includes(ev.id);
+        const distFmt = ev.distance < 1 ? `${Math.round(ev.distance * 1000)} m` : `${ev.distance.toFixed(1)} km`;
+
+        return `
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 shadow-sm hover:shadow-md transition space-y-3">
+            
+            <!-- Header Row: Category Badge, Distance Pill, and Bookmark Button -->
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-100 text-brand-800 dark:bg-brand-900/60 dark:text-brand-300">
+                  ${ev.category}
+                </span>
+                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center gap-1">
+                  <svg class="w-3 h-3 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
+                  <span>${distFmt}</span>
+                </span>
+                ${ev.audience === 'Akhawat' ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300">Khusus Akhawat</span>' : ''}
+              </div>
+
+              <!-- Bookmark Toggle Button -->
+              <button onclick="toggleBookmark(${ev.id})" class="touch-btn p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition ${isBookmarked ? 'text-amber-500' : 'text-slate-400'}" title="Tandai Kajian">
+                <svg class="w-5 h-5 ${isBookmarked ? 'fill-current' : ''}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+              </button>
+            </div>
+
+            <!-- Title & Speaker -->
+            <div>
+              <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white leading-snug hover:text-brand-700 transition cursor-pointer" onclick="openDetailSheet(${ev.id})">
+                ${ev.title}
+              </h3>
+              <p class="text-xs font-semibold text-brand-700 dark:text-brand-400 mt-1 flex items-center gap-1">
+                <svg class="w-3.5 h-3.5 text-brand-600 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                <span>${ev.ustadz}</span>
+              </p>
+            </div>
+
+            <!-- Masjid & Time Details -->
+            <div class="space-y-1 text-xs text-slate-600 dark:text-slate-300">
+              <div class="flex items-center gap-2">
+                <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                <span class="font-medium truncate">${ev.masjid}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <span>${ev.day}, ${ev.time}</span>
+              </div>
+            </div>
+
+            <!-- Action Buttons Row -->
+            <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <button onclick="openDetailSheet(${ev.id})" class="touch-btn text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 transition">
+                  Detail Majelis
+                </button>
+                <button onclick="openRoute(${ev.lat}, ${ev.lon})" class="touch-btn text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 transition flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
+                  <span>Rute</span>
+                </button>
+              </div>
+
+              <!-- RSVP Button -->
+              <button onclick="toggleRsvp(${ev.id})" class="touch-btn text-xs font-bold px-3 py-1.5 rounded-xl transition ${isRsvped ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-brand-700 text-white hover:bg-brand-800 shadow-sm'}">
+                ${isRsvped ? '✓ Hadir' : '+ Ikuti'}
+              </button>
+            </div>
+
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ------------------------------------------
+    // 5. SAVED / BOOKMARKS VIEW
+    // ------------------------------------------
+    function renderSavedCards() {
+      const container = document.getElementById('savedCardsContainer');
+      const emptyState = document.getElementById('emptySavedState');
+      const badge = document.getElementById('savedCountBadge');
+      const mobBadge = document.getElementById('mobSavedBadge');
+
+      const savedList = events.filter(ev => bookmarks.includes(ev.id));
+      badge.innerText = `${savedList.length} Disimpan`;
+
+      if (mobBadge) {
+        if (savedList.length > 0) {
+          mobBadge.innerText = savedList.length;
+          mobBadge.classList.remove('hidden');
+        } else {
+          mobBadge.classList.add('hidden');
+        }
+      }
+
+      if (savedList.length === 0) {
+        container.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      container.innerHTML = savedList.map(ev => {
+        const dist = calculateHaversine(userCoords.lat, userCoords.lon, ev.lat, ev.lon).toFixed(1);
+        return `
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 shadow-sm flex items-start justify-between gap-3">
+            <div class="min-w-0 space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-100 text-brand-800 dark:bg-brand-900/60 dark:text-brand-300">${ev.category}</span>
+                <span class="text-[10px] text-slate-500 font-medium">📍 ${dist} km</span>
+              </div>
+              <h4 class="font-bold text-sm text-slate-900 dark:text-white truncate cursor-pointer" onclick="openDetailSheet(${ev.id})">${ev.title}</h4>
+              <p class="text-xs text-brand-700 dark:text-brand-400 font-semibold">${ev.ustadz}</p>
+              <p class="text-[11px] text-slate-500">${ev.masjid} • ${ev.time}</p>
+            </div>
+            <div class="flex flex-col gap-2 shrink-0">
+              <button onclick="openDetailSheet(${ev.id})" class="touch-btn text-xs font-bold px-3 py-1.5 rounded-xl bg-brand-700 text-white">Detail</button>
+              <button onclick="toggleBookmark(${ev.id})" class="touch-btn text-[11px] font-medium text-rose-500 hover:underline">Hapus</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ------------------------------------------
+    // 6. LEAFLET MAP INTEGRATION
+    // ------------------------------------------
+    function initOrRefreshMap() {
+      const mapEl = document.getElementById('mapContainer');
+      if (!mapEl) return;
+
+      if (!map) {
+        map = L.map('mapContainer', {
+          zoomControl: false
+        }).setView([userCoords.lat, userCoords.lon], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+
+        L.control.zoom({ position: 'topright' }).addTo(map);
+      } else {
+        map.invalidateSize();
+        map.setView([userCoords.lat, userCoords.lon], 13);
+      }
+
+      mapMarkers.forEach(m => map.removeLayer(m));
+      mapMarkers = [];
+
+      const userIcon = L.divIcon({
+        className: 'user-pin',
+        html: `<div class="w-6 h-6 rounded-full bg-blue-600 border-2 border-white shadow-lg flex items-center justify-center text-white text-xs font-bold">●</div>`,
+        iconSize: [24, 24]
+      });
+      const userMarker = L.marker([userCoords.lat, userCoords.lon], { icon: userIcon }).addTo(map);
+      userMarker.bindPopup(`<b>Lokasi Anda</b><br>${userCoords.name}`);
+      mapMarkers.push(userMarker);
+
+      events.forEach(ev => {
+        const markerIcon = L.divIcon({
+          className: 'mosque-pin',
+          html: `<div class="w-8 h-8 rounded-2xl bg-brand-800 border-2 border-amber-400 shadow-md flex items-center justify-center text-white text-xs font-bold">🕌</div>`,
+          iconSize: [32, 32]
+        });
+
+        const marker = L.marker([ev.lat, ev.lon], { icon: markerIcon }).addTo(map);
+        marker.on('click', () => {
+          showMapPreviewCard(ev);
+        });
+        mapMarkers.push(marker);
+      });
+    }
+
+    function showMapPreviewCard(ev) {
+      const card = document.getElementById('mapEventPreviewCard');
+      if (!card) return;
+
+      document.getElementById('mapCardCategory').innerText = ev.category;
+      document.getElementById('mapCardDistance').innerText = `${calculateHaversine(userCoords.lat, userCoords.lon, ev.lat, ev.lon).toFixed(1)} km`;
+      document.getElementById('mapCardTitle').innerText = ev.title;
+      document.getElementById('mapCardUstadz').innerText = ev.ustadz;
+      document.getElementById('mapCardMasjid').innerText = ev.masjid;
+      
+      document.getElementById('mapCardDetailBtn').onclick = () => openDetailSheet(ev.id);
+      document.getElementById('mapCardRouteBtn').onclick = () => openRoute(ev.lat, ev.lon);
+
+      card.classList.remove('hidden');
+    }
+
+    function centerUserLocation() {
+      if (map) {
+        map.setView([userCoords.lat, userCoords.lon], 14, { animate: true });
+        showToast('📍 Lokasi dipusatkan ke koordinat Anda');
+      }
+    }
+
+    // ------------------------------------------
+    // 7. COMPASS & QIBLA ENGINE
+    // ------------------------------------------
+    function updateQiblaDisplay() {
+      const deg = calculateQibla(userCoords.lat, userCoords.lon);
+      const dist = calculateHaversine(userCoords.lat, userCoords.lon, KAABA_COORDS.lat, KAABA_COORDS.lon);
+
+      document.getElementById('qiblaDegreeText').innerText = `${deg.toFixed(2)}°`;
+      document.getElementById('qiblaDistanceText').innerText = `${Math.round(dist).toLocaleString('id-ID')} km`;
+
+      const dial = document.getElementById('compassDial');
+      if (dial) {
+        dial.style.transform = `rotate(${deg}deg)`;
+      }
+    }
+
+    function calibrateCompass() {
+      if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission()
+          .then(permissionState => {
+            if (permissionState === 'granted') {
+              window.addEventListener('deviceorientation', handleOrientation);
+              showToast('🧭 Sensor kompas aktif');
+            } else {
+              showToast('Izin sensor ditolak');
+            }
+          })
+          .catch(() => showToast('Sensor tidak didukung pada browser ini'));
+      } else if ('ondeviceorientationabsolute' in window) {
+        window.addEventListener('deviceorientationabsolute', handleOrientation);
+        showToast('🧭 Menggunakan sensor absolut');
+      } else {
+        showToast('🧭 Kompas dikalibrasi ke sudut acuan');
+      }
+    }
+
+    function handleOrientation(e) {
+      let compassHeading = e.webkitCompassHeading || (360 - e.alpha);
+      if (compassHeading) {
+        const qiblaDeg = calculateQibla(userCoords.lat, userCoords.lon);
+        const dial = document.getElementById('compassDial');
+        if (dial) {
+          dial.style.transform = `rotate(${qiblaDeg - compassHeading}deg)`;
+        }
+      }
+    }
+
+    // ------------------------------------------
+    // 8. PRAYER TIMES & COUNTDOWN CLOCK
+    // ------------------------------------------
+    function updatePrayerSchedule() {
+      const now = new Date();
+      const times = calculatePrayerTimes(now, userCoords.lat, userCoords.lon);
+
+      document.getElementById('time-subuh').innerText = times.subuh;
+      document.getElementById('time-terbit').innerText = times.terbit;
+      document.getElementById('time-dzuhur').innerText = times.dzuhur;
+      document.getElementById('time-ashar').innerText = times.ashar;
+      document.getElementById('time-maghrib').innerText = times.maghrib;
+      document.getElementById('time-isya').innerText = times.isya;
+
+      const curMins = now.getHours() * 60 + now.getMinutes();
+      const prayers = [
+        { name: 'Subuh', time: times.subuh },
+        { name: 'Dzuhur', time: times.dzuhur },
+        { name: 'Ashar', time: times.ashar },
+        { name: 'Maghrib', time: times.maghrib },
+        { name: 'Isya', time: times.isya }
+      ];
+
+      function toMins(t) {
+        const [h, m] = t.split(':').map(Number);
+        return h * 60 + m;
+      }
+
+      let next = prayers.find(p => toMins(p.time) > curMins);
+      if (!next) next = { name: 'Subuh (Besok)', time: times.subuh };
+
+      document.getElementById('heroPrayerName').innerText = next.name;
+      document.getElementById('heroPrayerTargetTime').innerText = next.time;
+      document.getElementById('headerPrayerName').innerText = next.name;
+      document.getElementById('headerPrayerTime').innerText = next.time;
+      document.getElementById('quickNextPrayerName').innerText = `${next.name} ${next.time}`;
+
+      let targetMins = toMins(next.time);
+      if (targetMins <= curMins) targetMins += 24 * 60;
+      const diffSecs = (targetMins - curMins) * 60 - now.getSeconds();
+      
+      const rh = Math.floor(diffSecs / 3600);
+      const rm = Math.floor((diffSecs % 3600) / 60);
+      const rs = diffSecs % 60;
+
+      const countdownStr = `${String(rh).padStart(2, '0')}:${String(rm).padStart(2, '0')}:${String(rs).padStart(2, '0')}`;
+      document.getElementById('heroPrayerCountdown').innerText = countdownStr;
+      document.getElementById('quickCountdown').innerText = `${rh}j ${rm}m lagi`;
+    }
+
+    // ------------------------------------------
+    // 9. BOTTOM SHEET CONTROLLERS
+    // ------------------------------------------
+    function openFilterSheet() {
+      const sheet = document.getElementById('filterSheet');
+      sheet.classList.remove('pointer-events-none');
+      sheet.querySelector('.sheet-backdrop').classList.remove('opacity-0');
+      sheet.querySelector('.sheet-panel').classList.remove('translate-y-full');
+    }
+
+    function closeFilterSheet() {
+      const sheet = document.getElementById('filterSheet');
+      sheet.querySelector('.sheet-backdrop').classList.add('opacity-0');
+      sheet.querySelector('.sheet-panel').classList.add('translate-y-full');
+      setTimeout(() => sheet.classList.add('pointer-events-none'), 250);
+    }
+
+    function openDetailSheet(eventId) {
+      const ev = events.find(e => e.id === eventId);
+      if (!ev) return;
+
+      document.getElementById('detailCategoryBadge').innerText = ev.category;
+      document.getElementById('detailAudienceBadge').innerText = ev.audience === 'Akhawat' ? 'Khusus Akhawat' : 'Umum (Ikhwan & Akhawat)';
+      document.getElementById('detailTitle').innerText = ev.title;
+      document.getElementById('detailUstadz').innerText = ev.ustadz;
+      document.getElementById('detailTime').innerText = ev.time;
+      document.getElementById('detailDate').innerText = `${ev.day} (${ev.dateInfo})`;
+      document.getElementById('detailMasjid').innerText = ev.masjid;
+      document.getElementById('detailAddress').innerText = ev.address;
+      document.getElementById('detailDescription').innerText = ev.description;
+
+      document.getElementById('detailRouteBtn').onclick = () => openRoute(ev.lat, ev.lon);
+      
+      const rsvpBtn = document.getElementById('detailRsvpBtn');
+      const isRsvped = rsvps.includes(ev.id);
+      rsvpBtn.innerHTML = isRsvped ? '✓ Batal Hadir' : 'Konfirmasi Hadir';
+      rsvpBtn.onclick = () => {
+        toggleRsvp(ev.id);
+        closeDetailSheet();
+      };
+
+      const sheet = document.getElementById('detailSheet');
+      sheet.classList.remove('pointer-events-none');
+      sheet.querySelector('.sheet-backdrop').classList.remove('opacity-0');
+      sheet.querySelector('.sheet-panel').classList.remove('translate-y-full');
+    }
+
+    function closeDetailSheet() {
+      const sheet = document.getElementById('detailSheet');
+      sheet.querySelector('.sheet-backdrop').classList.add('opacity-0');
+      sheet.querySelector('.sheet-panel').classList.add('translate-y-full');
+      setTimeout(() => sheet.classList.add('pointer-events-none'), 250);
+    }
+
+    function openSubmitSheet() {
+      const sheet = document.getElementById('submitSheet');
+      sheet.classList.remove('pointer-events-none');
+      sheet.querySelector('.sheet-backdrop').classList.remove('opacity-0');
+      sheet.querySelector('.sheet-panel').classList.remove('translate-y-full');
+    }
+
+    function closeSubmitSheet() {
+      const sheet = document.getElementById('submitSheet');
+      sheet.querySelector('.sheet-backdrop').classList.add('opacity-0');
+      sheet.querySelector('.sheet-panel').classList.add('translate-y-full');
+      setTimeout(() => sheet.classList.add('pointer-events-none'), 250);
+    }
+
+    function openLocationSheet() {
+      const sheet = document.getElementById('locationSheet');
+      sheet.classList.remove('pointer-events-none');
+      sheet.querySelector('.sheet-backdrop').classList.remove('opacity-0');
+      sheet.querySelector('.sheet-panel').classList.remove('translate-y-full');
+    }
+
+    function closeLocationSheet() {
+      const sheet = document.getElementById('locationSheet');
+      sheet.querySelector('.sheet-backdrop').classList.add('opacity-0');
+      sheet.querySelector('.sheet-panel').classList.add('translate-y-full');
+      setTimeout(() => sheet.classList.add('pointer-events-none'), 250);
+    }
+
+    // ------------------------------------------
+    // 10. INTERACTION HANDLERS & HELPERS
+    // ------------------------------------------
+    function selectCategory(cat) {
+      activeCategory = cat;
+      document.querySelectorAll('.cat-chip').forEach(chip => {
+        if (chip.getAttribute('data-cat') === cat) {
+          chip.className = 'cat-chip touch-btn shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold bg-brand-700 text-white shadow-sm transition';
+        } else {
+          chip.className = 'cat-chip touch-btn shrink-0 px-3 py-1.5 rounded-full text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-500 transition';
+        }
+      });
+      renderKajianList();
+    }
+
+    function setRadius(r) {
+      activeRadius = r;
+      document.querySelectorAll('.radius-btn').forEach(btn => {
+        if (Number(btn.getAttribute('data-radius')) === r) {
+          btn.className = 'radius-btn touch-btn py-2 rounded-xl text-xs font-semibold bg-brand-700 text-white border-transparent';
+        } else {
+          btn.className = 'radius-btn touch-btn py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300';
+        }
+      });
+      document.getElementById('filterRadiusLabel').innerText = `Radius: ${r === 999 ? 'Semua' : r + ' km'}`;
+      renderKajianList();
+    }
+
+    function setAudience(aud) {
+      activeAudience = aud;
+      document.querySelectorAll('.aud-btn').forEach(btn => {
+        if (btn.getAttribute('data-aud') === aud) {
+          btn.className = 'aud-btn touch-btn py-2 rounded-xl text-xs font-semibold bg-brand-700 text-white';
+        } else {
+          btn.className = 'aud-btn touch-btn py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300';
+        }
+      });
+      renderKajianList();
+    }
+
+    function resetFilters() {
+      activeCategory = 'Semua';
+      activeRadius = 25;
+      activeAudience = 'Semua';
+      searchQuery = '';
+      document.getElementById('searchInput').value = '';
+      document.getElementById('clearSearchBtn').classList.add('hidden');
+      selectCategory('Semua');
+      setRadius(25);
+      setAudience('Semua');
+      showToast('Semua filter direset');
+      closeFilterSheet();
+    }
+
+    function onSearchChange() {
+      searchQuery = document.getElementById('searchInput').value;
+      const clearBtn = document.getElementById('clearSearchBtn');
+      if (searchQuery.length > 0) {
+        clearBtn.classList.remove('hidden');
+      } else {
+        clearBtn.classList.add('hidden');
+      }
+      renderKajianList();
+    }
+
+    function clearSearch() {
+      document.getElementById('searchInput').value = '';
+      onSearchChange();
+    }
+
+    function selectCity(name, lat, lon) {
+      userCoords = { lat, lon, name };
+      document.getElementById('currentLocationLabel').innerText = name;
+      localStorage.setItem('sinikajian_coords', JSON.stringify(userCoords));
+      closeLocationSheet();
+      showToast(`Lokasi diubah ke ${name}`);
+      renderKajianList();
+      updatePrayerSchedule();
+      updateQiblaDisplay();
+      if (map) initOrRefreshMap();
+    }
+
+    function toggleBookmark(id) {
+      const idx = bookmarks.indexOf(id);
+      if (idx > -1) {
+        bookmarks.splice(idx, 1);
+        showToast('Dihapus dari simpanan');
+      } else {
+        bookmarks.push(id);
+        showToast('Disimpan ke favorit');
+      }
+      localStorage.setItem('sinikajian_bookmarks', JSON.stringify(bookmarks));
+      renderKajianList();
+      renderSavedCards();
+    }
+
+    function toggleRsvp(id) {
+      const idx = rsvps.indexOf(id);
+      if (idx > -1) {
+        rsvps.splice(idx, 1);
+        showToast('Kehadiran dibatalkan');
+      } else {
+        rsvps.push(id);
+        showToast('Kehadiran dikonfirmasi');
+      }
+      localStorage.setItem('sinikajian_rsvps', JSON.stringify(rsvps));
+      renderKajianList();
+    }
+
+    function openRoute(lat, lon) {
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+      window.open(url, '_blank');
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      const newEvent = {
+        id: Date.now(),
+        title: document.getElementById('formTitle').value,
+        ustadz: document.getElementById('formUstadz').value,
+        category: document.getElementById('formCategory').value,
+        audience: document.getElementById('formAudience').value,
+        masjid: document.getElementById('formMasjid').value,
+        time: document.getElementById('formTime').value,
+        address: document.getElementById('formAddress').value,
+        lat: userCoords.lat + (Math.random() - 0.5) * 0.05,
+        lon: userCoords.lon + (Math.random() - 0.5) * 0.05,
+        day: "Pekan Ini",
+        dateInfo: "Kajian Baru",
+        verified: false,
+        description: "Kajian diajukan oleh jamaah dan siap diikuti."
+      };
+
+      events.unshift(newEvent);
+      localStorage.setItem('sinikajian_events', JSON.stringify(events));
+      closeSubmitSheet();
+      e.target.reset();
+      showToast('Kajian berhasil ditambahkan');
+      renderKajianList();
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const text = document.getElementById('toastText');
+      text.innerText = msg;
+      toast.classList.remove('opacity-0', '-translate-y-2');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', '-translate-y-2');
+      }, 2500);
+    }
+
+    function toggleDarkMode() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('sinikajian_dark', isDark ? 'true' : 'false');
+    }
+
+    // ------------------------------------------
+    // 11. INITIALIZATION LIFECYCLE
+    // ------------------------------------------
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedDark = localStorage.getItem('sinikajian_dark');
+      if (savedDark === 'true' || (!savedDark && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      }
+
+      const savedCoords = localStorage.getItem('sinikajian_coords');
+      if (savedCoords) {
+        try {
+          userCoords = JSON.parse(savedCoords);
+          document.getElementById('currentLocationLabel').innerText = userCoords.name;
+        } catch (e) {}
+      }
+
+      const savedEvents = localStorage.getItem('sinikajian_events');
+      events = savedEvents ? JSON.parse(savedEvents) : INITIAL_EVENTS;
+
+      const savedBookmarks = localStorage.getItem('sinikajian_bookmarks');
+      bookmarks = savedBookmarks ? JSON.parse(savedBookmarks) : [];
+
+      const savedRsvps = localStorage.getItem('sinikajian_rsvps');
+      rsvps = savedRsvps ? JSON.parse(savedRsvps) : [];
+
+      renderKajianList();
+      renderSavedCards();
+      updatePrayerSchedule();
+      updateQiblaDisplay();
+
+      setInterval(updatePrayerSchedule, 1000);
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      }
+    });
+  </script>
+</body>
+</html>
+'''
+
+with open("C:/Users/Rizz/SiniKajian/index.html", "w", encoding="utf-8") as f:
+    f.write(html_content)
+
+print("SUCCESS: index.html generated cleanly.")
