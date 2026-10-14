@@ -1108,7 +1108,7 @@
         dateInfo: "Malam Ini",
         verified: true,
         source: "instagram",
-        sourceUrl: "https://instagram.com/",
+        sourceUrl: "https://www.instagram.com/p/contoh-kajian-1/",
         description: "Pembahasan bab Keikhlasan dan Niat dalam beramal dari kitab karya Al-Imam An-Nawawi rahimahullah. Dilengkapi sesi tanya jawab interaktif."
       },
       {
@@ -1126,7 +1126,7 @@
         dateInfo: "Sabtu Pekan Ini",
         verified: true,
         source: "facebook",
-        sourceUrl: "https://facebook.com/",
+        sourceUrl: "https://www.facebook.com/contoh-kajian-2/",
         description: "Kaidah praktis menghindari riba, gharar, dan maisir dalam transaksi digital, paylater, dan investasi syariah kontemporer."
       },
       {
@@ -1144,7 +1144,7 @@
         dateInfo: "Ahad Pagi",
         verified: true,
         source: "threads",
-        sourceUrl: "https://threads.com/",
+        sourceUrl: "https://www.threads.com/t/contoh-kajian-3/",
         description: "Menyelami hikmah empat kisah agung dalam Surah Al-Kahfi sebagai benteng kokoh menghadapi fitnah zaman."
       },
       {
@@ -1162,7 +1162,7 @@
         dateInfo: "Kamis Malam",
         verified: true,
         source: "instagram",
-        sourceUrl: "https://instagram.com/",
+        sourceUrl: "https://www.instagram.com/p/contoh-kajian-1/",
         description: "Mempelajari kronologi Perang Uhud, kepatuhan terhadap komando Rasulullah, dan hikmah dibalik ujian kekalahan sementara."
       },
       {
@@ -1180,7 +1180,7 @@
         dateInfo: "Jumat Pagi",
         verified: true,
         source: "facebook",
-        sourceUrl: "https://facebook.com/",
+        sourceUrl: "https://www.facebook.com/contoh-kajian-2/",
         description: "Kajian khusus akhawat dan ummahat membahas panduan praktis bersuci dari hadats besar dan penyempurnaan sholat sesuai sunnah."
       },
       {
@@ -1198,7 +1198,7 @@
         dateInfo: "Selasa Malam",
         verified: true,
         source: "threads",
-        sourceUrl: "https://threads.com/",
+        sourceUrl: "https://www.threads.com/t/contoh-kajian-3/",
         description: "Belajar kaidah tata bahasa Arab dasar dari matan Al-Ajurumiyyah untuk pemula yang ingin memahami bacaan sholat dan Al-Quran."
       }
     ];
@@ -1400,9 +1400,9 @@
                 ${ev.audience === 'Akhawat' ? '<span class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-rose-100 text-rose-700">Akhawat</span>' : ''}
               </div>
               <div class="flex items-center gap-1.5 shrink-0">
-                <a href="${ev.sourceUrl || '#'}" target="_blank" rel="noopener" title="Sumber: ${src.label}" class="flex items-center gap-1 text-[10px] font-bold text-white px-2 py-1 rounded-full" style="${src.style}">
-                  <span class="font-extrabold">${src.glyph}</span><span>${src.label}</span>
-                </a>
+                <button onclick="trackSourceClick(${ev.id}, '${ev.source || 'instagram'}', '${ev.sourceUrl || '#'}')" title="Buka sumber: ${src.label}" class="flex items-center gap-1 text-[10px] font-bold text-white px-2 py-1 rounded-full cursor-pointer border-none" style="${src.style}">
+                  <span class="font-extrabold">${src.glyph}</span><span>${src.label} ↗</span>
+                </button>
                 <button onclick="toggleBookmark(${ev.id})" class="touch-btn p-1.5 rounded-full hover:bg-sand-100 transition ${isBookmarked ? 'text-gold-500' : 'text-slate-300'}" title="Simpan">
                   <svg class="w-5 h-5 ${isBookmarked ? 'fill-current' : ''}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
                 </button>
@@ -1961,6 +1961,21 @@
     };
 
     let sbClient = null;
+
+    // Tracking klik badge sumber — catat ke Supabase, fallback localStorage
+    async function trackSourceClick(kajianId, platform, url) {
+      const payload = { kajian_id: kajianId, platform: platform, clicked_at: new Date().toISOString() };
+      try {
+        if (sbClient) {
+          await sbClient.from('source_clicks').insert([payload]);
+        } else {
+          const log = JSON.parse(localStorage.getItem('sinikajian_clicks') || '[]');
+          log.push(payload);
+          localStorage.setItem('sinikajian_clicks', JSON.stringify(log.slice(-500)));
+        }
+      } catch (e) { console.warn('track error:', e); }
+      if (url && url !== '#') window.open(url, '_blank', 'noopener');
+    }
 
     function initSupabase() {
       const sbUrl = window.__SUPABASE_URL__ || localStorage.getItem('sinikajian_sb_url') || SUPABASE_CONFIG.url;
