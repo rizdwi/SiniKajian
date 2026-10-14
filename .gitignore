@@ -18,6 +18,9 @@ Thumbs.db
 rendered_dom.html
 dump_mobile.html
 test_vp.html
+probe.html
+capture_cdp.py
+*.png
 
 .vercel
 .env*
