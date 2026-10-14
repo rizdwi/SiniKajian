@@ -251,6 +251,17 @@
               </button>
             </div>
 
+            <!-- HERO: Kajian Pilihan & Akan Datang -->
+            <div id="heroSection" class="block lg:hidden">
+              <div class="flex items-center justify-between mb-2 px-1">
+                <h2 class="text-sm font-extrabold text-slate-900">🔥 Kajian Pilihan</h2>
+                <span id="heroCount" class="text-[10px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded-full"></span>
+              </div>
+              <div id="heroCarousel" class="flex gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-1 -mx-4 px-4">
+                <!-- Diisi via JS: renderHero() -->
+              </div>
+            </div>
+
             <!-- Sticky Search & Filter Bar -->
             <div class="sticky top-0 z-10 pt-1 pb-1 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-sm space-y-2">
               
@@ -1039,6 +1050,12 @@
         <button onclick="closeLocationSheet()" class="text-xs text-slate-400">Tutup</button>
       </div>
 
+      <!-- GPS: gunakan lokasi HP -->
+      <button onclick="useGpsLocation()" id="gpsLocBtn" class="touch-btn w-full p-3.5 rounded-2xl bg-brand-900 text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-brand-800 transition">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span id="gpsLocLabel">📡 Gunakan Lokasi HP Saya</span>
+      </button>
+
       <div class="grid grid-cols-2 gap-2 text-xs">
         <button onclick="selectCity('Jakarta Pusat', -6.2088, 106.8456)" class="touch-btn p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-left hover:border-brand-600 flex items-center gap-2">
           <svg class="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
@@ -1334,6 +1351,49 @@
     // ------------------------------------------
     // 4. KAJIAN FEED RENDERING
     // ------------------------------------------
+    // Hero: tampilkan 5 kajian terdekat sebagai kartu pilihan
+    function renderHero() {
+      const carousel = document.getElementById('heroCarousel');
+      const countBadge = document.getElementById('heroCount');
+      if (!carousel) return;
+
+      const sorted = events
+        .map(ev => ({ ...ev, distance: calculateHaversine(userCoords.lat, userCoords.lon, ev.lat, ev.lon) }))
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, 5);
+
+      if (countBadge) countBadge.innerText = `${events.length} kajian`;
+      if (sorted.length === 0) {
+        carousel.innerHTML = '<div class="text-xs text-slate-400 py-4">Belum ada kajian.</div>';
+        return;
+      }
+
+      carousel.innerHTML = sorted.map((ev, idx) => {
+        const distFmt = ev.distance < 1 ? `${Math.round(ev.distance * 1000)} m` : `${ev.distance.toFixed(1)} km`;
+        const src = (typeof SOURCE_META !== 'undefined' ? SOURCE_META[ev.source] : null) || { label: 'Sumber', style: 'background:#0C5C40', glyph: '↗' };
+        const hasSource = ev.source_url && ev.source_url !== '#';
+        return `
+        <div class="snap-start shrink-0 w-[260px] rounded-2xl overflow-hidden border border-brand-100 bg-white shadow-[0_4px_20px_rgba(12,92,64,0.10)]">
+          <div class="bg-gradient-to-br from-brand-900 to-brand-700 p-4 text-white relative">
+            <span class="absolute top-3 right-3 text-[10px] font-extrabold bg-gold-400 text-brand-950 px-2 py-0.5 rounded-full">#${idx + 1} Terdekat</span>
+            <p class="text-[10px] font-bold uppercase tracking-widest text-brand-200">${ev.category || 'Kajian'}</p>
+            <h3 class="font-extrabold text-[15px] leading-snug mt-1 pr-14">${ev.title}</h3>
+            <p class="text-[12px] text-brand-100 mt-1">${ev.ustadz}</p>
+          </div>
+          <div class="p-3.5">
+            <div class="flex items-center gap-3 text-[11px] text-slate-500">
+              <span>📍 ${distFmt}</span>
+              <span>🕌 ${ev.masjid}</span>
+            </div>
+            <div class="flex items-center gap-2 mt-3">
+              <button onclick="openDetailSheet(${ev.id})" class="flex-1 text-[12px] font-bold py-2 rounded-xl bg-brand-900 text-white">Detail</button>
+              ${hasSource ? `<button onclick="trackSourceClick(${ev.id}, '${ev.source || 'instagram'}', '${ev.source_url}')" title="${src.label}" class="text-[11px] font-bold text-white px-3 py-2 rounded-xl" style="${src.style}">${src.glyph} ${src.label}</button>` : ''}
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
     function renderKajianList() {
       const container = document.getElementById('kajianListContainer');
       const emptyState = document.getElementById('emptyState');
@@ -1436,6 +1496,7 @@
           </div>
         `;
       }).join('');
+      renderHero();
     }
 
     // ------------------------------------------
@@ -1863,6 +1924,37 @@
     function clearSearch() {
       document.getElementById('searchInput').value = '';
       onSearchChange();
+    }
+
+    function useGpsLocation() {
+      const label = document.getElementById('gpsLocLabel');
+      if (!navigator.geolocation) {
+        if (label) label.innerText = '❌ GPS tidak didukung';
+        return;
+      }
+      if (label) label.innerText = '⏳ Mencari lokasi...';
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          userCoords = { lat: pos.coords.latitude, lon: pos.coords.longitude, name: 'Lokasi Saya' };
+          document.getElementById('currentLocationLabel').innerText = '📡 Lokasi Saya';
+          localStorage.setItem('sinikajian_coords', JSON.stringify(userCoords));
+          closeLocationSheet();
+          showToast('Lokasi GPS aktif — kajian terdekat diperbarui');
+          renderKajianList();
+          updatePrayerSchedule();
+          updateQiblaDisplay();
+          if (map) initOrRefreshMap();
+          initDesktopMiniMap();
+          if (label) label.innerText = '📡 Gunakan Lokasi HP Saya';
+        },
+        (err) => {
+          const msg = err.code === 1 ? 'Izin lokasi ditolak' : 'Gagal dapat lokasi';
+          if (label) label.innerText = '❌ ' + msg;
+          showToast(msg + ' — pilih kota manual');
+          setTimeout(() => { if (label) label.innerText = '📡 Gunakan Lokasi HP Saya'; }, 2500);
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+      );
     }
 
     function selectCity(name, lat, lon) {
