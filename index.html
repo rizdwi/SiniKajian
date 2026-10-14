@@ -180,7 +180,7 @@
           Kiblat
         </button>
         <button onclick="switchTab('saved')" id="desktop-nav-saved" class="desktop-tab-btn px-3 py-1.5 text-xs font-medium rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 transition">
-          Tersimpan
+          Dashboard
         </button>
       </nav>
 
@@ -734,32 +734,52 @@
     <!-- ======================================== -->
     <div id="view-saved" class="tab-view flex-1 hidden flex flex-col overflow-y-auto no-scrollbar pb-24 md:pb-6 w-full">
       <div class="max-w-4xl w-full mx-auto px-4 pt-4 space-y-4">
-        
-        <div class="flex items-center justify-between">
-          <div>
-            <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">Kajian Tersimpan</h2>
-            <p class="text-xs text-slate-500 dark:text-slate-400">Daftar majelis ilmu yang Anda tandai dan ikuti</p>
-          </div>
-          <span id="savedCountBadge" class="text-xs font-bold px-2.5 py-1 rounded-full bg-brand-100 dark:bg-brand-900/60 text-brand-800 dark:text-brand-300">0 Disimpan</span>
+
+        <div>
+          <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">📊 Dashboard</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Perjalanan menuntut ilmu Anda</p>
         </div>
 
-        <!-- Saved Kajian Cards Container -->
-        <div id="savedCardsContainer" class="space-y-3">
-          <!-- Rendered dynamically -->
+        <!-- Quote Ulama Harian -->
+        <div class="bg-gradient-to-br from-brand-900 to-brand-700 rounded-2xl p-5 text-white shadow-[0_4px_20px_rgba(12,92,64,0.15)]">
+          <p class="text-[10px] font-bold uppercase tracking-widest text-brand-200">💎 Quote Hari Ini</p>
+          <p id="dashQuoteText" class="font-bold text-[15px] leading-relaxed mt-2"></p>
+          <p id="dashQuoteSource" class="text-[11px] text-brand-200 mt-2"></p>
         </div>
 
-        <!-- Empty State for Saved Tab -->
-        <div id="emptySavedState" class="text-center py-16 px-4 space-y-3 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
-          <div class="w-14 h-14 rounded-2xl bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center mx-auto">
-            <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-            </svg>
+        <!-- Streak Kehadiran -->
+        <div class="bg-white border border-brand-100 rounded-2xl p-4 flex items-center gap-4 shadow-[0_2px_12px_rgba(12,92,64,0.06)]">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center text-2xl shrink-0">🔥</div>
+          <div class="flex-1">
+            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Streak Kehadiran</p>
+            <p class="font-extrabold text-lg text-slate-900"><span id="dashStreak">0</span> hari beruntun</p>
+            <p class="text-[11px] text-slate-500">Konfirmasi kehadiran tiap kajian untuk menjaga streak</p>
           </div>
-          <h3 class="font-bold text-base text-slate-800 dark:text-slate-200">Belum ada kajian tersimpan</h3>
-          <p class="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto">Tandai kajian favorit Anda dengan menekan tombol simpan pada kartu majelis ilmu.</p>
-          <button onclick="switchTab('kajian')" class="touch-btn px-4 py-2 rounded-xl bg-brand-700 text-white text-xs font-semibold shadow-sm">
-            Eksplorasi Kajian Terdekat
-          </button>
+          <div class="text-center shrink-0">
+            <p class="text-[10px] font-bold uppercase text-slate-400">Total Hadir</p>
+            <p id="dashTotalHadir" class="font-extrabold text-2xl text-brand-800">0</p>
+          </div>
+        </div>
+
+        <!-- Kajian Akan Datang (yang diikuti) -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-extrabold text-slate-900">📅 Akan Datang</h3>
+            <span id="upcomingCountBadge" class="text-[10px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded-full"></span>
+          </div>
+          <div id="upcomingCardsContainer" class="space-y-3"></div>
+        </div>
+
+        <!-- Kajian Tersimpan -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-extrabold text-slate-900">🔖 Tersimpan</h3>
+            <span id="savedCountBadge" class="text-[10px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded-full">0</span>
+          </div>
+          <div id="savedCardsContainer" class="space-y-3"></div>
+          <div id="emptySavedState" class="hidden text-center py-10 px-4 bg-white rounded-2xl border border-brand-100">
+            <p class="text-xs text-slate-400">Belum ada kajian tersimpan. Tandai ♡ pada kartu kajian.</p>
+          </div>
         </div>
 
       </div>
@@ -810,7 +830,7 @@
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
         </svg>
-        <span class="text-[10px] font-medium mt-1">Simpan</span>
+        <span class="text-[10px] font-medium mt-1">Dashboard</span>
         <span id="mobSavedBadge" class="hidden absolute top-1 right-3 w-3.5 h-3.5 rounded-full bg-brand-600 text-white text-[8px] font-bold flex items-center justify-center">1</span>
       </button>
 
@@ -1344,7 +1364,7 @@
       } else if (tabName === 'kiblat') {
         updateQiblaDisplay();
       } else if (tabName === 'saved') {
-        renderSavedCards();
+        renderDashboard();
       }
     }
 
@@ -1502,6 +1522,56 @@
     // ------------------------------------------
     // 5. SAVED / BOOKMARKS VIEW
     // ------------------------------------------
+    // Dashboard: quote + streak + upcoming + saved
+    function renderDashboard() {
+      const q = getTodayQuote();
+      const qt = document.getElementById('dashQuoteText');
+      const qs = document.getElementById('dashQuoteSource');
+      if (qt) qt.innerText = '"' + q.text + '"';
+      if (qs) qs.innerText = '— ' + q.source;
+
+      const streakEl = document.getElementById('dashStreak');
+      if (streakEl) streakEl.innerText = getAttendanceStreak();
+      const totalEl = document.getElementById('dashTotalHadir');
+      if (totalEl) {
+        try {
+          const log = JSON.parse(localStorage.getItem('sinikajian_attendance') || '[]');
+          totalEl.innerText = new Set(log.map(d => d.split('T')[0])).size;
+        } catch (e) { totalEl.innerText = '0'; }
+      }
+
+      // Upcoming = yang di-RSVP
+      const upContainer = document.getElementById('upcomingCardsContainer');
+      const upBadge = document.getElementById('upcomingCountBadge');
+      const upcoming = events.filter(ev => rsvps.includes(ev.id));
+      if (upBadge) upBadge.innerText = `${upcoming.length} diikuti`;
+      if (upContainer) {
+        upContainer.innerHTML = upcoming.length === 0
+          ? '<p class="text-xs text-slate-400 bg-white rounded-2xl border border-brand-100 p-4 text-center">Belum ada. Tekan "+ Ikuti" pada kajian untuk menambah ke sini.</p>'
+          : upcoming.map(ev => {
+              const src = (typeof SOURCE_META !== 'undefined' ? SOURCE_META[ev.source] : null) || { label: 'Sumber', style: 'background:#0C5C40', glyph: '↗' };
+              const hasSource = ev.source_url && ev.source_url !== '#';
+              const flyer = ev.flyer_url
+                ? `<img src="${ev.flyer_url}" class="w-16 h-16 rounded-xl object-cover shrink-0" loading="lazy" onerror="this.style.display='none'">`
+                : `<div class="w-16 h-16 rounded-xl bg-gradient-to-br from-brand-800 to-brand-600 flex items-center justify-center text-2xl shrink-0">🕌</div>`;
+              return `
+              <div class="bg-white border border-brand-100 rounded-2xl p-3 flex gap-3 shadow-[0_2px_12px_rgba(12,92,64,0.06)]">
+                ${flyer}
+                <div class="flex-1 min-w-0">
+                  <h4 class="font-bold text-[13px] text-slate-900 leading-snug truncate">${ev.title}</h4>
+                  <p class="text-[11px] text-slate-500 mt-0.5">${ev.ustadz}</p>
+                  <p class="text-[11px] text-slate-500">📍 ${ev.masjid} • ${ev.day}</p>
+                  <div class="flex gap-1.5 mt-2">
+                    <button onclick="openDetailSheet(${ev.id})" class="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-brand-900 text-white">Detail</button>
+                    ${hasSource ? `<button onclick="trackSourceClick(${ev.id}, '${ev.source || 'instagram'}', '${ev.source_url}')" class="text-[11px] font-bold text-white px-3 py-1.5 rounded-lg" style="${src.style}">${src.glyph} ${src.label}</button>` : ''}
+                  </div>
+                </div>
+              </div>`;
+            }).join('');
+      }
+      renderSavedCards();
+    }
+
     function renderSavedCards() {
       const container = document.getElementById('savedCardsContainer');
       const emptyState = document.getElementById('emptySavedState');
@@ -1509,7 +1579,7 @@
       const mobBadge = document.getElementById('mobSavedBadge');
 
       const savedList = events.filter(ev => bookmarks.includes(ev.id));
-      badge.innerText = `${savedList.length} Disimpan`;
+      if (badge) badge.innerText = `${savedList.length}`;
 
       if (mobBadge) {
         if (savedList.length > 0) {
@@ -1984,6 +2054,54 @@
       renderSavedCards();
     }
 
+    // Quote ulama — rotasi harian berdasarkan tanggal
+    const ULAMA_QUOTES = [
+      { text: "Menuntut ilmu adalah kewajiban atas setiap muslim.", source: "HR. Ibnu Majah no. 224" },
+      { text: "Barangsiapa menempuh jalan untuk mencari ilmu, Allah mudahkan baginya jalan menuju surga.", source: "HR. Muslim no. 2699" },
+      { text: "Ilmu itu bukan yang dihafal, tetapi yang memberi manfaat.", source: "Imam Asy-Syafi'i" },
+      { text: "Sebaik-baik kalian adalah yang mempelajari Al-Qur'an dan mengajarkannya.", source: "HR. Bukhari no. 5027" },
+      { text: "Tidaklah suatu kaum berkumpul di rumah Allah lalu mempelajari kitab-Nya, melainkan ketenangan turun atas mereka.", source: "HR. Muslim no. 2699" },
+      { text: "Ilmu tanpa amal adalah kegilaan, dan amal tanpa ilmu adalah kesia-siaan.", source: "Imam Al-Ghazali" },
+      { text: "Carilah ilmu sebelum ilmu itu diangkat.", source: "Umar bin Khattab" },
+    ];
+    function getTodayQuote() {
+      const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 864e5);
+      return ULAMA_QUOTES[dayOfYear % ULAMA_QUOTES.length];
+    }
+
+    // Streak kehadiran — hitung hari berurutan user konfirmasi hadir
+    function getAttendanceStreak() {
+      try {
+        const log = JSON.parse(localStorage.getItem('sinikajian_attendance') || '[]');
+        if (log.length === 0) return 0;
+        const days = [...new Set(log.map(d => d.split('T')[0]))].sort().reverse();
+        let streak = 0;
+        let cur = new Date(); cur.setHours(0, 0, 0, 0);
+        // toleransi: hari ini atau kemarin sebagai awal streak
+        const today = cur.toISOString().split('T')[0];
+        cur.setDate(cur.getDate() - 1);
+        const yesterday = cur.toISOString().split('T')[0];
+        let startIdx = days[0] === today ? 0 : (days[0] === yesterday ? 0 : -1);
+        if (startIdx === -1) return 0;
+        let expected = new Date(days[startIdx]);
+        for (let i = startIdx; i < days.length; i++) {
+          const d = new Date(days[i]);
+          if (d.toISOString().split('T')[0] === expected.toISOString().split('T')[0]) {
+            streak++;
+            expected.setDate(expected.getDate() - 1);
+          } else break;
+        }
+        return streak;
+      } catch (e) { return 0; }
+    }
+    function logAttendance() {
+      try {
+        const log = JSON.parse(localStorage.getItem('sinikajian_attendance') || '[]');
+        log.push(new Date().toISOString());
+        localStorage.setItem('sinikajian_attendance', JSON.stringify(log.slice(-365)));
+      } catch (e) {}
+    }
+
     function toggleRsvp(id) {
       const idx = rsvps.indexOf(id);
       if (idx > -1) {
@@ -1991,10 +2109,12 @@
         showToast('Kehadiran dibatalkan');
       } else {
         rsvps.push(id);
-        showToast('Kehadiran dikonfirmasi');
+        logAttendance();
+        showToast('Kehadiran dikonfirmasi ✓');
       }
       localStorage.setItem('sinikajian_rsvps', JSON.stringify(rsvps));
       renderKajianList();
+      if (typeof renderDashboard === 'function') renderDashboard();
     }
 
     function openRoute(lat, lon) {
