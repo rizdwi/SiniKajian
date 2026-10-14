@@ -1733,7 +1733,7 @@
       document.getElementById('detailTitle').innerText = ev.title;
       document.getElementById('detailUstadz').innerText = ev.ustadz;
       document.getElementById('detailTime').innerText = ev.time;
-      document.getElementById('detailDate').innerText = `${ev.day} (${ev.dateInfo})`;
+      document.getElementById('detailDate').innerText = `${ev.day} (${ev.dateInfo || 'Jadwal Rutin'})`;
       document.getElementById('detailMasjid').innerText = ev.masjid;
       document.getElementById('detailAddress').innerText = ev.address;
       document.getElementById('detailDescription').innerText = ev.description;
@@ -1955,11 +1955,16 @@
     // ------------------------------------------
     // 10. SUPABASE CLOUD SYNC
     // ------------------------------------------
+    const SUPABASE_CONFIG = {
+      url: 'https://hhcopgprjdjvgfcuqdyf.supabase.co',
+      anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhoY29wZ3ByamRqdmdmY3VxZHlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MjI0MTQsImV4cCI6MjEwNzQ5ODQxNH0.BIFbbaK8RsjM2yz0iSGU7jW2ivC_13HDlO_bP9zDlZ4'
+    };
+
     let sbClient = null;
 
     function initSupabase() {
-      const sbUrl = window.__SUPABASE_URL__ || localStorage.getItem('sinikajian_sb_url');
-      const sbKey = window.__SUPABASE_ANON_KEY__ || localStorage.getItem('sinikajian_sb_key');
+      const sbUrl = window.__SUPABASE_URL__ || localStorage.getItem('sinikajian_sb_url') || SUPABASE_CONFIG.url;
+      const sbKey = window.__SUPABASE_ANON_KEY__ || localStorage.getItem('sinikajian_sb_key') || SUPABASE_CONFIG.anonKey;
       if (window.supabase && sbUrl && sbKey) {
         try {
           sbClient = window.supabase.createClient(sbUrl, sbKey);
@@ -1979,7 +1984,10 @@
           .eq('verified', true)
           .order('id', { ascending: true });
         if (!error && data && data.length > 0) {
-          events = data;
+          events = data.map(item => ({
+            ...item,
+            dateInfo: item.dateInfo || item.day || 'Pekan Ini'
+          }));
           localStorage.setItem('sinikajian_events', JSON.stringify(events));
           renderKajianList();
           if (map) initOrRefreshMap();
