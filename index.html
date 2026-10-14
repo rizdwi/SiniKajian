@@ -315,7 +315,7 @@
                 <span>Ditemukan</span>
                 <span id="resultsCount" class="font-bold text-slate-800 dark:text-slate-200">0</span>
                 <span>majelis ilmu</span>
-                <span id="filterRadiusLabel" class="text-[11px] px-1.5 py-0.5 rounded-md bg-slate-200 dark:bg-slate-800 font-medium">Radius: 25 km</span>
+                <span id="filterRadiusLabel" class="text-[11px] px-1.5 py-0.5 rounded-md bg-slate-200 dark:bg-slate-800 font-medium">Radius: Semua</span>
               </div>
               <button onclick="openFilterSheet()" class="text-brand-600 dark:text-brand-400 font-semibold hover:underline">
                 Ubah Radius
@@ -831,8 +831,8 @@
           <button onclick="setRadius(3)" data-radius="3" class="radius-btn touch-btn py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">3 km</button>
           <button onclick="setRadius(5)" data-radius="5" class="radius-btn touch-btn py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">5 km</button>
           <button onclick="setRadius(10)" data-radius="10" class="radius-btn touch-btn py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">10 km</button>
-          <button onclick="setRadius(25)" data-radius="25" class="radius-btn touch-btn py-2 rounded-xl text-xs font-semibold bg-brand-700 text-white border-transparent">25 km</button>
-          <button onclick="setRadius(999)" data-radius="999" class="radius-btn touch-btn py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">Semua</button>
+          <button onclick="setRadius(25)" data-radius="25" class="radius-btn touch-btn py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">25 km</button>
+          <button onclick="setRadius(999)" data-radius="999" class="radius-btn touch-btn py-2 rounded-xl text-xs font-semibold bg-brand-700 text-white border-transparent">Semua</button>
         </div>
       </div>
 
@@ -1209,7 +1209,7 @@
     let rsvps = [];
     let activeTab = 'kajian';
     let activeCategory = 'Semua';
-    let activeRadius = 25; // km
+    let activeRadius = 999; // km (default: semua)
     let activeAudience = 'Semua';
     let searchQuery = '';
 
@@ -1837,7 +1837,7 @@
 
     function resetFilters() {
       activeCategory = 'Semua';
-      activeRadius = 25;
+      activeRadius = 999;
       activeAudience = 'Semua';
       searchQuery = '';
       document.getElementById('searchInput').value = '';
