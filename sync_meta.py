@@ -497,6 +497,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Parse without pushing to database")
     parser.add_argument("--seed-meta", action="store_true", help="Insert verified Meta Facebook & Threads study events")
     parser.add_argument("--test", action="store_true", help="Test parser and schema validation")
+    parser.add_argument("--gemini-key", help="Google AI Studio Gemini API Key for vision/OCR extraction")
 
     args = parser.parse_args()
 
@@ -525,18 +526,26 @@ def main():
         return
 
     collected = []
+    gemini_key = args.gemini_key or os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
 
     # 1. Threads Keyword Search (if token provided)
     if args.threads_token:
         try:
             threads_items = fetch_threads_keywords(args.threads_token, keyword=args.threads_keyword)
             for item in threads_items:
-                parsed = extract_kajian_metadata(
-                    item.get("text", ""),
-                    permalink=item.get("permalink", f"https://www.threads.net/t/{item.get('id')}"),
-                    platform="threads",
-                    created_time=item.get("timestamp")
-                )
+                post_text = item.get("text", "")
+                permalink = item.get("permalink", f"https://www.threads.net/t/{item.get('id')}")
+                media_url = item.get("media_url")
+                
+                if gemini_key:
+                    try:
+                        from gemini_meta_scraper import extract_with_gemini
+                        parsed = extract_with_gemini(gemini_key, post_text=post_text, flyer_source=media_url, permalink=permalink, platform="threads")
+                    except Exception as ge:
+                        print(f"[!] Gemini extraction fallback to heuristic: {ge}")
+                        parsed = extract_kajian_metadata(post_text, permalink=permalink, platform="threads", created_time=item.get("timestamp"))
+                else:
+                    parsed = extract_kajian_metadata(post_text, permalink=permalink, platform="threads", created_time=item.get("timestamp"))
                 collected.append(parsed)
         except Exception as e:
             print(f"[!] Error fetching Threads: {e}")
@@ -546,12 +555,19 @@ def main():
         try:
             fb_items = fetch_facebook_page_posts(args.fb_page, args.fb_token)
             for item in fb_items:
-                parsed = extract_kajian_metadata(
-                    item.get("message", ""),
-                    permalink=item.get("permalink_url", f"https://www.facebook.com/{item.get('id')}"),
-                    platform="facebook",
-                    created_time=item.get("created_time")
-                )
+                post_text = item.get("message", "")
+                permalink = item.get("permalink_url", f"https://www.facebook.com/{item.get('id')}")
+                full_picture = item.get("full_picture")
+                
+                if gemini_key:
+                    try:
+                        from gemini_meta_scraper import extract_with_gemini
+                        parsed = extract_with_gemini(gemini_key, post_text=post_text, flyer_source=full_picture, permalink=permalink, platform="facebook")
+                    except Exception as ge:
+                        print(f"[!] Gemini extraction fallback to heuristic: {ge}")
+                        parsed = extract_kajian_metadata(post_text, permalink=permalink, platform="facebook", created_time=item.get("created_time"))
+                else:
+                    parsed = extract_kajian_metadata(post_text, permalink=permalink, platform="facebook", created_time=item.get("created_time"))
                 collected.append(parsed)
         except Exception as e:
             print(f"[!] Error fetching Facebook: {e}")
