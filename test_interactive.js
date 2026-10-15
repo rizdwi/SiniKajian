@@ -143,7 +143,7 @@ console.log('✓ Interaction 2 (Search keyword filter): PASS');
 clearSearch();
 assert.strictEqual(searchQuery, '', 'searchQuery reset');
 renderKajianList();
-assert.strictEqual(document.getElementById('resultsCount').innerText, 6, 'Clear search returns all events');
+assert.strictEqual(document.getElementById('resultsCount').innerText, INITIAL_EVENTS.length, 'Clear search returns all events');
 console.log('✓ Interaction 3 (Clear search restore): PASS');
 
 // Interaction 4: Radius filtering

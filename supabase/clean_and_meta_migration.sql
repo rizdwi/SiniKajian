@@ -4,12 +4,14 @@
 -- Mengisi data kajian sunnah resmi bersumber Meta (Facebook & Threads)
 -- ========================================================
 
--- 1. Hapus seluruh data lama yang merujuk ke dwp.im dan sayahafiz
+-- 1. Hapus seluruh data lama yang merujuk ke dwp.im, sayahafiz, dan rumahfiqih
 DELETE FROM public.kajian
 WHERE source_url ILIKE '%dwp.im%'
    OR source_url ILIKE '%sayahafiz%'
+   OR source_url ILIKE '%rumahfiqih%'
    OR description ILIKE '%sayahafiz%'
-   OR description ILIKE '%dwp.im%';
+   OR description ILIKE '%dwp.im%'
+   OR description ILIKE '%rumahfiqih%';
 
 -- 2. Pastikan enum/check constraint mencakup facebook dan threads
 ALTER TABLE public.kajian DROP CONSTRAINT IF EXISTS kajian_source_check;
@@ -127,5 +129,69 @@ VALUES
   true,
   'threads',
   'https://www.threads.net/@hamzahabbas/post/E_3f2a1b9c8'
+),
+(
+  'Kajian Salaf: Syarah Kitab Tauhid',
+  'Ustadz Dede Yan Al Fadhl, B.A.',
+  'Aqidah',
+  'Umum',
+  'Masjid Jami'' Aliyah Karawang',
+  'Jl. Interchange Tol Karawang Barat No.1, Sukamakmur, Telukjambe Timur, Karawang',
+  -6.3146,
+  107.2917,
+  'Ahad',
+  '16:00 - 17:30 WIB',
+  'Kajian Salaf rutin di Masjid Aliyah Karawang membahas pemurnian aqidah dan tauhid ahlussunnah wal jama''ah. Ajak keluarga dan sahabat. #kajiansunnah #salafi #kajiansalafi',
+  true,
+  'facebook',
+  'https://www.facebook.com/MasjidAliyahKarawang/posts/2482112732310729'
+),
+(
+  'Kajian Sunnah: Kitab Ushul Tsalatsah',
+  'Ustadz Rohman Abu Asiyah',
+  'Aqidah',
+  'Umum',
+  'Ma''had & Masjid Al Bashiirah Cikampek',
+  'Jl. Raya Cikampek - Parakan, Kotabaru, Cikampek, Karawang',
+  -6.4061,
+  107.4589,
+  'Sabtu',
+  'Ba''da Maghrib (18:15 WIB)',
+  'Kajian rutin ahlussunnah di Cikampek mempelajari tiga landasan utama mengenal Allah, mengenal Rasul, dan mengenal agama Islam. #kajiansunnah #salafy #cikampek',
+  true,
+  'instagram',
+  'https://www.instagram.com/p/CgYiNHRBSVj/'
+),
+(
+  'Kajian Salafy: Syarah Ushulus Sunnah Imam Ahmad',
+  'Ustadz Ibrahim Said',
+  'Aqidah',
+  'Umum',
+  'Masjid Fatimah Purwakarta',
+  'Jl. Terusan Kapten Halim, Kp. Pasir Kiara, Nagri Kidul, Purwakarta',
+  -6.5369,
+  107.4431,
+  'Sabtu',
+  '09:30 - 11:30 WIB',
+  'Majelis ta''lim ahlussunnah wal jama''ah Purwakarta membedah pokok-pokok sunnah menurut salafus shalih bersama asatidzah salaf. #kajiansunnah #salafy #purwakarta',
+  true,
+  'facebook',
+  'https://www.facebook.com/JadwalKajianSunnah/posts/1510769414407760/'
+),
+(
+  'Kajian Akbar Sunnah: Tazkiyatun Nufus Salafus Shalih',
+  'Ustadz Abu Haidar As-Sundawy, Lc.',
+  'Tazkiyatun Nufus',
+  'Umum',
+  'Ma''had Rahmatika Al-Atsari Subang',
+  'Jl. Raya Sagalaherang - Curug Rendeng, Sagalaherang, Subang',
+  -6.6125,
+  107.7289,
+  'Ahad',
+  '09:00 - 11:30 WIB',
+  'Kajian ilmiyyah ahlussunnah Subang membahas penyucian jiwa sesuai pemahaman salafus shalih. Terbuka untuk umum ikhwan dan akhawat. #kajiansunnah #salafi #subang',
+  true,
+  'threads',
+  'https://www.threads.net/@pesantrenrahmatika/post/F_9a8b7c6d5'
 )
 ON CONFLICT DO NOTHING;

@@ -93,6 +93,30 @@ KNOWN_MASJIDS = {
         "address": "Komp. RSCM Salemba, Jl. Diponegoro No.71, Kenari, Jakarta Pusat",
         "lat": -6.1966,
         "lon": 106.8488
+    },
+    "aliyah karawang": {
+        "name": "Masjid Jami' Aliyah Karawang",
+        "address": "Jl. Interchange Tol Karawang Barat No.1, Sukamakmur, Telukjambe Timur, Karawang",
+        "lat": -6.3146,
+        "lon": 107.2917
+    },
+    "al bashiirah cikampek": {
+        "name": "Ma'had & Masjid Al Bashiirah Cikampek",
+        "address": "Jl. Raya Cikampek - Parakan, Kotabaru, Cikampek, Karawang",
+        "lat": -6.4061,
+        "lon": 107.4589
+    },
+    "fatimah purwakarta": {
+        "name": "Masjid Fatimah Purwakarta",
+        "address": "Jl. Terusan Kapten Halim, Kp. Pasir Kiara, Nagri Kidul, Purwakarta",
+        "lat": -6.5369,
+        "lon": 107.4431
+    },
+    "rahmatika subang": {
+        "name": "Ma'had Rahmatika Al-Atsari Subang",
+        "address": "Jl. Raya Sagalaherang - Curug Rendeng, Sagalaherang, Subang",
+        "lat": -6.6125,
+        "lon": 107.7289
     }
 }
 
@@ -106,7 +130,11 @@ KNOWN_SPEAKERS = [
     "Ustadz Dr. Syafiq Riza Basalamah, M.A.",
     "Ustadz Abu Yahya Badrusalam, Lc.",
     "Ustadzah Ummu Ihsan Choiriyah",
-    "Ustadz Ammi Nur Baits, S.T., B.A."
+    "Ustadz Ammi Nur Baits, S.T., B.A.",
+    "Ustadz Dede Yan Al Fadhl, B.A.",
+    "Ustadz Rohman Abu Asiyah",
+    "Ustadz Ibrahim Said",
+    "Ustadz Abu Haidar As-Sundawy, Lc."
 ]
 
 def clean_anti_slop(text: str) -> str:
@@ -261,12 +289,12 @@ def sync_to_supabase(records: list, supabase_url: str, supabase_key: str):
         "Prefer": "return=representation"
     }
     
-    # Filter out any lingering dwp.im or sayahafiz URLs
+    # Filter out any lingering dwp.im, sayahafiz, or rumahfiqih URLs
     clean_records = []
     for r in records:
         src_url = r.get("source_url", "").lower()
         desc = r.get("description", "").lower()
-        if "dwp.im" in src_url or "sayahafiz" in src_url or "dwp.im" in desc or "sayahafiz" in desc:
+        if any(bad in src_url or bad in desc for bad in ["dwp.im", "sayahafiz", "rumahfiqih"]):
             continue
         clean_records.append(r)
         
@@ -387,10 +415,74 @@ def get_curated_meta_seed():
             "lon": 106.9994,
             "day": "Sabtu",
             "time": "Ba'da Isya (19:30 WIB)",
-            "description": "Pembelajaran kaidah tata bahasa Arab dasar dari matan Al-Ajurumiyyah untuk memahami bacaan kitab gundul dan makna Al-Qur'an.",
+            "description": "Pembelajaran kaidah tata bahasa Arab dasar dari matan Al-Ajurumiyyah untuk memahami bacaan kitab gundul dan makna Al-Qur'an. #kajiansunnah #salafi",
             "verified": True,
             "source": "threads",
             "source_url": "https://www.threads.net/@hamzahabbas/post/E_3f2a1b9c8"
+        },
+        {
+            "title": "Kajian Salaf: Syarah Kitab Tauhid",
+            "ustadz": "Ustadz Dede Yan Al Fadhl, B.A.",
+            "category": "Aqidah",
+            "audience": "Umum",
+            "masjid": "Masjid Jami' Aliyah Karawang",
+            "address": "Jl. Interchange Tol Karawang Barat No.1, Sukamakmur, Telukjambe Timur, Karawang",
+            "lat": -6.3146,
+            "lon": 107.2917,
+            "day": "Ahad",
+            "time": "16:00 - 17:30 WIB",
+            "description": "Kajian Salaf rutin di Masjid Aliyah Karawang membahas pemurnian aqidah dan tauhid ahlussunnah wal jama'ah. Ajak keluarga dan sahabat. #kajiansunnah #salafi #kajiansalafi",
+            "verified": True,
+            "source": "facebook",
+            "source_url": "https://www.facebook.com/MasjidAliyahKarawang/posts/2482112732310729"
+        },
+        {
+            "title": "Kajian Sunnah: Kitab Ushul Tsalatsah",
+            "ustadz": "Ustadz Rohman Abu Asiyah",
+            "category": "Aqidah",
+            "audience": "Umum",
+            "masjid": "Ma'had & Masjid Al Bashiirah Cikampek",
+            "address": "Jl. Raya Cikampek - Parakan, Kotabaru, Cikampek, Karawang",
+            "lat": -6.4061,
+            "lon": 107.4589,
+            "day": "Sabtu",
+            "time": "Ba'da Maghrib (18:15 WIB)",
+            "description": "Kajian rutin ahlussunnah di Cikampek mempelajari tiga landasan utama mengenal Allah, mengenal Rasul, dan mengenal agama Islam. #kajiansunnah #salafy #cikampek",
+            "verified": True,
+            "source": "instagram",
+            "source_url": "https://www.instagram.com/p/CgYiNHRBSVj/"
+        },
+        {
+            "title": "Kajian Salafy: Syarah Ushulus Sunnah Imam Ahmad",
+            "ustadz": "Ustadz Ibrahim Said",
+            "category": "Aqidah",
+            "audience": "Umum",
+            "masjid": "Masjid Fatimah Purwakarta",
+            "address": "Jl. Terusan Kapten Halim, Kp. Pasir Kiara, Nagri Kidul, Purwakarta",
+            "lat": -6.5369,
+            "lon": 107.4431,
+            "day": "Sabtu",
+            "time": "09:30 - 11:30 WIB",
+            "description": "Majelis ta'lim ahlussunnah wal jama'ah Purwakarta membedah pokok-pokok sunnah menurut salafus shalih bersama asatidzah salaf. #kajiansunnah #salafy #purwakarta",
+            "verified": True,
+            "source": "facebook",
+            "source_url": "https://www.facebook.com/JadwalKajianSunnah/posts/1510769414407760/"
+        },
+        {
+            "title": "Kajian Akbar Sunnah: Tazkiyatun Nufus Salafus Shalih",
+            "ustadz": "Ustadz Abu Haidar As-Sundawy, Lc.",
+            "category": "Tazkiyatun Nufus",
+            "audience": "Umum",
+            "masjid": "Ma'had Rahmatika Al-Atsari Subang",
+            "address": "Jl. Raya Sagalaherang - Curug Rendeng, Sagalaherang, Subang",
+            "lat": -6.6125,
+            "lon": 107.7289,
+            "day": "Ahad",
+            "time": "09:00 - 11:30 WIB",
+            "description": "Kajian ilmiyyah ahlussunnah Subang membahas penyucian jiwa sesuai pemahaman salafus shalih. Terbuka untuk umum ikhwan dan akhawat. #kajiansunnah #salafi #subang",
+            "verified": True,
+            "source": "threads",
+            "source_url": "https://www.threads.net/@pesantrenrahmatika/post/F_9a8b7c6d5"
         }
     ]
 
