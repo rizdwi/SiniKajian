@@ -216,6 +216,13 @@
           </svg>
         </button>
 
+        <!-- Force Refresh & Purge Cache Button -->
+        <button onclick="forcePurgeAndReload()" class="touch-btn p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="Perbarui Data & Bersihkan Cache" aria-label="Bersihkan Cache">
+          <svg class="w-4 h-4 text-brand-700 dark:text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </button>
+
         <!-- Dark Mode Toggle -->
         <button onclick="toggleDarkMode()" id="themeToggleBtn" class="touch-btn p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition" aria-label="Ganti Tema">
           <svg id="moonIcon" class="w-4 h-4 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1461,6 +1468,30 @@
   <!-- APPLICATION SCRIPTS (PURE ES6+ ENGINE)     -->
   <!-- ========================================== -->
   <script>
+    // ------------------------------------------
+    // 0. CACHE PURGE & AUTO-UPGRADE CONTROLLER (v12)
+    // ------------------------------------------
+    const APP_BUILD_ID = 'sinikajian-build-v12.2';
+    const clientSavedBuild = localStorage.getItem('sinikajian_active_build');
+    if (clientSavedBuild !== APP_BUILD_ID) {
+      console.warn('[SiniKajian] Upgrading build cache from', clientSavedBuild, 'to', APP_BUILD_ID);
+      // Immediately wipe legacy events cache containing obsolete Instagram / placeholder links
+      localStorage.removeItem('sinikajian_events');
+      localStorage.setItem('sinikajian_active_build', APP_BUILD_ID);
+      
+      // Clean obsolete CacheStorage directly
+      if ('caches' in window) {
+        caches.keys().then((keys) => {
+          keys.forEach((key) => {
+            if (key !== 'sinikajian-v12') {
+              console.log('[SiniKajian] Evicting old cache storage:', key);
+              caches.delete(key);
+            }
+          });
+        });
+      }
+    }
+
     // ------------------------------------------
     // 1. DATA STATE & CORE CONSTANTS
     // ------------------------------------------
@@ -3092,13 +3123,58 @@
       setInterval(updatePrayerSchedule, 1000);
 
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js').catch(() => {});
+        navigator.serviceWorker.register('./sw.js?v=12.2', { updateViaCache: 'none' }).then(reg => {
+          reg.update();
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            if (newWorker) {
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
+                  console.log('[SiniKajian] Service worker updated. Reloading...');
+                  window.location.reload();
+                }
+              });
+            }
+          });
+        }).catch(err => console.warn('SW register issue:', err));
+
+        let isRefreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!isRefreshing) {
+            isRefreshing = true;
+            window.location.reload();
+          }
+        });
       }
 
       if (window.location.hash === '#location-sheet') {
         setTimeout(openLocationSheet, 300);
       }
     });
+
+    // Global Force Cache Purge & Hard Reload Helper
+    function forcePurgeAndReload() {
+      showToast('Membersihkan seluruh cache & memperbarui data...');
+      try {
+        localStorage.removeItem('sinikajian_events');
+        localStorage.removeItem('sinikajian_active_build');
+        sessionStorage.clear();
+      } catch (e) {}
+
+      const unregisterPromise = ('serviceWorker' in navigator)
+        ? navigator.serviceWorker.getRegistrations().then(regs => Promise.all(regs.map(r => r.unregister())))
+        : Promise.resolve();
+
+      const clearCachesPromise = ('caches' in window)
+        ? caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
+        : Promise.resolve();
+
+      Promise.all([unregisterPromise, clearCachesPromise]).then(() => {
+        window.location.href = window.location.origin + window.location.pathname + '?bust=' + Date.now();
+      }).catch(() => {
+        window.location.href = window.location.origin + window.location.pathname + '?bust=' + Date.now();
+      });
+    }
   </script>
 </body>
 </html>
