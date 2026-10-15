@@ -141,7 +141,7 @@ def clean_anti_slop(text: str) -> str:
     """Removes em dashes and forbidden buzzwords."""
     if not text:
         return ""
-    text = text.replace("—", "-")
+    text = text.replace("\u2014", "-")
     buzzwords = ["revolutionary", "cutting-edge", "seamless", "game-changer", "unleash", "empower", "testament"]
     for bw in buzzwords:
         text = re.sub(re.escape(bw), "andal", text, flags=re.IGNORECASE)
@@ -520,7 +520,7 @@ def main():
         assert parsed["category"] == "Aqidah"
         assert parsed["masjid"] == "Masjid Al-Ikhlas"
         assert parsed["source"] == "threads"
-        assert "—" not in parsed["description"]
+        assert "\u2014" not in parsed["description"]
         print("[✓] All parser tests passed!")
         return
 

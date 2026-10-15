@@ -508,7 +508,7 @@
                     <svg class="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     <span>Waktu Sholat Hari Ini</span>
                   </h4>
-                  <p class="text-[10px] text-slate-400 mt-0.5">Wilayah DKI Jakarta & sekitarnya</p>
+                  <p id="sidebarPrayerLocationLabel" class="text-[10px] text-slate-400 mt-0.5">Wilayah Jakarta Pusat & sekitarnya</p>
                 </div>
                 <span id="sidebarCountdownBadge" class="text-[11px] font-bold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/40 px-2.5 py-1 rounded-full border border-brand-200/60 dark:border-brand-800/40">
                   Dzuhur 11:51
@@ -617,7 +617,10 @@
           
           <div class="flex items-center justify-between mb-3">
             <div>
-              <span class="text-xs font-semibold text-emerald-300 tracking-wide uppercase">Waktu Sholat Berikutnya</span>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold text-emerald-300 tracking-wide uppercase">Waktu Sholat Berikutnya</span>
+                <span id="sholatCityBadge" class="text-[10px] font-bold text-emerald-200 bg-white/10 px-2 py-0.5 rounded-full border border-white/10">Jakarta Pusat</span>
+              </div>
               <h2 id="heroPrayerName" class="text-3xl font-extrabold tracking-tight mt-0.5">Dzuhur</h2>
             </div>
             <div class="text-right">
@@ -2359,6 +2362,10 @@
     function selectCity(name, lat, lon) {
       userCoords = { lat, lon, name };
       document.getElementById('currentLocationLabel').innerText = name;
+      const sbLoc = document.getElementById('sidebarPrayerLocationLabel');
+      if (sbLoc) sbLoc.innerText = `Wilayah ${name} & sekitarnya`;
+      const sholatBadge = document.getElementById('sholatCityBadge');
+      if (sholatBadge) sholatBadge.innerText = name;
       localStorage.setItem('sinikajian_coords', JSON.stringify(userCoords));
       closeLocationSheet();
       showToast(`Lokasi diubah ke ${name}`);
@@ -2554,16 +2561,21 @@
                    !desc.includes('dwp.im') && !desc.includes('sayahafiz') && !desc.includes('rumahfiqih');
           });
 
-          if (cleanData.length > 0) {
-            events = cleanData.map(item => ({
+          // Combine Supabase verified items with curated INITIAL_EVENTS so all regions (Karawang, Cikampek, Purwakarta, Subang, Jabodetabek) remain available
+          const mergedMap = new Map();
+          INITIAL_EVENTS.forEach(ev => mergedMap.set(ev.id, ev));
+          cleanData.forEach(item => {
+            mergedMap.set(item.id, {
               ...item,
               dateInfo: item.dateInfo || item.day || 'Pekan Ini'
-            }));
-            localStorage.setItem('sinikajian_events', JSON.stringify(events));
-            renderKajianList();
-            if (map) initOrRefreshMap();
-            initDesktopMiniMap();
-          }
+            });
+          });
+
+          events = Array.from(mergedMap.values());
+          localStorage.setItem('sinikajian_events', JSON.stringify(events));
+          renderKajianList();
+          if (map) initOrRefreshMap();
+          initDesktopMiniMap();
         }
       } catch (e) {
         console.warn('Supabase fetch error:', e);
@@ -2599,6 +2611,10 @@
         try {
           userCoords = JSON.parse(savedCoords);
           document.getElementById('currentLocationLabel').innerText = userCoords.name;
+          const sbLoc = document.getElementById('sidebarPrayerLocationLabel');
+          if (sbLoc) sbLoc.innerText = `Wilayah ${userCoords.name} & sekitarnya`;
+          const sholatBadge = document.getElementById('sholatCityBadge');
+          if (sholatBadge) sholatBadge.innerText = userCoords.name;
         } catch (e) {}
       }
 
