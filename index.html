@@ -1106,9 +1106,18 @@
           <svg class="w-4 h-4 text-slate-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
           </svg>
-          <div>
+          <div class="flex-1">
             <p class="font-bold text-slate-900 dark:text-white" id="detailMasjid">Masjid Al-Ikhlas</p>
-            <p class="text-slate-500" id="detailAddress">Jl. Cipete Raya No. 12</p>
+            <p class="text-slate-500 leading-snug" id="detailAddress">Jl. Cipete Raya No. 12</p>
+            <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+              <span id="detailCoordsBadge" class="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/50 flex items-center gap-1">
+                <svg class="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
+                <span id="detailCoordsText">GPS: -6.27892, 106.79979</span>
+              </span>
+              <a id="detailMapsDirectLink" href="#" target="_blank" rel="noopener" class="text-[10px] text-brand-700 dark:text-brand-400 font-semibold underline hover:text-brand-800 inline-flex items-center gap-0.5">
+                Buka Pin Google Maps ↗
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -1134,12 +1143,12 @@
             <span>Konfirmasi Hadir</span>
           </button>
         </div>
-        <button id="detailSourceBtn" class="w-full touch-btn py-2.5 rounded-xl bg-brand-50 dark:bg-brand-950/60 border border-brand-200 dark:border-brand-800/80 text-brand-800 dark:text-brand-300 font-semibold text-xs flex items-center justify-center gap-2">
-          <svg class="w-4 h-4 text-brand-600 dark:text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <a id="detailSourceBtn" target="_blank" rel="noopener noreferrer" class="w-full touch-btn py-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/80 text-blue-700 dark:text-blue-300 font-semibold text-xs flex items-center justify-center gap-2 no-underline shadow-xs">
+          <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
           </svg>
-          <span id="detailSourceLabel">Buka Sumber Asli Posting ↗</span>
-        </button>
+          <span id="detailSourceLabel">Buka Sumber Asli di Facebook ↗</span>
+        </a>
       </div>
 
     </div>
@@ -1276,15 +1285,15 @@
             <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-semibold">Wilayah Dekat</span>
           </div>
           <div class="grid grid-cols-3 gap-2">
-            <button onclick="selectCity('Karawang', -6.3042, 107.3056)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="karawang">
+            <button onclick="selectCity('Karawang', -6.3216, 107.2718)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="karawang">
               <div class="font-bold text-slate-900 dark:text-white">Karawang</div>
               <div class="text-[10px] text-slate-500 truncate">Masjid Aliyah</div>
             </button>
-            <button onclick="selectCity('Cikampek', -6.4061, 107.4589)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="cikampek">
+            <button onclick="selectCity('Cikampek', -6.4093, 107.4950)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="cikampek">
               <div class="font-bold text-slate-900 dark:text-white">Cikampek</div>
               <div class="text-[10px] text-slate-500 truncate">Al Bashiirah</div>
             </button>
-            <button onclick="selectCity('Purwakarta', -6.5569, 107.4433)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="purwakarta">
+            <button onclick="selectCity('Purwakarta', -6.5720, 107.4623)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="purwakarta">
               <div class="font-bold text-slate-900 dark:text-white">Purwakarta</div>
               <div class="text-[10px] text-slate-500 truncate">Masjid Fatimah</div>
             </button>
@@ -1298,11 +1307,11 @@
             <span class="text-[10px] px-1.5 py-0.5 rounded bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300 font-semibold">Wilayah Dekat</span>
           </div>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <button onclick="selectCity('Subang', -6.5714, 107.7602)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="subang">
+            <button onclick="selectCity('Subang', -6.6687, 107.6409)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="subang">
               <div class="font-bold text-slate-900 dark:text-white">Subang</div>
               <div class="text-[10px] text-slate-500 truncate">Rahmatika</div>
             </button>
-            <button onclick="selectCity('Bandung Kota', -6.9175, 107.6191)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="bandung">
+            <button onclick="selectCity('Bandung Kota', -6.8794, 107.5834)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="bandung">
               <div class="font-bold text-slate-900 dark:text-white">Bandung</div>
               <div class="text-[10px] text-slate-500 truncate">Al-Murabbi</div>
             </button>
@@ -1324,11 +1333,11 @@
             <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 font-semibold">Aglomerasi</span>
           </div>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <button onclick="selectCity('Bekasi', -6.2383, 106.9756)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="bekasi">
+            <button onclick="selectCity('Bekasi', -6.3204, 106.9406)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="bekasi">
               <div class="font-bold text-slate-900 dark:text-white">Bekasi</div>
               <div class="text-[10px] text-slate-500 truncate">Baitul Haq</div>
             </button>
-            <button onclick="selectCity('Bogor Kota', -6.5971, 106.8060)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="bogor">
+            <button onclick="selectCity('Bogor Kota', -6.5929, 106.8168)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="bogor">
               <div class="font-bold text-slate-900 dark:text-white">Bogor</div>
               <div class="text-[10px] text-slate-500 truncate">MIAH Bogor</div>
             </button>
@@ -1350,7 +1359,7 @@
             <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-semibold">Pantura Timur</span>
           </div>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <button onclick="selectCity('Cirebon', -6.7452, 108.5398)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="cirebon">
+            <button onclick="selectCity('Cirebon', -6.7460, 108.5344)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="cirebon">
               <div class="font-bold text-slate-900 dark:text-white">Cirebon</div>
               <div class="text-[10px] text-slate-500 truncate">Masjid As-Sunnah</div>
             </button>
@@ -1464,21 +1473,21 @@
     const INITIAL_EVENTS = [
       {
         id: 1,
-        title: "Kajian Tematik: Kandungan Sayyidul Istighfar",
+        title: "Kajian Ilmiah: Aneka Wajah Riya",
         ustadz: "Ustadz Dr. Firanda Andirja, Lc., M.A.",
         category: "Tazkiyatun Nufus",
         audience: "Umum",
         masjid: "Masjid Al-Ikhlas",
-        address: "Jl. Cipete III No.3, Cipete Selatan, Cilandak, Jakarta Selatan",
-        lat: -6.2785,
-        lon: 106.8041,
+        address: "Jl. Cipete III No.3, Cipete Selatan, Cilandak, Jakarta Selatan 12410",
+        lat: -6.278921,
+        lon: 106.799790,
         day: "Ahad",
-        time: "Ba'da Dzuhur (12:30 WIB)",
-        dateInfo: "Ahad Siang",
+        time: "09:30 WIB - Selesai",
+        dateInfo: "Ahad Pagi",
         verified: true,
         source: "facebook",
-        sourceUrl: "https://www.facebook.com/firandaandirja/posts/1610887477321997/",
-        description: "Membahas makna mendalam bacaan sayyidul istighfar, syarat taubat nasuha, dan keutamaan istighfar dalam kehidupan sehari-hari."
+        sourceUrl: "https://www.facebook.com/firandaandirja/posts/1372508347826579/",
+        description: "Kajian ilmiah mengupas bahaya riya tersembunyi, tanda-tandanya, dan cara memurnikan keikhlasan beramal sesuai tuntunan sunnah."
       },
       {
         id: 2,
@@ -1487,9 +1496,9 @@
         category: "Fiqih",
         audience: "Umum",
         masjid: "Masjid Baitul Haq",
-        address: "Komp. Puri Gading, Jatimelati, Pondok Melati, Bekasi",
-        lat: -6.3150,
-        lon: 106.9288,
+        address: "Komp. Puri Gading, Jl. Puri Gading Utara Raya, Jatimelati, Pondok Melati, Bekasi 17415",
+        lat: -6.320397,
+        lon: 106.940551,
         day: "Selasa",
         time: "09:00 - 11:00 WIB",
         dateInfo: "Selasa Pagi",
@@ -1505,9 +1514,9 @@
         category: "Tazkiyatun Nufus",
         audience: "Umum",
         masjid: "Masjid Nurul Iman",
-        address: "Komp. Mall Blok M Square Lt. 7, Kebayoran Baru, Jakarta Selatan",
-        lat: -6.2443,
-        lon: 106.7997,
+        address: "Komp. Mall Blok M Square Lt. 7, Melawai, Kebayoran Baru, Jakarta Selatan 12130",
+        lat: -6.244574,
+        lon: 106.800616,
         day: "Sabtu",
         time: "Ba'da Ashar (16:00 - 17:30 WIB)",
         dateInfo: "Sabtu Sore",
@@ -1518,14 +1527,14 @@
       },
       {
         id: 4,
-        title: "Kajian Spesial: Serial Kisah Nabi dan Pelajaran Hidup",
+        title: "Kajian Spesial: Serial Kisah Nabi - Luth 'Alaihissalam",
         ustadz: "Ustadz Khalid Basalamah, M.A.",
         category: "Sirah",
         audience: "Umum",
         masjid: "Masjid Baitul Ihsan",
-        address: "Jl. Budi Kemuliaan No. 23, Gambir, Jakarta Pusat",
-        lat: -6.1802,
-        lon: 106.8211,
+        address: "Jl. Budi Kemuliaan No. 23, Gambir, Jakarta Pusat 10110",
+        lat: -6.180800,
+        lon: 106.820200,
         day: "Kamis",
         time: "Ba'da Isya (19:30 WIB)",
         dateInfo: "Kamis Malam",
@@ -1541,12 +1550,12 @@
         category: "Akhlak",
         audience: "Umum",
         masjid: "Masjid Al-Hidayah",
-        address: "Jl. Veteran No. 12, Pasar Kliwon, Surakarta",
-        lat: -7.5755,
-        lon: 110.8243,
+        address: "Jl. Veteran No. 12, Pasar Kliwon, Surakarta 57116",
+        lat: -7.583984,
+        lon: 110.826959,
         day: "Sabtu",
-        time: "09:00 - 11:30 WIB",
-        dateInfo: "Sabtu Pagi",
+        time: "Ba'da Shubuh (05:00 - 07:00 WIB)",
+        dateInfo: "Sabtu Subuh",
         verified: true,
         source: "facebook",
         sourceUrl: "https://www.facebook.com/SyafiqRizaBasalamahOfficial/posts/1602298501255007/",
@@ -1554,21 +1563,21 @@
       },
       {
         id: 6,
-        title: "Kajian Tematik: 10 Metode Beragama yang Keliru",
+        title: "Kajian Sore Rutin: Menuju Takwa Bersama Sunnah",
         ustadz: "Ustadz Sofyan Chalid Ruray, Lc.",
         category: "Aqidah",
         audience: "Umum",
         masjid: "Masjid Jami' Aliyah Karawang",
-        address: "Jl. Interchange Tol Karawang Barat No.1, Sukamakmur, Telukjambe Timur, Karawang",
-        lat: -6.3146,
-        lon: 107.2917,
+        address: "Jl. Interchange Tol Karawang Barat No.1, Sukamakmur, Telukjambe Timur, Karawang 41361",
+        lat: -6.321550,
+        lon: 107.271770,
         day: "Ahad",
         time: "Ba'da Ashar (16:00 WIB)",
         dateInfo: "Ahad Sore",
         verified: true,
         source: "facebook",
-        sourceUrl: "https://www.facebook.com/100063634087092/posts/1730801232384330/",
-        description: "Membahas prinsip aqidah ahlussunnah dalam beragama dan koreksi terhadap penyimpangan manhaj salafus shalih."
+        sourceUrl: "https://www.facebook.com/masjidjamialiyah/posts/1730801232384330/",
+        description: "Kajian sore rutin di Masjid Jami' Aliyah Karawang Barat membahas tazkiyatun nufus dan aqidah ahlussunnah wal jama'ah."
       },
       {
         id: 7,
@@ -1577,27 +1586,27 @@
         category: "Akhlak",
         audience: "Umum",
         masjid: "Masjid Jami' Aliyah Karawang",
-        address: "Jl. Interchange Tol Karawang Barat No.1, Sukamakmur, Telukjambe Timur, Karawang",
-        lat: -6.3146,
-        lon: 107.2917,
+        address: "Jl. Interchange Tol Karawang Barat No.1, Sukamakmur, Telukjambe Timur, Karawang 41361",
+        lat: -6.321550,
+        lon: 107.271770,
         day: "Senin",
         time: "16:00 - 17:30 WIB",
         dateInfo: "Senin Sore",
         verified: true,
         source: "facebook",
-        sourceUrl: "https://www.facebook.com/100063634087092/posts/1788042709993515/",
+        sourceUrl: "https://www.facebook.com/masjidjamialiyah/posts/1788042709993515/",
         description: "Kajian rutin di Masjid Jami' Aliyah Karawang membahas muhasabah dan pembersihan jiwa seorang muslim sesuai bimbingan sunnah."
       },
       {
         id: 8,
-        title: "Tabligh Akbar: Harta Derita Wanita",
+        title: "Tabligh Akbar: Bedah Buku Harta Derita Wanita",
         ustadz: "Ustadz Ammi Nur Baits, S.T., B.A.",
         category: "Fiqih",
         audience: "Umum",
         masjid: "Ma'had & Masjid Al Bashiirah Cikampek",
-        address: "Jl. Raya Cikampek - Parakan, Kotabaru, Cikampek, Karawang",
-        lat: -6.4061,
-        lon: 107.4589,
+        address: "Masjid Salman Al Farisi, Jl. By Pass Jomin No.100, Kp. Rawasari RT 12/02, Jomin Timur, Kotabaru, Cikampek 41374",
+        lat: -6.409302,
+        lon: 107.495040,
         day: "Jumat",
         time: "09:00 - 11:30 WIB",
         dateInfo: "Jumat Pagi",
@@ -1608,21 +1617,21 @@
       },
       {
         id: 9,
-        title: "Tabligh Akbar: Meniti Jalan Kebenaran Sesuai Pemahaman Salaf",
-        ustadz: "Ustadz Mintaraga, Lc., M.A.",
-        category: "Aqidah",
+        title: "Tabligh Akbar: Hari Terberat Rasulullah ﷺ",
+        ustadz: "Ustadz Dr. Sufyan Baswedan, M.A.",
+        category: "Sirah",
         audience: "Umum",
         masjid: "Masjid Fatimah Purwakarta",
-        address: "Jl. Terusan Kapten Halim, Kp. Pasir Kiara, Nagri Kidul, Purwakarta",
-        lat: -6.5369,
-        lon: 107.4431,
-        day: "Sabtu",
+        address: "Jl. Terusan Kapten Halim, Kp. Pasirkihiang RT 14/06, Desa Lebak Anyar, Pasawahan, Purwakarta 41172",
+        lat: -6.572032,
+        lon: 107.462299,
+        day: "Ahad",
         time: "Ba'da Maghrib s/d Isya",
-        dateInfo: "Sabtu Malam",
+        dateInfo: "Ahad Malam",
         verified: true,
         source: "facebook",
-        sourceUrl: "https://www.facebook.com/JadwalKajianSunnah/posts/1510769414407760/",
-        description: "Tabligh akbar membedah aqidah ahlussunnah wal jama'ah dan manhaj para sahabat Nabi di Masjid Fatimah Purwakarta."
+        sourceUrl: "https://www.facebook.com/JadwalKajianSunnah/posts/1011820064302700/",
+        description: "Tabligh akbar DKM Masjid Fatimah Purwakarta bersama Ustadz Dr. Sufyan Baswedan, M.A. mengupas peristiwa hari terberat dalam dakwah Rasulullah shallallahu 'alaihi wa sallam."
       },
       {
         id: 10,
@@ -1631,9 +1640,9 @@
         category: "Aqidah",
         audience: "Umum",
         masjid: "Ma'had Rahmatika Al-Atsari Subang",
-        address: "Jl. Raya Sagalaherang - Curug Rendeng, Sagalaherang, Subang",
-        lat: -6.6125,
-        lon: 107.7289,
+        address: "Ds. Dayeuhkolot RT 05/02, Kec. Sagalaherang, Subang 41282",
+        lat: -6.668700,
+        lon: 107.640900,
         day: "Ahad",
         time: "09:00 - 11:30 WIB",
         dateInfo: "Ahad Pagi",
@@ -1649,9 +1658,9 @@
         category: "Akhlak",
         audience: "Umum",
         masjid: "Masjid Al-Murabbi",
-        address: "Jl. Prof. Dr. Sutami No. 122, Sukasari, Kota Bandung",
-        lat: -6.8797,
-        lon: 107.5901,
+        address: "Jl. Prof. Dr. Sutami No. 122, Sukarasa, Sukasari, Kota Bandung 40151",
+        lat: -6.879375,
+        lon: 107.583438,
         day: "Sabtu",
         time: "Ba'da Maghrib s/d Selesai",
         dateInfo: "Sabtu Malam",
@@ -1662,39 +1671,39 @@
       },
       {
         id: 12,
-        title: "Kajian Rutin: Memahami Pokok-Pokok Manhaj Salaf",
-        ustadz: "Ustadz Mahfudz Umri, Lc.",
+        title: "Kajian Rutin: Kitab Syarah Aqidah Ahlussunnah wal Jama'ah",
+        ustadz: "Ustadz Yazid bin Abdul Qadir Jawas",
         category: "Aqidah",
         audience: "Umum",
         masjid: "Masjid Imam Ahmad bin Hanbal",
-        address: "Jl. Kol. Ahmad Syam, Baranangsiang, Bogor Timur, Kota Bogor",
-        lat: -6.5971,
-        lon: 106.8060,
-        day: "Ahad",
-        time: "09:00 - 11:30 WIB",
-        dateInfo: "Ahad Pagi",
+        address: "Jl. Kolonel Ahmad Syam RT 03/10, Tanah Baru, Bogor Utara, Kota Bogor 16154",
+        lat: -6.592908,
+        lon: 106.816804,
+        day: "Sabtu",
+        time: "Ba'da Shubuh (05:30 WIB - Selesai)",
+        dateInfo: "Sabtu Subuh",
         verified: true,
         source: "facebook",
         sourceUrl: "https://www.facebook.com/MIAH.Bogor/posts/676840155672019/",
-        description: "Kajian ahlussunnah wal jama'ah di Bogor membahas prinsip dasar beragama di atas dalil Al-Quran dan As-Sunnah."
+        description: "Kajian rutin Sabtu shubuh di Masjid Imam Ahmad bin Hanbal Bogor mengupas kitab Syarah Aqidah Ahlussunnah wal Jama'ah karya Ustadz Yazid bin Abdul Qadir Jawas."
       },
       {
         id: 13,
-        title: "Kajian Fiqih Ibadah: Syarah Kitab Bulughul Maram",
-        ustadz: "Ustadz Muhammad Toharo",
+        title: "Jadwal Kajian Rutin: Riyadhus Shalihin & Fiqih Islam",
+        ustadz: "Ustadz Arif Syarifudin, Lc.",
         category: "Fiqih",
         audience: "Umum",
         masjid: "Masjid As-Sunnah Cirebon",
-        address: "Jl. Kalitanjung No. 52B, Karyamulya, Kesambi, Kota Cirebon",
-        lat: -6.7452,
-        lon: 108.5398,
-        day: "Kamis",
-        time: "Ba'da Ashar (16:00 WIB)",
-        dateInfo: "Kamis Sore",
+        address: "Jl. Kalitanjung No. 52B, Karyamulya, Kesambi, Kota Cirebon 45135",
+        lat: -6.746000,
+        lon: 108.534400,
+        day: "Senin",
+        time: "Ba'da Isya (19:30 WIB)",
+        dateInfo: "Senin Malam",
         verified: true,
         source: "facebook",
-        sourceUrl: "https://www.facebook.com/groups/869199183192303/posts/3555235657921962/",
-        description: "Kajian rutin mengupas tuntas hadits-hadits hukum fiqih ibadah dan muamalah karya Al-Hafizh Ibnu Hajar Al-Asqalani."
+        sourceUrl: "https://www.facebook.com/JadwalKajianSunnah/posts/543343662535112/",
+        description: "Jadwal kajian rutin terbuka untuk umum di Masjid As-Sunnah Cirebon mengkaji kitab Riyadhus Shalihin dan Fiqih Islam."
       }
     ];
 
@@ -2015,9 +2024,9 @@
         const hasSource = (ev.sourceUrl || ev.source_url) && (ev.sourceUrl !== '#' && ev.source_url !== '#');
         const finalUrl = ev.sourceUrl || ev.source_url || '#';
         const srcBtn = hasSource
-          ? `<button onclick="trackSourceClick(${ev.id}, '${ev.source || 'instagram'}', '${finalUrl}')" title="Buka sumber: ${src.label}" class="touch-btn flex items-center gap-1 text-[10px] font-bold text-white px-2 py-0.5 rounded-full cursor-pointer border-none shadow-xs" style="${src.style}">
+          ? `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" onclick="trackSourceClick(${ev.id}, '${ev.source || 'facebook'}', '${finalUrl}', event)" title="Buka sumber asli di ${src.label}" class="touch-btn inline-flex items-center gap-1 text-[10px] font-bold text-white px-2 py-0.5 rounded-full border-none shadow-xs no-underline cursor-pointer transition hover:opacity-90" style="${src.style}">
                <span class="font-extrabold">${src.glyph}</span><span>${src.label} ↗</span>
-             </button>`
+             </a>`
           : '';
 
         return `
@@ -2132,8 +2141,9 @@
         upContainer.innerHTML = upcoming.length === 0
           ? '<p class="text-xs text-slate-400 bg-white rounded-2xl border border-brand-100 p-4 text-center">Belum ada. Tekan "+ Ikuti" pada kajian untuk menambah ke sini.</p>'
           : upcoming.map(ev => {
-              const src = (typeof SOURCE_META !== 'undefined' ? SOURCE_META[ev.source] : null) || { label: 'Sumber', style: 'background:#0C5C40', glyph: '↗' };
-              const hasSource = ev.source_url && ev.source_url !== '#';
+              const src = (typeof SOURCE_META !== 'undefined' ? SOURCE_META[ev.source] : null) || { label: 'Facebook', style: 'background:#1877F2', glyph: 'f' };
+              const finalUrl = ev.sourceUrl || ev.source_url;
+              const hasSource = finalUrl && finalUrl !== '#';
               const flyer = ev.flyer_url
                 ? `<img src="${ev.flyer_url}" class="w-16 h-16 rounded-xl object-cover shrink-0" loading="lazy" onerror="this.style.display='none'">`
                 : `<div class="w-16 h-16 rounded-xl bg-gradient-to-br from-brand-800 to-brand-600 flex items-center justify-center text-2xl shrink-0">🕌</div>`;
@@ -2144,9 +2154,9 @@
                   <h4 class="font-bold text-[13px] text-slate-900 leading-snug truncate">${ev.title}</h4>
                   <p class="text-[11px] text-slate-500 mt-0.5">${ev.ustadz}</p>
                   <p class="text-[11px] text-slate-500">📍 ${ev.masjid} • ${ev.day}</p>
-                  <div class="flex gap-1.5 mt-2">
+                  <div class="flex items-center gap-1.5 mt-2">
                     <button onclick="openDetailSheet(${ev.id})" class="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-brand-900 text-white">Detail</button>
-                    ${hasSource ? `<button onclick="trackSourceClick(${ev.id}, '${ev.source || 'instagram'}', '${ev.source_url}')" class="text-[11px] font-bold text-white px-3 py-1.5 rounded-lg" style="${src.style}">${src.glyph} ${src.label}</button>` : ''}
+                    ${hasSource ? `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" onclick="trackSourceClick(${ev.id}, '${ev.source || 'facebook'}', '${finalUrl}', event)" class="touch-btn inline-flex items-center gap-1 text-[11px] font-bold text-white px-3 py-1.5 rounded-lg no-underline shadow-xs cursor-pointer" style="${src.style}">${src.glyph} ${src.label} ↗</a>` : ''}
                   </div>
                 </div>
               </div>`;
@@ -2464,7 +2474,31 @@
       document.getElementById('detailAddress').innerText = ev.address;
       document.getElementById('detailDescription').innerText = ev.description;
 
-      document.getElementById('detailRouteBtn').onclick = () => openRoute(ev.lat, ev.lon);
+      const coordsEl = document.getElementById('detailCoordsText');
+      if (coordsEl) coordsEl.innerText = `GPS: ${ev.lat.toFixed(6)}, ${ev.lon.toFixed(6)}`;
+      const mapsDirectLink = document.getElementById('detailMapsDirectLink');
+      if (mapsDirectLink) mapsDirectLink.href = `https://www.google.com/maps/search/?api=1&query=${ev.lat},${ev.lon}`;
+
+      document.getElementById('detailRouteBtn').onclick = () => openRoute(ev.lat, ev.lon, ev.masjid);
+
+      const sourceBtn = document.getElementById('detailSourceBtn');
+      const sourceLabel = document.getElementById('detailSourceLabel');
+      const targetUrl = ev.sourceUrl || ev.source_url;
+      if (sourceBtn) {
+        if (targetUrl && targetUrl !== '#') {
+          sourceBtn.href = targetUrl;
+          sourceBtn.classList.remove('hidden');
+          sourceBtn.style.display = 'flex';
+          sourceBtn.onclick = (e) => {
+            trackSourceClick(ev.id, ev.source || 'facebook', targetUrl, e);
+          };
+          const platformName = (ev.source || 'facebook').toLowerCase() === 'facebook' ? 'Facebook' : (ev.source || 'Meta');
+          if (sourceLabel) sourceLabel.innerText = `Buka Sumber Asli di ${platformName} ↗`;
+        } else {
+          sourceBtn.classList.add('hidden');
+          sourceBtn.style.display = 'none';
+        }
+      }
       
       const rsvpBtn = document.getElementById('detailRsvpBtn');
       const isRsvped = rsvps.includes(ev.id);
@@ -2525,32 +2559,32 @@
         name: 'Purwasuka',
         label: 'Karawang, Cikampek, Purwakarta',
         centerCity: 'Karawang',
-        lat: -6.3042,
-        lon: 107.3056,
+        lat: -6.3216,
+        lon: 107.2718,
         cities: ['Karawang', 'Cikampek', 'Purwakarta']
       },
       bandung_subang: {
         name: 'Bandung & Subang',
         label: 'Subang, Bandung, Sumedang, Cimahi',
         centerCity: 'Subang',
-        lat: -6.5714,
-        lon: 107.7602,
+        lat: -6.6687,
+        lon: 107.6409,
         cities: ['Subang', 'Bandung Kota', 'Bandung', 'Cimahi', 'Sumedang']
       },
       bodebek: {
         name: 'Bodebek',
         label: 'Bogor, Depok, Bekasi, Cikarang',
         centerCity: 'Bekasi',
-        lat: -6.2383,
-        lon: 106.9756,
+        lat: -6.3204,
+        lon: 106.9406,
         cities: ['Bekasi', 'Cikarang', 'Depok & Cibubur', 'Bogor Kota', 'Bogor']
       },
       ciayumajakuning: {
         name: 'Ciayumajakuning',
         label: 'Cirebon, Indramayu, Majalengka, Kuningan',
         centerCity: 'Cirebon',
-        lat: -6.7452,
-        lon: 108.5398,
+        lat: -6.7460,
+        lon: 108.5344,
         cities: ['Cirebon', 'Indramayu', 'Majalengka', 'Kuningan']
       },
       priangan_timur: {
@@ -2908,18 +2942,23 @@
     let sbClient = null;
 
     // Tracking klik badge sumber - catat ke Supabase, fallback localStorage
-    async function trackSourceClick(kajianId, platform, url) {
-      const payload = { kajian_id: kajianId, platform: platform, clicked_at: new Date().toISOString() };
+    function trackSourceClick(kajianId, platform, url, ev) {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
+      const payload = { kajian_id: kajianId, platform: platform || 'facebook', clicked_at: new Date().toISOString() };
       try {
         if (sbClient) {
-          await sbClient.from('source_clicks').insert([payload]);
+          sbClient.from('source_clicks').insert([payload]).then(() => {}).catch(e => console.warn(e));
         } else {
           const log = JSON.parse(localStorage.getItem('sinikajian_clicks') || '[]');
           log.push(payload);
           localStorage.setItem('sinikajian_clicks', JSON.stringify(log.slice(-500)));
         }
       } catch (e) { console.warn('track error:', e); }
-      if (url && url !== '#') window.open(url, '_blank', 'noopener');
+
+      // Jika dipanggil via tombol/skrip (bukan tag <a> dengan target="_blank"), buka langsung
+      if (url && url !== '#' && (!ev || !ev.target || ev.target.tagName !== 'A')) {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
     }
 
     function initSupabase() {
@@ -2952,15 +2991,16 @@
                    !desc.includes('dwp.im') && !desc.includes('sayahafiz') && !desc.includes('rumahfiqih');
           });
 
-          // Combine Supabase verified items with curated INITIAL_EVENTS so all regions (Karawang, Cikampek, Purwakarta, Subang, Jabodetabek) remain available
+          // Combine Supabase verified items with curated INITIAL_EVENTS so all regions remain available
           const mergedMap = new Map();
-          INITIAL_EVENTS.forEach(ev => mergedMap.set(ev.id, ev));
           cleanData.forEach(item => {
             mergedMap.set(item.id, {
               ...item,
               dateInfo: item.dateInfo || item.day || 'Pekan Ini'
             });
           });
+          // INITIAL_EVENTS is canonical for its verified addresses & coordinates
+          INITIAL_EVENTS.forEach(ev => mergedMap.set(ev.id, ev));
 
           events = Array.from(mergedMap.values());
           localStorage.setItem('sinikajian_events', JSON.stringify(events));
@@ -3028,6 +3068,7 @@
             }
           });
           events = Array.from(canonicalMap.values());
+          localStorage.setItem('sinikajian_events', JSON.stringify(events));
         } catch (e) {
           events = INITIAL_EVENTS;
         }
