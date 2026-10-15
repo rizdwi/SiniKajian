@@ -410,6 +410,46 @@
                 </button>
               </div>
 
+              <!-- Horizontal Swipeable Regional Cluster Strip (Kawasan Jawa Barat) -->
+              <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 text-xs">
+                <button onclick="selectCluster('all')" data-cluster="all" class="cluster-chip touch-btn shrink-0 px-3 py-1.5 rounded-full font-bold bg-brand-700 text-white shadow-xs transition">
+                  Semua Wilayah
+                </button>
+                <button onclick="selectCluster('purwasuka')" data-cluster="purwasuka" class="cluster-chip touch-btn shrink-0 px-3 py-1.5 rounded-full font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-500 transition flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                  <span>Purwasuka</span>
+                  <span class="text-[10px] text-slate-400 font-normal">(Karawang/Cikampek/Purwakarta)</span>
+                </button>
+                <button onclick="selectCluster('bandung_subang')" data-cluster="bandung_subang" class="cluster-chip touch-btn shrink-0 px-3 py-1.5 rounded-full font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-500 transition flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-teal-500 shrink-0"></span>
+                  <span>Bandung & Subang</span>
+                  <span class="text-[10px] text-slate-400 font-normal">(Subang/Bandung/Sumedang)</span>
+                </button>
+                <button onclick="selectCluster('bodebek')" data-cluster="bodebek" class="cluster-chip touch-btn shrink-0 px-3 py-1.5 rounded-full font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-500 transition flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
+                  <span>Bodebek</span>
+                  <span class="text-[10px] text-slate-400 font-normal">(Bogor/Depok/Bekasi)</span>
+                </button>
+                <button onclick="selectCluster('ciayumajakuning')" data-cluster="ciayumajakuning" class="cluster-chip touch-btn shrink-0 px-3 py-1.5 rounded-full font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-500 transition flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                  <span>Ciayumajakuning</span>
+                  <span class="text-[10px] text-slate-400 font-normal">(Cirebon/Indramayu)</span>
+                </button>
+                <button onclick="selectCluster('priangan_timur')" data-cluster="priangan_timur" class="cluster-chip touch-btn shrink-0 px-3 py-1.5 rounded-full font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-500 transition flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span>
+                  <span>Priangan Timur</span>
+                  <span class="text-[10px] text-slate-400 font-normal">(Garut/Tasik)</span>
+                </button>
+                <button onclick="selectCluster('sukabumi_cianjur')" data-cluster="sukabumi_cianjur" class="cluster-chip touch-btn shrink-0 px-3 py-1.5 rounded-full font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-500 transition flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
+                  <span>Sukabumi & Cianjur</span>
+                </button>
+                <button onclick="selectCluster('dki_tangsel')" data-cluster="dki_tangsel" class="cluster-chip touch-btn shrink-0 px-3 py-1.5 rounded-full font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-500 transition flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-slate-500 shrink-0"></span>
+                  <span>DKI & Tangsel</span>
+                </button>
+              </div>
+
               <!-- Horizontal Swipeable Category Chips -->
               <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
                 <button onclick="selectCategory('Semua')" data-cat="Semua" class="cat-chip touch-btn shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold bg-brand-700 text-white shadow-sm transition">
@@ -1082,15 +1122,23 @@
       </div>
 
       <!-- Action Buttons -->
-      <div class="grid grid-cols-2 gap-2 pt-2">
-        <button id="detailRouteBtn" class="touch-btn py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold text-xs flex items-center justify-center gap-1.5">
-          <svg class="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+      <div class="space-y-2 pt-2">
+        <div class="grid grid-cols-2 gap-2">
+          <button id="detailRouteBtn" class="touch-btn py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold text-xs flex items-center justify-center gap-1.5">
+            <svg class="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            </svg>
+            Buka Google Maps
+          </button>
+          <button id="detailRsvpBtn" class="touch-btn py-2.5 rounded-xl bg-brand-700 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-sm">
+            <span>Konfirmasi Hadir</span>
+          </button>
+        </div>
+        <button id="detailSourceBtn" class="w-full touch-btn py-2.5 rounded-xl bg-brand-50 dark:bg-brand-950/60 border border-brand-200 dark:border-brand-800/80 text-brand-800 dark:text-brand-300 font-semibold text-xs flex items-center justify-center gap-2">
+          <svg class="w-4 h-4 text-brand-600 dark:text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
           </svg>
-          Buka Google Maps
-        </button>
-        <button id="detailRsvpBtn" class="touch-btn py-2.5 rounded-xl bg-brand-700 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-sm">
-          <span>Konfirmasi Hadir</span>
+          <span id="detailSourceLabel">Buka Sumber Asli Posting ↗</span>
         </button>
       </div>
 
@@ -1186,63 +1234,206 @@
     <div onclick="closeLocationSheet()" class="sheet-backdrop absolute inset-0 bg-slate-900/50 backdrop-blur-xs opacity-0"></div>
     
     <!-- Sheet Panel -->
-    <div class="sheet-panel relative w-full max-w-xl mx-auto bg-white dark:bg-slate-900 rounded-t-3xl p-5 shadow-2xl border-t border-slate-200 dark:border-slate-800 transform translate-y-full safe-bottom space-y-4">
+    <div class="sheet-panel relative w-full max-w-xl mx-auto bg-white dark:bg-slate-900 rounded-t-3xl p-5 shadow-2xl border-t border-slate-200 dark:border-slate-800 transform translate-y-full safe-bottom space-y-4 max-h-[85vh] flex flex-col">
       
-      <div class="w-12 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto"></div>
+      <div class="w-12 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto shrink-0"></div>
 
-      <div class="flex items-center justify-between">
-        <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Pilih Wilayah Acuan</h3>
-        <button onclick="closeLocationSheet()" class="text-xs text-slate-400">Tutup</button>
+      <div class="flex items-center justify-between shrink-0">
+        <div>
+          <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Pilih Wilayah Acuan</h3>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">Pengelompokan wilayah serumpun di Jawa Barat & sekitarnya</p>
+        </div>
+        <button onclick="closeLocationSheet()" class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">Tutup</button>
+      </div>
+
+      <!-- Quick Search Kota -->
+      <div class="relative shrink-0">
+        <input 
+          type="text" 
+          id="citySearchInput" 
+          placeholder="Cari kota atau kabupaten..." 
+          class="w-full pl-9 pr-3 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium focus:outline-none focus:border-brand-600 text-slate-800 dark:text-slate-100"
+          oninput="filterCityItems(this.value)"
+        />
+        <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
       </div>
 
       <!-- GPS: gunakan lokasi HP -->
-      <button onclick="useGpsLocation()" id="gpsLocBtn" class="touch-btn w-full p-3.5 rounded-2xl bg-brand-900 text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-brand-800 transition">
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-        <span id="gpsLocLabel">📡 Gunakan Lokasi HP Saya</span>
+      <button onclick="useGpsLocation()" id="gpsLocBtn" class="touch-btn shrink-0 w-full p-3 rounded-2xl bg-brand-900 text-white font-bold text-xs flex items-center justify-center gap-2 hover:bg-brand-800 transition">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span id="gpsLocLabel">📡 Gunakan Lokasi HP Saya (Deteksi Otomatis)</span>
       </button>
 
-      <div class="grid grid-cols-2 gap-2 text-xs">
-        <button onclick="selectCity('Jakarta Pusat', -6.2088, 106.8456)" class="touch-btn p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-left hover:border-brand-600 flex items-center gap-2">
-          <svg class="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
-          <span>Jakarta Pusat</span>
-        </button>
-        <button onclick="selectCity('Jakarta Selatan', -6.2615, 106.8106)" class="touch-btn p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-left hover:border-brand-600 flex items-center gap-2">
-          <svg class="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
-          <span>Jakarta Selatan</span>
-        </button>
-        <button onclick="selectCity('Depok & Cibubur', -6.4025, 106.7942)" class="touch-btn p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-left hover:border-brand-600 flex items-center gap-2">
-          <svg class="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
-          <span>Depok / Cibubur</span>
-        </button>
-        <button onclick="selectCity('Bekasi', -6.2383, 106.9756)" class="touch-btn p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-left hover:border-brand-600 flex items-center gap-2">
-          <svg class="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
-          <span>Bekasi</span>
-        </button>
-        <button onclick="selectCity('Tangerang Selatan', -6.2888, 106.7179)" class="touch-btn p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-left hover:border-brand-600 flex items-center gap-2">
-          <svg class="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
-          <span>BSD / Tangsel</span>
-        </button>
-        <button onclick="selectCity('Karawang', -6.3042, 107.3056)" class="touch-btn p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-left hover:border-brand-600 flex items-center gap-2">
-          <svg class="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
-          <span>Karawang</span>
-        </button>
-        <button onclick="selectCity('Cikampek', -6.4061, 107.4589)" class="touch-btn p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-left hover:border-brand-600 flex items-center gap-2">
-          <svg class="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
-          <span>Cikampek</span>
-        </button>
-        <button onclick="selectCity('Purwakarta', -6.5569, 107.4433)" class="touch-btn p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-left hover:border-brand-600 flex items-center gap-2">
-          <svg class="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
-          <span>Purwakarta</span>
-        </button>
-        <button onclick="selectCity('Subang', -6.5714, 107.7602)" class="touch-btn p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-left hover:border-brand-600 flex items-center gap-2">
-          <svg class="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
-          <span>Subang</span>
-        </button>
-        <button onclick="selectCity('Bandung', -6.9175, 107.6191)" class="touch-btn p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold text-left hover:border-brand-600 flex items-center gap-2">
-          <svg class="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
-          <span>Bandung Kota</span>
-        </button>
+      <!-- Scrollable Cluster Sections -->
+      <div id="cityClusterList" class="overflow-y-auto space-y-4 pr-1 text-xs flex-1">
+        
+        <!-- Cluster 1: Purwasuka -->
+        <div class="city-group space-y-2">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-1">
+            <span class="font-extrabold text-slate-800 dark:text-slate-200 text-xs">Purwasuka (Karawang / Cikampek / Purwakarta)</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-semibold">Wilayah Dekat</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <button onclick="selectCity('Karawang', -6.3042, 107.3056)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="karawang">
+              <div class="font-bold text-slate-900 dark:text-white">Karawang</div>
+              <div class="text-[10px] text-slate-500 truncate">Masjid Aliyah</div>
+            </button>
+            <button onclick="selectCity('Cikampek', -6.4061, 107.4589)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="cikampek">
+              <div class="font-bold text-slate-900 dark:text-white">Cikampek</div>
+              <div class="text-[10px] text-slate-500 truncate">Al Bashiirah</div>
+            </button>
+            <button onclick="selectCity('Purwakarta', -6.5569, 107.4433)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="purwakarta">
+              <div class="font-bold text-slate-900 dark:text-white">Purwakarta</div>
+              <div class="text-[10px] text-slate-500 truncate">Masjid Fatimah</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Cluster 2: Bandung Raya & Subang -->
+        <div class="city-group space-y-2">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-1">
+            <span class="font-extrabold text-slate-800 dark:text-slate-200 text-xs">Bandung Raya & Subang (Subang / Bandung / Sumedang)</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300 font-semibold">Wilayah Dekat</span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <button onclick="selectCity('Subang', -6.5714, 107.7602)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="subang">
+              <div class="font-bold text-slate-900 dark:text-white">Subang</div>
+              <div class="text-[10px] text-slate-500 truncate">Rahmatika</div>
+            </button>
+            <button onclick="selectCity('Bandung Kota', -6.9175, 107.6191)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="bandung">
+              <div class="font-bold text-slate-900 dark:text-white">Bandung</div>
+              <div class="text-[10px] text-slate-500 truncate">Al-Murabbi</div>
+            </button>
+            <button onclick="selectCity('Sumedang', -6.8586, 107.9266)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="sumedang">
+              <div class="font-bold text-slate-900 dark:text-white">Sumedang</div>
+              <div class="text-[10px] text-slate-500 truncate">Sumedang Kota</div>
+            </button>
+            <button onclick="selectCity('Cimahi', -6.8723, 107.5420)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="cimahi">
+              <div class="font-bold text-slate-900 dark:text-white">Cimahi</div>
+              <div class="text-[10px] text-slate-500 truncate">Cimahi Kota</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Cluster 3: Bodebek & Sekitarnya -->
+        <div class="city-group space-y-2">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-1">
+            <span class="font-extrabold text-slate-800 dark:text-slate-200 text-xs">Bodebek (Bogor / Depok / Bekasi)</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 font-semibold">Aglomerasi</span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <button onclick="selectCity('Bekasi', -6.2383, 106.9756)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="bekasi">
+              <div class="font-bold text-slate-900 dark:text-white">Bekasi</div>
+              <div class="text-[10px] text-slate-500 truncate">Baitul Haq</div>
+            </button>
+            <button onclick="selectCity('Bogor Kota', -6.5971, 106.8060)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="bogor">
+              <div class="font-bold text-slate-900 dark:text-white">Bogor</div>
+              <div class="text-[10px] text-slate-500 truncate">MIAH Bogor</div>
+            </button>
+            <button onclick="selectCity('Depok & Cibubur', -6.4025, 106.7942)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="depok">
+              <div class="font-bold text-slate-900 dark:text-white">Depok / Cibubur</div>
+              <div class="text-[10px] text-slate-500 truncate">Margonda</div>
+            </button>
+            <button onclick="selectCity('Cikarang', -6.3015, 107.1536)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="cikarang">
+              <div class="font-bold text-slate-900 dark:text-white">Cikarang</div>
+              <div class="text-[10px] text-slate-500 truncate">Kawasan Industri</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Cluster 4: Ciayumajakuning -->
+        <div class="city-group space-y-2">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-1">
+            <span class="font-extrabold text-slate-800 dark:text-slate-200 text-xs">Ciayumajakuning (Cirebon / Indramayu / Majalengka / Kuningan)</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-semibold">Pantura Timur</span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <button onclick="selectCity('Cirebon', -6.7452, 108.5398)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="cirebon">
+              <div class="font-bold text-slate-900 dark:text-white">Cirebon</div>
+              <div class="text-[10px] text-slate-500 truncate">Masjid As-Sunnah</div>
+            </button>
+            <button onclick="selectCity('Indramayu', -6.3264, 108.3200)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="indramayu">
+              <div class="font-bold text-slate-900 dark:text-white">Indramayu</div>
+              <div class="text-[10px] text-slate-500 truncate">Pantura</div>
+            </button>
+            <button onclick="selectCity('Majalengka', -6.8361, 108.2274)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="majalengka">
+              <div class="font-bold text-slate-900 dark:text-white">Majalengka</div>
+              <div class="text-[10px] text-slate-500 truncate">Kertajati</div>
+            </button>
+            <button onclick="selectCity('Kuningan', -6.9764, 108.4831)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="kuningan">
+              <div class="font-bold text-slate-900 dark:text-white">Kuningan</div>
+              <div class="text-[10px] text-slate-500 truncate">Gunung Ciremai</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Cluster 5: Priangan Timur -->
+        <div class="city-group space-y-2">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-1">
+            <span class="font-extrabold text-slate-800 dark:text-slate-200 text-xs">Priangan Timur (Garut / Tasikmalaya / Ciamis)</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 font-semibold">Priangan</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <button onclick="selectCity('Garut', -7.2279, 107.9087)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="garut">
+              <div class="font-bold text-slate-900 dark:text-white">Garut</div>
+              <div class="text-[10px] text-slate-500 truncate">Garut Kota</div>
+            </button>
+            <button onclick="selectCity('Tasikmalaya', -7.3274, 108.2207)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="tasikmalaya">
+              <div class="font-bold text-slate-900 dark:text-white">Tasikmalaya</div>
+              <div class="text-[10px] text-slate-500 truncate">Tasik Kota</div>
+            </button>
+            <button onclick="selectCity('Ciamis', -7.3256, 108.3533)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="ciamis">
+              <div class="font-bold text-slate-900 dark:text-white">Ciamis / Banjar</div>
+              <div class="text-[10px] text-slate-500 truncate">Priangan Timur</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Cluster 6: Sukabumi & Cianjur -->
+        <div class="city-group space-y-2">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-1">
+            <span class="font-extrabold text-slate-800 dark:text-slate-200 text-xs">Sukabumi & Cianjur</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 font-semibold">Jabar Selatan</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="selectCity('Sukabumi', -6.9277, 106.9300)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="sukabumi">
+              <div class="font-bold text-slate-900 dark:text-white">Sukabumi</div>
+              <div class="text-[10px] text-slate-500 truncate">Kota & Cisaat</div>
+            </button>
+            <button onclick="selectCity('Cianjur', -6.8222, 107.1394)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="cianjur">
+              <div class="font-bold text-slate-900 dark:text-white">Cianjur</div>
+              <div class="text-[10px] text-slate-500 truncate">Kota & Cipanas</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Cluster 7: DKI Jakarta & Tangerang -->
+        <div class="city-group space-y-2">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-1">
+            <span class="font-extrabold text-slate-800 dark:text-slate-200 text-xs">DKI Jakarta & Tangerang</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold">Ibukota</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <button onclick="selectCity('Jakarta Selatan', -6.2615, 106.8106)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="jakarta selatan">
+              <div class="font-bold text-slate-900 dark:text-white">Jaksel</div>
+              <div class="text-[10px] text-slate-500 truncate">Blok M / Cilandak</div>
+            </button>
+            <button onclick="selectCity('Jakarta Pusat', -6.2088, 106.8456)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="jakarta pusat">
+              <div class="font-bold text-slate-900 dark:text-white">Jakpus</div>
+              <div class="text-[10px] text-slate-500 truncate">Baitul Ihsan</div>
+            </button>
+            <button onclick="selectCity('Tangerang Selatan', -6.2888, 106.7179)" class="city-btn touch-btn p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left hover:border-brand-600 transition" data-name="tangerang selatan bsd">
+              <div class="font-bold text-slate-900 dark:text-white">Tangsel / BSD</div>
+              <div class="text-[10px] text-slate-500 truncate">Serpong</div>
+            </button>
+          </div>
+        </div>
+
       </div>
+
+    </div>
 
     </div>
   </div>
@@ -1269,11 +1460,11 @@
     // Default User Coordinate (Jakarta Pusat)
     let userCoords = { lat: -6.2088, lon: 106.8456, name: "Jakarta Pusat" };
     
-    // Initial Verified Study Events (Meta Facebook & Threads Verified)
+    // Initial Verified Study Events (Meta Facebook & Threads Verified - Real Authentic Links)
     const INITIAL_EVENTS = [
       {
         id: 1,
-        title: "Kajian Rutin: Kitab Riyadhus Shalihin",
+        title: "Kajian Tematik: Kandungan Sayyidul Istighfar",
         ustadz: "Ustadz Dr. Firanda Andirja, Lc., M.A.",
         category: "Tazkiyatun Nufus",
         audience: "Umum",
@@ -1281,53 +1472,53 @@
         address: "Jl. Cipete III No.3, Cipete Selatan, Cilandak, Jakarta Selatan",
         lat: -6.2785,
         lon: 106.8041,
-        day: "Rabu",
-        time: "Ba'da Maghrib (18:15 WIB)",
-        dateInfo: "Malam Ini",
+        day: "Ahad",
+        time: "Ba'da Dzuhur (12:30 WIB)",
+        dateInfo: "Ahad Siang",
         verified: true,
         source: "facebook",
-        sourceUrl: "https://www.facebook.com/firandaandirjaofficial/posts/1029384756",
-        description: "Pembahasan bab Keikhlasan dan Niat dalam beramal dari kitab karya Al-Imam An-Nawawi rahimahullah. Dilengkapi sesi tanya jawab interaktif."
+        sourceUrl: "https://www.facebook.com/firandaandirja/posts/1610887477321997/",
+        description: "Membahas makna mendalam bacaan sayyidul istighfar, syarat taubat nasuha, dan keutamaan istighfar dalam kehidupan sehari-hari."
       },
       {
         id: 2,
-        title: "Kajian Fiqih Muamalah: Kaidah Jual Beli Modern",
+        title: "Kajian Fiqih Muamalah: Kaidah Halal Haram Harta",
         ustadz: "Ustadz Dr. Erwandi Tarmizi, M.A.",
         category: "Fiqih",
+        audience: "Umum",
+        masjid: "Masjid Baitul Haq",
+        address: "Komp. Puri Gading, Jatimelati, Pondok Melati, Bekasi",
+        lat: -6.3150,
+        lon: 106.9288,
+        day: "Selasa",
+        time: "09:00 - 11:00 WIB",
+        dateInfo: "Selasa Pagi",
+        verified: true,
+        source: "facebook",
+        sourceUrl: "https://www.facebook.com/eta.erwanditarmiziofficial/posts/1005716377840588/",
+        description: "Kaidah praktis fikih muamalat kontemporer, tinjauan syariah jual beli, dan pencegahan transaksi riba."
+      },
+      {
+        id: 3,
+        title: "Kajian Rutin Sabtu Sore: Kitab Riyadhus Shalihin",
+        ustadz: "Ustadz Muhammad Nuzul Dzikri, Lc.",
+        category: "Tazkiyatun Nufus",
         audience: "Umum",
         masjid: "Masjid Nurul Iman",
         address: "Komp. Mall Blok M Square Lt. 7, Kebayoran Baru, Jakarta Selatan",
         lat: -6.2443,
         lon: 106.7997,
         day: "Sabtu",
-        time: "Ba'da Ashar (15:30 WIB)",
-        dateInfo: "Sabtu Pekan Ini",
-        verified: true,
-        source: "threads",
-        sourceUrl: "https://www.threads.net/@erwanditarmizi_official/post/C_1a2b3c4d5",
-        description: "Kaidah praktis menghindari riba, gharar, dan maisir dalam transaksi digital, paylater, dan investasi syariah kontemporer."
-      },
-      {
-        id: 3,
-        title: "Tafsir Surah Al-Kahfi & Tadabbur Akhir Zaman",
-        ustadz: "Ustadz Muhammad Nuzul Dzikri, Lc.",
-        category: "Aqidah",
-        audience: "Umum",
-        masjid: "Masjid Nurul Falah",
-        address: "Jl. Radio Dalam Raya No. 14, Gandaria Utara, Kebayoran Baru",
-        lat: -6.2559,
-        lon: 106.7915,
-        day: "Ahad",
-        time: "09:00 - 11:30 WIB",
-        dateInfo: "Ahad Pagi",
+        time: "Ba'da Ashar (16:00 - 17:30 WIB)",
+        dateInfo: "Sabtu Sore",
         verified: true,
         source: "facebook",
-        sourceUrl: "https://www.facebook.com/muhammadnuzuldzikri/posts/5849201934",
-        description: "Menyelami hikmah empat kisah agung dalam Surah Al-Kahfi sebagai benteng kokoh menghadapi fitnah zaman."
+        sourceUrl: "https://www.facebook.com/muhammadnuzuldzikri/posts/1408933177936012/",
+        description: "Pembahasan rutin bab adab dan akhlak mulia dari kitab Riyadhus Shalihin karya Imam An-Nawawi rahimahullah."
       },
       {
         id: 4,
-        title: "Sirah Nabawiyah: Perang Uhud & Ibrah Kesabaran",
+        title: "Kajian Spesial: Serial Kisah Nabi dan Pelajaran Hidup",
         ustadz: "Ustadz Khalid Basalamah, M.A.",
         category: "Sirah",
         audience: "Umum",
@@ -1339,50 +1530,32 @@
         time: "Ba'da Isya (19:30 WIB)",
         dateInfo: "Kamis Malam",
         verified: true,
-        source: "threads",
-        sourceUrl: "https://www.threads.net/@khalidbasalamahofficial/post/D_9x8y7z6w5",
-        description: "Mempelajari kronologi Perang Uhud, kepatuhan terhadap komando Rasulullah, dan hikmah dibalik ujian kekalahan sementara."
+        source: "facebook",
+        sourceUrl: "https://www.facebook.com/khalidzeedbasalamah/posts/1596495535164816/",
+        description: "Mempelajari jejak perjuangan para Nabi dan Rasul serta faedah keteladanan yang relevan untuk kehidupan masa kini."
       },
       {
         id: 5,
-        title: "Kajian Khusus Muslimah: Fiqih Thaharah & Sholat",
-        ustadz: "Ustadzah Ummu Ihsan Choiriyah",
-        category: "Fiqih",
-        audience: "Akhawat",
-        masjid: "Masjid Al-Barkah",
-        address: "Jl. Pahlawan Komarudin No. 1, Cakung, Jakarta Timur",
-        lat: -6.2038,
-        lon: 106.9452,
-        day: "Jumat",
-        time: "09:00 - 11:00 WIB",
-        dateInfo: "Jumat Pagi",
+        title: "Kajian Spesial: Kiat Menjaga Keharmonisan Keluarga Sunnah",
+        ustadz: "Ustadz Dr. Syafiq Riza Basalamah, M.A.",
+        category: "Akhlak",
+        audience: "Umum",
+        masjid: "Masjid Al-Hidayah",
+        address: "Jl. Veteran No. 12, Pasar Kliwon, Surakarta",
+        lat: -7.5755,
+        lon: 110.8243,
+        day: "Sabtu",
+        time: "09:00 - 11:30 WIB",
+        dateInfo: "Sabtu Pagi",
         verified: true,
         source: "facebook",
-        sourceUrl: "https://www.facebook.com/radiorodja756am/posts/8492018472",
-        description: "Kajian khusus akhawat dan ummahat membahas panduan praktis bersuci dari hadats besar dan penyempurnaan sholat sesuai sunnah."
+        sourceUrl: "https://www.facebook.com/SyafiqRizaBasalamahOfficial/posts/1602298501255007/",
+        description: "Menelusuri panduan Rasulullah shallallahu 'alaihi wa sallam dalam mendidik anak dan membangun rumah tangga yang sakinah."
       },
       {
         id: 6,
-        title: "Bahasa Arab Dasar: Memahami I'rab Kitab Al-Ajurumiyyah",
-        ustadz: "Ustadz Hamzah Abbas, Lc.",
-        category: "Bahasa Arab",
-        audience: "Umum",
-        masjid: "Masjid Al-Azhar Summarecon",
-        address: "Komp. Summarecon Bekasi, Jl. Bulevar Utara, Bekasi Utara",
-        lat: -6.2238,
-        lon: 106.9994,
-        day: "Selasa",
-        time: "Ba'da Maghrib (18:15 WIB)",
-        dateInfo: "Selasa Malam",
-        verified: true,
-        source: "threads",
-        sourceUrl: "https://www.threads.net/@hamzahabbas/post/E_3f2a1b9c8",
-        description: "Belajar kaidah tata bahasa Arab dasar dari matan Al-Ajurumiyyah untuk pemula yang ingin memahami bacaan sholat dan Al-Quran. #kajiansunnah #salafi"
-      },
-      {
-        id: 7,
-        title: "Kajian Salaf: Syarah Kitab Tauhid",
-        ustadz: "Ustadz Dede Yan Al Fadhl, B.A.",
+        title: "Kajian Tematik: 10 Metode Beragama yang Keliru",
+        ustadz: "Ustadz Sofyan Chalid Ruray, Lc.",
         category: "Aqidah",
         audience: "Umum",
         masjid: "Masjid Jami' Aliyah Karawang",
@@ -1390,35 +1563,53 @@
         lat: -6.3146,
         lon: 107.2917,
         day: "Ahad",
-        time: "16:00 - 17:30 WIB",
+        time: "Ba'da Ashar (16:00 WIB)",
         dateInfo: "Ahad Sore",
         verified: true,
         source: "facebook",
-        sourceUrl: "https://www.facebook.com/MasjidAliyahKarawang/posts/2482112732310729",
-        description: "Kajian Salaf rutin di Masjid Aliyah Karawang membahas pemurnian aqidah dan tauhid ahlussunnah wal jama'ah. Terbuka untuk umum. #kajiansunnah #salafi #kajiansalafi"
+        sourceUrl: "https://www.facebook.com/100063634087092/posts/1730801232384330/",
+        description: "Membahas prinsip aqidah ahlussunnah dalam beragama dan koreksi terhadap penyimpangan manhaj salafus shalih."
+      },
+      {
+        id: 7,
+        title: "Kajian Islam Ilmiah: Sikap Seorang Muslim terhadap Dirinya",
+        ustadz: "Ustadz Al Jasri, S.Sos.",
+        category: "Akhlak",
+        audience: "Umum",
+        masjid: "Masjid Jami' Aliyah Karawang",
+        address: "Jl. Interchange Tol Karawang Barat No.1, Sukamakmur, Telukjambe Timur, Karawang",
+        lat: -6.3146,
+        lon: 107.2917,
+        day: "Senin",
+        time: "16:00 - 17:30 WIB",
+        dateInfo: "Senin Sore",
+        verified: true,
+        source: "facebook",
+        sourceUrl: "https://www.facebook.com/100063634087092/posts/1788042709993515/",
+        description: "Kajian rutin di Masjid Jami' Aliyah Karawang membahas muhasabah dan pembersihan jiwa seorang muslim sesuai bimbingan sunnah."
       },
       {
         id: 8,
-        title: "Kajian Sunnah: Kitab Ushul Tsalatsah",
-        ustadz: "Ustadz Rohman Abu Asiyah",
-        category: "Aqidah",
+        title: "Tabligh Akbar: Harta Derita Wanita",
+        ustadz: "Ustadz Ammi Nur Baits, S.T., B.A.",
+        category: "Fiqih",
         audience: "Umum",
         masjid: "Ma'had & Masjid Al Bashiirah Cikampek",
         address: "Jl. Raya Cikampek - Parakan, Kotabaru, Cikampek, Karawang",
         lat: -6.4061,
         lon: 107.4589,
-        day: "Sabtu",
-        time: "Ba'da Maghrib (18:15 WIB)",
-        dateInfo: "Sabtu Malam",
+        day: "Jumat",
+        time: "09:00 - 11:30 WIB",
+        dateInfo: "Jumat Pagi",
         verified: true,
-        source: "instagram",
-        sourceUrl: "https://www.instagram.com/p/CgYiNHRBSVj/",
-        description: "Kajian rutin ahlussunnah di Cikampek mempelajari tiga landasan utama mengenal Allah, mengenal Rasul, dan mengenal agama Islam. #kajiansunnah #salafy #cikampek"
+        source: "facebook",
+        sourceUrl: "https://www.facebook.com/masjid.bashiirohcikampek/posts/2219702645554320/",
+        description: "Kajian fiqih keluarga membahas solusi syar'i menyelesaikan prahara rumah tangga terkait hak dan kewajiban nafkah serta harta keluarga."
       },
       {
         id: 9,
-        title: "Kajian Salafy: Syarah Ushulus Sunnah Imam Ahmad",
-        ustadz: "Ustadz Ibrahim Said",
+        title: "Tabligh Akbar: Meniti Jalan Kebenaran Sesuai Pemahaman Salaf",
+        ustadz: "Ustadz Mintaraga, Lc., M.A.",
         category: "Aqidah",
         audience: "Umum",
         masjid: "Masjid Fatimah Purwakarta",
@@ -1426,18 +1617,18 @@
         lat: -6.5369,
         lon: 107.4431,
         day: "Sabtu",
-        time: "09:30 - 11:30 WIB",
-        dateInfo: "Sabtu Pagi",
+        time: "Ba'da Maghrib s/d Isya",
+        dateInfo: "Sabtu Malam",
         verified: true,
         source: "facebook",
         sourceUrl: "https://www.facebook.com/JadwalKajianSunnah/posts/1510769414407760/",
-        description: "Majelis ta'lim ahlussunnah wal jama'ah Purwakarta membedah pokok-pokok sunnah menurut salafus shalih bersama asatidzah salaf. #kajiansunnah #salafy #purwakarta"
+        description: "Tabligh akbar membedah aqidah ahlussunnah wal jama'ah dan manhaj para sahabat Nabi di Masjid Fatimah Purwakarta."
       },
       {
         id: 10,
-        title: "Kajian Akbar Sunnah: Tazkiyatun Nufus Salafus Shalih",
+        title: "Kajian Rutin Ilmiah: Membedah Aqidah Salafus Shalih",
         ustadz: "Ustadz Abu Haidar As-Sundawy, Lc.",
-        category: "Tazkiyatun Nufus",
+        category: "Aqidah",
         audience: "Umum",
         masjid: "Ma'had Rahmatika Al-Atsari Subang",
         address: "Jl. Raya Sagalaherang - Curug Rendeng, Sagalaherang, Subang",
@@ -1447,9 +1638,63 @@
         time: "09:00 - 11:30 WIB",
         dateInfo: "Ahad Pagi",
         verified: true,
-        source: "threads",
-        sourceUrl: "https://www.threads.net/@pesantrenrahmatika/post/F_9a8b7c6d5",
-        description: "Kajian ilmiyyah ahlussunnah Subang membahas penyucian jiwa sesuai pemahaman salafus shalih. Terbuka untuk umum ikhwan dan akhawat. #kajiansunnah #salafi #subang"
+        source: "facebook",
+        sourceUrl: "https://www.facebook.com/PesantrenRahmatika/videos/2300604030680951/",
+        description: "Kajian intensif membahas tauhid dan aqidah ahlussunnah wal jama'ah bersama santri dan jamaah umum di Subang."
+      },
+      {
+        id: 11,
+        title: "Kajian Tematik: Meraih Keberkahan Hidup Sesuai Sunnah",
+        ustadz: "Ustadz dr. Raehanul Bahraen, M.Sc., Sp.PK",
+        category: "Akhlak",
+        audience: "Umum",
+        masjid: "Masjid Al-Murabbi",
+        address: "Jl. Prof. Dr. Sutami No. 122, Sukasari, Kota Bandung",
+        lat: -6.8797,
+        lon: 107.5901,
+        day: "Sabtu",
+        time: "Ba'da Maghrib s/d Selesai",
+        dateInfo: "Sabtu Malam",
+        verified: true,
+        source: "facebook",
+        sourceUrl: "https://www.facebook.com/raehanul.bahraen/posts/10226941715648502/",
+        description: "Kajian ilmiah interaktif membahas tips kesehatan rohani, tazkiyatun nufus, dan adab keseharian seorang muslim."
+      },
+      {
+        id: 12,
+        title: "Kajian Rutin: Memahami Pokok-Pokok Manhaj Salaf",
+        ustadz: "Ustadz Mahfudz Umri, Lc.",
+        category: "Aqidah",
+        audience: "Umum",
+        masjid: "Masjid Imam Ahmad bin Hanbal",
+        address: "Jl. Kol. Ahmad Syam, Baranangsiang, Bogor Timur, Kota Bogor",
+        lat: -6.5971,
+        lon: 106.8060,
+        day: "Ahad",
+        time: "09:00 - 11:30 WIB",
+        dateInfo: "Ahad Pagi",
+        verified: true,
+        source: "facebook",
+        sourceUrl: "https://www.facebook.com/MIAH.Bogor/posts/676840155672019/",
+        description: "Kajian ahlussunnah wal jama'ah di Bogor membahas prinsip dasar beragama di atas dalil Al-Quran dan As-Sunnah."
+      },
+      {
+        id: 13,
+        title: "Kajian Fiqih Ibadah: Syarah Kitab Bulughul Maram",
+        ustadz: "Ustadz Muhammad Toharo",
+        category: "Fiqih",
+        audience: "Umum",
+        masjid: "Masjid As-Sunnah Cirebon",
+        address: "Jl. Kalitanjung No. 52B, Karyamulya, Kesambi, Kota Cirebon",
+        lat: -6.7452,
+        lon: 108.5398,
+        day: "Kamis",
+        time: "Ba'da Ashar (16:00 WIB)",
+        dateInfo: "Kamis Sore",
+        verified: true,
+        source: "facebook",
+        sourceUrl: "https://www.facebook.com/groups/869199183192303/posts/3555235657921962/",
+        description: "Kajian rutin mengupas tuntas hadits-hadits hukum fiqih ibadah dan muamalah karya Al-Hafizh Ibnu Hajar Al-Asqalani."
       }
     ];
 
@@ -1700,6 +1945,18 @@
 
       if (activeAudience !== 'Semua') {
         filtered = filtered.filter(ev => ev.audience === activeAudience);
+      }
+
+      // Filter klaster kawasan wilayah serumpun (Purwasuka, Bandung/Subang, Bodebek, dll)
+      if (activeCluster !== 'all' && REGIONAL_CLUSTERS[activeCluster]) {
+        const cluster = REGIONAL_CLUSTERS[activeCluster];
+        filtered = filtered.filter(ev => {
+          return cluster.cities.some(cName => 
+            (ev.address || '').toLowerCase().includes(cName.toLowerCase()) || 
+            (ev.masjid || '').toLowerCase().includes(cName.toLowerCase()) ||
+            (ev.title || '').toLowerCase().includes(cName.toLowerCase())
+          );
+        });
       }
 
       if (searchQuery.trim() !== '') {
@@ -2259,7 +2516,113 @@
     }
 
     // ------------------------------------------
-    // 10. INTERACTION HANDLERS & HELPERS
+    // 10. REGIONAL CLUSTERS (JAWA BARAT & SEKITARNYA)
+    // ------------------------------------------
+    let activeCluster = 'all';
+
+    const REGIONAL_CLUSTERS = {
+      purwasuka: {
+        name: 'Purwasuka',
+        label: 'Karawang, Cikampek, Purwakarta',
+        centerCity: 'Karawang',
+        lat: -6.3042,
+        lon: 107.3056,
+        cities: ['Karawang', 'Cikampek', 'Purwakarta']
+      },
+      bandung_subang: {
+        name: 'Bandung & Subang',
+        label: 'Subang, Bandung, Sumedang, Cimahi',
+        centerCity: 'Subang',
+        lat: -6.5714,
+        lon: 107.7602,
+        cities: ['Subang', 'Bandung Kota', 'Bandung', 'Cimahi', 'Sumedang']
+      },
+      bodebek: {
+        name: 'Bodebek',
+        label: 'Bogor, Depok, Bekasi, Cikarang',
+        centerCity: 'Bekasi',
+        lat: -6.2383,
+        lon: 106.9756,
+        cities: ['Bekasi', 'Cikarang', 'Depok & Cibubur', 'Bogor Kota', 'Bogor']
+      },
+      ciayumajakuning: {
+        name: 'Ciayumajakuning',
+        label: 'Cirebon, Indramayu, Majalengka, Kuningan',
+        centerCity: 'Cirebon',
+        lat: -6.7452,
+        lon: 108.5398,
+        cities: ['Cirebon', 'Indramayu', 'Majalengka', 'Kuningan']
+      },
+      priangan_timur: {
+        name: 'Priangan Timur',
+        label: 'Garut, Tasikmalaya, Ciamis, Banjar',
+        centerCity: 'Tasikmalaya',
+        lat: -7.3274,
+        lon: 108.2207,
+        cities: ['Garut', 'Tasikmalaya', 'Ciamis', 'Banjar']
+      },
+      sukabumi_cianjur: {
+        name: 'Sukabumi & Cianjur',
+        label: 'Sukabumi, Cianjur',
+        centerCity: 'Sukabumi',
+        lat: -6.9277,
+        lon: 106.9300,
+        cities: ['Sukabumi', 'Cianjur']
+      },
+      dki_tangsel: {
+        name: 'DKI & Tangsel',
+        label: 'Jakarta Pusat, Jakarta Selatan, Tangsel',
+        centerCity: 'Jakarta Selatan',
+        lat: -6.2615,
+        lon: 106.8106,
+        cities: ['Jakarta Selatan', 'Jakarta Pusat', 'Tangerang Selatan']
+      }
+    };
+
+    function selectCluster(clusterId) {
+      activeCluster = clusterId;
+      document.querySelectorAll('.cluster-chip').forEach(chip => {
+        if (chip.getAttribute('data-cluster') === clusterId) {
+          chip.className = 'cluster-chip touch-btn shrink-0 px-3 py-1.5 rounded-full font-bold bg-brand-700 text-white shadow-xs transition';
+        } else {
+          chip.className = 'cluster-chip touch-btn shrink-0 px-3 py-1.5 rounded-full font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-500 transition flex items-center gap-1.5';
+        }
+      });
+
+      if (clusterId !== 'all' && REGIONAL_CLUSTERS[clusterId]) {
+        const c = REGIONAL_CLUSTERS[clusterId];
+        selectCity(c.centerCity, c.lat, c.lon);
+        showToast(`Kawasan: ${c.name} (${c.label})`);
+      } else {
+        renderKajianList();
+      }
+    }
+
+    function filterCityItems(query) {
+      const q = (query || '').toLowerCase().trim();
+      const groups = document.querySelectorAll('.city-group');
+      groups.forEach(grp => {
+        const btns = grp.querySelectorAll('.city-btn');
+        let hasMatch = false;
+        btns.forEach(btn => {
+          const text = (btn.innerText + ' ' + (btn.getAttribute('data-name') || '')).toLowerCase();
+          if (q === '' || text.includes(q)) {
+            btn.classList.remove('hidden');
+            hasMatch = true;
+          } else {
+            btn.classList.add('hidden');
+          }
+        });
+        if (hasMatch) {
+          grp.classList.remove('hidden');
+        } else {
+          grp.classList.add('hidden');
+        }
+      });
+    }
+
+    // ------------------------------------------
+    // 11. INTERACTION HANDLERS & HELPERS
     // ------------------------------------------
     function selectCategory(cat) {
       activeCategory = cat;
@@ -2302,12 +2665,20 @@
       activeCategory = 'Semua';
       activeRadius = 999;
       activeAudience = 'Semua';
+      activeCluster = 'all';
       searchQuery = '';
       document.getElementById('searchInput').value = '';
       document.getElementById('clearSearchBtn').classList.add('hidden');
       selectCategory('Semua');
       setRadius(25);
       setAudience('Semua');
+      document.querySelectorAll('.cluster-chip').forEach(chip => {
+        if (chip.getAttribute('data-cluster') === 'all') {
+          chip.className = 'cluster-chip touch-btn shrink-0 px-3 py-1.5 rounded-full font-bold bg-brand-700 text-white shadow-xs transition';
+        } else {
+          chip.className = 'cluster-chip touch-btn shrink-0 px-3 py-1.5 rounded-full font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-500 transition flex items-center gap-1.5';
+        }
+      });
       showToast('Semua filter direset');
       closeFilterSheet();
     }
@@ -2367,6 +2738,26 @@
       const sholatBadge = document.getElementById('sholatCityBadge');
       if (sholatBadge) sholatBadge.innerText = name;
       localStorage.setItem('sinikajian_coords', JSON.stringify(userCoords));
+
+      // Sinkronisasi active cluster chip jika kota termasuk dalam klaster
+      let matchedCluster = null;
+      for (const [cId, cData] of Object.entries(REGIONAL_CLUSTERS)) {
+        if (cData.cities.some(cName => name.toLowerCase().includes(cName.toLowerCase()))) {
+          matchedCluster = cId;
+          break;
+        }
+      }
+      if (matchedCluster) {
+        activeCluster = matchedCluster;
+        document.querySelectorAll('.cluster-chip').forEach(chip => {
+          if (chip.getAttribute('data-cluster') === matchedCluster) {
+            chip.className = 'cluster-chip touch-btn shrink-0 px-3 py-1.5 rounded-full font-bold bg-brand-700 text-white shadow-xs transition';
+          } else {
+            chip.className = 'cluster-chip touch-btn shrink-0 px-3 py-1.5 rounded-full font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-500 transition flex items-center gap-1.5';
+          }
+        });
+      }
+
       closeLocationSheet();
       showToast(`Lokasi diubah ke ${name}`);
       renderKajianList();
@@ -2628,10 +3019,15 @@
             return !sUrl.includes('dwp.im') && !sUrl.includes('sayahafiz') && !sUrl.includes('rumahfiqih') &&
                    !desc.includes('dwp.im') && !desc.includes('sayahafiz') && !desc.includes('rumahfiqih');
           });
-          // Merge missing initial events so regional updates (Karawang, Cikampek, Purwakarta, Subang) appear immediately
-          const existingIds = new Set(clean.map(e => e.id));
-          const missing = INITIAL_EVENTS.filter(e => !existingIds.has(e.id));
-          events = [...clean, ...missing];
+          // Merge: INITIAL_EVENTS is canonical for its IDs, external/user events (custom) are preserved
+          const canonicalMap = new Map();
+          INITIAL_EVENTS.forEach(e => canonicalMap.set(e.id, e));
+          clean.forEach(e => {
+            if (!canonicalMap.has(e.id)) {
+              canonicalMap.set(e.id, e);
+            }
+          });
+          events = Array.from(canonicalMap.values());
         } catch (e) {
           events = INITIAL_EVENTS;
         }
@@ -2656,6 +3052,10 @@
 
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').catch(() => {});
+      }
+
+      if (window.location.hash === '#location-sheet') {
+        setTimeout(openLocationSheet, 300);
       }
     });
   </script>

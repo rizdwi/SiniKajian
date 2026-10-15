@@ -117,6 +117,24 @@ KNOWN_MASJIDS = {
         "address": "Jl. Raya Sagalaherang - Curug Rendeng, Sagalaherang, Subang",
         "lat": -6.6125,
         "lon": 107.7289
+    },
+    "al-murabbi bandung": {
+        "name": "Masjid Al-Murabbi Bandung",
+        "address": "Jl. Prof. Dr. Sutami No. 122, Sukasari, Kota Bandung",
+        "lat": -6.8797,
+        "lon": 107.5901
+    },
+    "miah bogor": {
+        "name": "Masjid Imam Ahmad bin Hanbal (MIAH) Bogor",
+        "address": "Jl. Kol. Ahmad Syam, Baranangsiang, Bogor Timur, Kota Bogor",
+        "lat": -6.6083,
+        "lon": 106.8222
+    },
+    "as-sunnah cirebon": {
+        "name": "Masjid As-Sunnah Cirebon",
+        "address": "Jl. Kalitanjung No. 52B, Karyamulya, Kesambi, Kota Cirebon",
+        "lat": -6.7452,
+        "lon": 108.5398
     }
 }
 
@@ -131,10 +149,13 @@ KNOWN_SPEAKERS = [
     "Ustadz Abu Yahya Badrusalam, Lc.",
     "Ustadzah Ummu Ihsan Choiriyah",
     "Ustadz Ammi Nur Baits, S.T., B.A.",
-    "Ustadz Dede Yan Al Fadhl, B.A.",
-    "Ustadz Rohman Abu Asiyah",
-    "Ustadz Ibrahim Said",
-    "Ustadz Abu Haidar As-Sundawy, Lc."
+    "Ustadz Abu Haidar As-Sundawy, Lc.",
+    "Ustadz dr. Raehanul Bahraen, M.Sc., Sp.PK",
+    "Ustadz Mahfudz Umri, Lc.",
+    "Ustadz Muhammad Toharo",
+    "Ustadz Mintaraga, Lc., M.A.",
+    "Ustadz Sofyan Chalid Ruray, Lc.",
+    "Ustadz Al Jasri, S.Sos."
 ]
 
 def clean_anti_slop(text: str) -> str:

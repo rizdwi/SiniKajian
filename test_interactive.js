@@ -67,6 +67,14 @@ global.document = {
           contains(x) { return this.items.has(x); }
         },
         querySelectorAll: () => [],
+        querySelector: () => ({
+          classList: {
+            items: new Set(),
+            add(...c) { c.forEach(x => this.items.add(x)); },
+            remove(...c) { c.forEach(x => this.items.delete(x)); },
+            contains(x) { return this.items.has(x); }
+          }
+        }),
         reset: () => {}
       };
     }
@@ -149,7 +157,7 @@ console.log('✓ Interaction 3 (Clear search restore): PASS');
 // Interaction 4: Radius filtering
 activeRadius = 10;
 renderKajianList();
-assert.strictEqual(document.getElementById('resultsCount').innerText, 4, 'Radius 10 km filters out distant events (4 remain)');
+assert.strictEqual(document.getElementById('resultsCount').innerText, 3, 'Radius 10 km filters out distant events (3 remain in Jakarta)');
 console.log('✓ Interaction 4 (Radius filter limit): PASS');
 
 // Interaction 5: Category filtering
@@ -157,8 +165,25 @@ activeRadius = 999;
 selectCategory('Fiqih');
 assert.strictEqual(activeCategory, 'Fiqih', 'Active category state is Fiqih');
 renderKajianList();
-assert.strictEqual(document.getElementById('resultsCount').innerText, 2, 'Exactly 2 Fiqih events in db');
+assert.strictEqual(document.getElementById('resultsCount').innerText, 3, 'Exactly 3 Fiqih events in db');
 console.log('✓ Interaction 5 (Category filter): PASS');
+
+// Interaction 5b: Regional Cluster Filtering (Purwasuka & Bandung/Subang)
+selectCategory('Semua');
+selectCluster('purwasuka');
+assert.strictEqual(activeCluster, 'purwasuka', 'Active cluster is purwasuka');
+assert.strictEqual(userCoords.name, 'Karawang', 'Reference city moved to Karawang');
+assert.strictEqual(document.getElementById('resultsCount').innerText, 4, 'Exactly 4 events in Purwasuka cluster (Karawang, Cikampek, Purwakarta)');
+console.log('✓ Interaction 5b (Purwasuka Cluster Filter): PASS');
+
+selectCluster('bandung_subang');
+assert.strictEqual(activeCluster, 'bandung_subang', 'Active cluster is bandung_subang');
+assert.strictEqual(userCoords.name, 'Subang', 'Reference city moved to Subang');
+assert.strictEqual(document.getElementById('resultsCount').innerText, 2, 'Exactly 2 events in Bandung & Subang cluster');
+console.log('✓ Interaction 5c (Bandung & Subang Cluster Filter): PASS');
+
+selectCluster('all');
+assert.strictEqual(activeCluster, 'all', 'Active cluster reset to all');
 
 // Interaction 6: Bookmark Toggle & Persistence
 selectCategory('Semua');
