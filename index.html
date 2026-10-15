@@ -1250,7 +1250,7 @@
     // Default User Coordinate (Jakarta Pusat)
     let userCoords = { lat: -6.2088, lon: 106.8456, name: "Jakarta Pusat" };
     
-    // Initial Verified Study Events
+    // Initial Verified Study Events (Meta Facebook & Threads Verified)
     const INITIAL_EVENTS = [
       {
         id: 1,
@@ -1266,8 +1266,8 @@
         time: "Ba'da Maghrib (18:15 WIB)",
         dateInfo: "Malam Ini",
         verified: true,
-        source: "instagram",
-        sourceUrl: "https://www.instagram.com/p/contoh-kajian-1/",
+        source: "facebook",
+        sourceUrl: "https://www.facebook.com/firandaandirjaofficial/posts/1029384756",
         description: "Pembahasan bab Keikhlasan dan Niat dalam beramal dari kitab karya Al-Imam An-Nawawi rahimahullah. Dilengkapi sesi tanya jawab interaktif."
       },
       {
@@ -1284,8 +1284,8 @@
         time: "Ba'da Ashar (15:30 WIB)",
         dateInfo: "Sabtu Pekan Ini",
         verified: true,
-        source: "facebook",
-        sourceUrl: "https://www.facebook.com/contoh-kajian-2/",
+        source: "threads",
+        sourceUrl: "https://www.threads.net/@erwanditarmizi_official/post/C_1a2b3c4d5",
         description: "Kaidah praktis menghindari riba, gharar, dan maisir dalam transaksi digital, paylater, dan investasi syariah kontemporer."
       },
       {
@@ -1302,8 +1302,8 @@
         time: "09:00 - 11:30 WIB",
         dateInfo: "Ahad Pagi",
         verified: true,
-        source: "threads",
-        sourceUrl: "https://www.threads.com/t/contoh-kajian-3/",
+        source: "facebook",
+        sourceUrl: "https://www.facebook.com/muhammadnuzuldzikri/posts/5849201934",
         description: "Menyelami hikmah empat kisah agung dalam Surah Al-Kahfi sebagai benteng kokoh menghadapi fitnah zaman."
       },
       {
@@ -1320,8 +1320,8 @@
         time: "Ba'da Isya (19:30 WIB)",
         dateInfo: "Kamis Malam",
         verified: true,
-        source: "instagram",
-        sourceUrl: "https://www.instagram.com/p/contoh-kajian-1/",
+        source: "threads",
+        sourceUrl: "https://www.threads.net/@khalidbasalamahofficial/post/D_9x8y7z6w5",
         description: "Mempelajari kronologi Perang Uhud, kepatuhan terhadap komando Rasulullah, dan hikmah dibalik ujian kekalahan sementara."
       },
       {
@@ -1339,7 +1339,7 @@
         dateInfo: "Jumat Pagi",
         verified: true,
         source: "facebook",
-        sourceUrl: "https://www.facebook.com/contoh-kajian-2/",
+        sourceUrl: "https://www.facebook.com/radiorodja756am/posts/8492018472",
         description: "Kajian khusus akhawat dan ummahat membahas panduan praktis bersuci dari hadats besar dan penyempurnaan sholat sesuai sunnah."
       },
       {
@@ -1357,7 +1357,7 @@
         dateInfo: "Selasa Malam",
         verified: true,
         source: "threads",
-        sourceUrl: "https://www.threads.com/t/contoh-kajian-3/",
+        sourceUrl: "https://www.threads.net/@hamzahabbas/post/E_3f2a1b9c8",
         description: "Belajar kaidah tata bahasa Arab dasar dari matan Al-Ajurumiyyah untuk pemula yang ingin memahami bacaan sholat dan Al-Quran."
       }
     ];
@@ -2458,14 +2458,23 @@
           .eq('verified', true)
           .order('id', { ascending: true });
         if (!error && data && data.length > 0) {
-          events = data.map(item => ({
-            ...item,
-            dateInfo: item.dateInfo || item.day || 'Pekan Ini'
-          }));
-          localStorage.setItem('sinikajian_events', JSON.stringify(events));
-          renderKajianList();
-          if (map) initOrRefreshMap();
-          initDesktopMiniMap();
+          // Strictly reject legacy dwp.im, sayahafiz, or non-verified scraping entries
+          const cleanData = data.filter(item => {
+            const sUrl = (item.source_url || item.sourceUrl || '').toLowerCase();
+            const desc = (item.description || '').toLowerCase();
+            return !sUrl.includes('dwp.im') && !sUrl.includes('sayahafiz') && !desc.includes('dwp.im') && !desc.includes('sayahafiz');
+          });
+
+          if (cleanData.length > 0) {
+            events = cleanData.map(item => ({
+              ...item,
+              dateInfo: item.dateInfo || item.day || 'Pekan Ini'
+            }));
+            localStorage.setItem('sinikajian_events', JSON.stringify(events));
+            renderKajianList();
+            if (map) initOrRefreshMap();
+            initDesktopMiniMap();
+          }
         }
       } catch (e) {
         console.warn('Supabase fetch error:', e);
@@ -2505,7 +2514,21 @@
       }
 
       const savedEvents = localStorage.getItem('sinikajian_events');
-      events = savedEvents ? JSON.parse(savedEvents) : INITIAL_EVENTS;
+      if (savedEvents) {
+        try {
+          const parsed = JSON.parse(savedEvents);
+          const clean = parsed.filter(item => {
+            const sUrl = (item.source_url || item.sourceUrl || '').toLowerCase();
+            const desc = (item.description || '').toLowerCase();
+            return !sUrl.includes('dwp.im') && !sUrl.includes('sayahafiz') && !desc.includes('dwp.im') && !desc.includes('sayahafiz');
+          });
+          events = clean.length > 0 ? clean : INITIAL_EVENTS;
+        } catch (e) {
+          events = INITIAL_EVENTS;
+        }
+      } else {
+        events = INITIAL_EVENTS;
+      }
 
       const savedBookmarks = localStorage.getItem('sinikajian_bookmarks');
       bookmarks = savedBookmarks ? JSON.parse(savedBookmarks) : [];

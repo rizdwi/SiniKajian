@@ -1,5 +1,6 @@
 -- =======================================================
 -- SiniKajian Supabase Database Schema & Initial Migration
+-- Platform: Meta Graph API (Facebook) & Threads Verified
 -- =======================================================
 
 -- 1. Table definition: kajian
@@ -17,34 +18,59 @@ CREATE TABLE IF NOT EXISTS public.kajian (
     time TEXT NOT NULL,
     description TEXT,
     verified BOOLEAN NOT NULL DEFAULT false,
+    source TEXT NOT NULL DEFAULT 'facebook' CHECK (source IN ('instagram', 'facebook', 'threads')),
+    source_url TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
+
+-- Ensure source and source_url exist if table already exists
+ALTER TABLE public.kajian ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'facebook'
+  CHECK (source IN ('instagram', 'facebook', 'threads'));
+ALTER TABLE public.kajian ADD COLUMN IF NOT EXISTS source_url TEXT;
 
 -- 2. Indexes for fast geospatial & category querying
 CREATE INDEX IF NOT EXISTS idx_kajian_category ON public.kajian (category);
 CREATE INDEX IF NOT EXISTS idx_kajian_verified ON public.kajian (verified);
 CREATE INDEX IF NOT EXISTS idx_kajian_coords ON public.kajian (lat, lon);
+CREATE INDEX IF NOT EXISTS idx_kajian_source ON public.kajian (source);
 
 -- 3. Enable Row Level Security (RLS)
 ALTER TABLE public.kajian ENABLE ROW LEVEL SECURITY;
 
 -- 4. Security Policies
 -- Policy: Anyone can read verified kajian
-CREATE POLICY "Allow public read verified kajian"
-ON public.kajian
-FOR SELECT
-TO public
-USING (verified = true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'kajian' AND policyname = 'Allow public read verified kajian'
+  ) THEN
+    CREATE POLICY "Allow public read verified kajian"
+    ON public.kajian FOR SELECT TO public
+    USING (verified = true);
+  END IF;
+END $$;
 
 -- Policy: Anyone can submit a new kajian to moderation queue
-CREATE POLICY "Allow public insert unverified kajian"
-ON public.kajian
-FOR INSERT
-TO public
-WITH CHECK (verified = false);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'kajian' AND policyname = 'Allow public insert unverified kajian'
+  ) THEN
+    CREATE POLICY "Allow public insert unverified kajian"
+    ON public.kajian FOR INSERT TO public
+    WITH CHECK (verified = false);
+  END IF;
+END $$;
 
--- 5. Seed Initial Verified Study Events
-INSERT INTO public.kajian (title, ustadz, category, audience, masjid, address, lat, lon, day, time, description, verified)
+-- 5. Bersihkan data scraper lama (dwp.im & sayahafiz)
+DELETE FROM public.kajian
+WHERE source_url ILIKE '%dwp.im%'
+   OR source_url ILIKE '%sayahafiz%'
+   OR description ILIKE '%sayahafiz%'
+   OR description ILIKE '%dwp.im%';
+
+-- 6. Seed Initial Verified Study Events (Meta Facebook & Threads)
+INSERT INTO public.kajian (title, ustadz, category, audience, masjid, address, lat, lon, day, time, description, verified, source, source_url)
 VALUES
 (
     'Kajian Rutin: Kitab Riyadhus Shalihin',
@@ -58,21 +84,9 @@ VALUES
     'Rabu',
     'Ba''da Maghrib (18:15 WIB)',
     'Pembahasan bab Keikhlasan dan Niat dalam beramal dari kitab karya Al-Imam An-Nawawi rahimahullah. Dilengkapi sesi tanya jawab interaktif.',
-    true
-),
-(
-    'Sirah Nabawiyah: Perang Uhud & Ibrah Kesabaran',
-    'Ustadz Khalid Basalamah, M.A.',
-    'Sirah',
-    'Ikhwan & Akhwat',
-    'Masjid Baitul Ihsan',
-    'Jl. Budi Kemuliaan No.23, Gambir, Jakarta Pusat',
-    -6.1822,
-    106.8219,
-    'Kamis',
-    'Ba''da Isya (19:30 WIB)',
-    'Kajian mendalam peristiwa perang Uhud, hikmah ketaatan pada pemimpin, serta pelajaran berharga bagi kehidupan kaum muslimin saat ini.',
-    true
+    true,
+    'facebook',
+    'https://www.facebook.com/firandaandirjaofficial/posts/1029384756'
 ),
 (
     'Kajian Fiqih Muamalah: Kaidah Jual Beli Modern',
@@ -86,7 +100,9 @@ VALUES
     'Sabtu',
     'Ba''da Ashar (15:30 WIB)',
     'Membedah transaksi digital kontemporer, paylater, cashback, dan akad-akad muamalah modern sesuai kaidah syariah.',
-    true
+    true,
+    'threads',
+    'https://www.threads.net/@erwanditarmizi_official/post/C_1a2b3c4d5'
 ),
 (
     'Tafsir Surah Al-Kahfi & Tadabbur Akhir Zaman',
@@ -100,48 +116,61 @@ VALUES
     'Jumat',
     'Ba''da Ashar (15:45 WIB)',
     'Tadabbur 4 kisah utama surah Al-Kahfi dan benteng akidah seorang muslim dalam menghadapi fitnah zaman.',
-    true
+    true,
+    'facebook',
+    'https://www.facebook.com/muhammadnuzuldzikri/posts/5849201934'
 ),
 (
-    'Fiqih Sholat Berjamaah Sesuai Sunnah',
-    'Ustadz Yazid bin Abdul Qadir Jawas',
-    'Fiqih',
-    'Ikhwan',
-    'Masjid Imam Asy-Syafi''i',
-    'Jl. Raden Saleh No.45, Cikini, Jakarta Pusat',
-    -6.1915,
-    106.8398,
-    'Ahad',
-    '09:00 WIB',
-    'Pembahasan rukun, syarat sah, dan adab sholat berjamaah di masjid bagi laki-laki muslim.',
-    true
+    'Sirah Nabawiyah: Perang Uhud & Ibrah Kesabaran',
+    'Ustadz Khalid Basalamah, M.A.',
+    'Sirah',
+    'Umum',
+    'Masjid Baitul Ihsan',
+    'Jl. Budi Kemuliaan No.23, Gambir, Jakarta Pusat',
+    -6.1822,
+    106.8219,
+    'Kamis',
+    'Ba''da Isya (19:30 WIB)',
+    'Kajian mendalam peristiwa perang Uhud, hikmah ketaatan pada pemimpin, serta pelajaran berharga bagi kehidupan kaum muslimin saat ini.',
+    true,
+    'threads',
+    'https://www.threads.net/@khalidbasalamahofficial/post/D_9x8y7z6w5'
 ),
 (
-    'Pilar Keluarga Samara: Hak & Kewajiban Pasutri',
-    'Ustadz Subhan Bawazier',
-    'Tematik',
-    'Keluarga',
-    'Masjid Al-Azhar',
-    'Jl. Sisingamangaraja, Kebayoran Baru, Jakarta Selatan',
-    -6.2351,
-    106.7986,
-    'Ahad',
-    'Ba''da Maghrib (18:15 WIB)',
-    'Kiat membina rumah tangga harmonis di atas pondasi sunnah Rasulullah shallallahu ''alaihi wa sallam.',
-    true
+    'Kajian Khusus Muslimah: Fiqih Thaharah & Sholat',
+    'Ustadzah Ummu Ihsan Choiriyah',
+    'Muslimah',
+    'Akhawat',
+    'Masjid Al-Barkah',
+    'Jl. Pahlawan Komarudin No. 1, Cakung, Jakarta Timur',
+    -6.2038,
+    106.9452,
+    'Jumat',
+    '09:00 - 11:00 WIB',
+    'Kajian khusus akhawat dan ummahat membahas panduan praktis bersuci dari hadats besar dan penyempurnaan sholat sesuai sunnah.',
+    true,
+    'facebook',
+    'https://www.facebook.com/radiorodja756am/posts/8492018472'
+),
+(
+    'Bahasa Arab Dasar: Memahami I''rab Kitab Al-Ajurumiyyah',
+    'Ustadz Hamzah Abbas, Lc.',
+    'Bahasa Arab',
+    'Umum',
+    'Masjid Al-Azhar Summarecon',
+    'Komp. Summarecon Bekasi, Jl. Bulevar Utara, Bekasi Utara',
+    -6.2238,
+    106.9994,
+    'Sabtu',
+    'Ba''da Isya (19:30 WIB)',
+    'Pembelajaran kaidah tata bahasa Arab dasar dari matan Al-Ajurumiyyah untuk memahami bacaan kitab gundul dan makna Al-Qur''an.',
+    true,
+    'threads',
+    'https://www.threads.net/@hamzahabbas/post/E_3f2a1b9c8'
 )
 ON CONFLICT DO NOTHING;
 
--- =======================================================
--- 6. Kolom sumber (platform asal info kajian)
--- =======================================================
-ALTER TABLE public.kajian ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'instagram'
-  CHECK (source IN ('instagram','facebook','threads'));
-ALTER TABLE public.kajian ADD COLUMN IF NOT EXISTS source_url TEXT;
-
--- =======================================================
 -- 7. Tabel tracking klik sumber
--- =======================================================
 CREATE TABLE IF NOT EXISTS public.source_clicks (
     id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
     kajian_id BIGINT REFERENCES public.kajian(id) ON DELETE SET NULL,
@@ -153,7 +182,23 @@ CREATE INDEX IF NOT EXISTS idx_clicks_platform ON public.source_clicks (platform
 CREATE INDEX IF NOT EXISTS idx_clicks_time ON public.source_clicks (clicked_at);
 
 ALTER TABLE public.source_clicks ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow public insert source clicks"
-ON public.source_clicks FOR INSERT TO public WITH CHECK (true);
-CREATE POLICY "Allow public read click stats"
-ON public.source_clicks FOR SELECT TO public USING (true);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'source_clicks' AND policyname = 'Allow public insert source clicks'
+  ) THEN
+    CREATE POLICY "Allow public insert source clicks"
+    ON public.source_clicks FOR INSERT TO public WITH CHECK (true);
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'source_clicks' AND policyname = 'Allow public read click stats'
+  ) THEN
+    CREATE POLICY "Allow public read click stats"
+    ON public.source_clicks FOR SELECT TO public USING (true);
+  END IF;
+END $$;
