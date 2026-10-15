@@ -230,7 +230,7 @@ VALUES
     'Kajian intensif membahas tauhid dan aqidah ahlussunnah wal jama''ah bersama santri dan jamaah umum di Subang.',
     true,
     'facebook',
-    'https://www.facebook.com/PesantrenRahmatika/videos/2300604030680951/'
+    'https://www.facebook.com/PesantrenRahmatika/posts/1759806059480246'
 ),
 (
     'Kajian Tematik: Meraih Keberkahan Hidup Sesuai Sunnah',
