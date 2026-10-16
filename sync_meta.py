@@ -593,10 +593,21 @@ def main():
         except Exception as e:
             print(f"[!] Error fetching Facebook: {e}")
 
-    # 3. If seed-meta is requested, use curated Meta entries
-    if args.seed_meta or (not args.threads_token and not args.fb_token and not collected):
-        print("[*] Using curated verified Meta Facebook & Threads study events...")
-        collected = get_curated_meta_seed()
+    # 3. Seed fallback DISABLED (audit 2026-10-16): get_curated_meta_seed()
+    # contains unverifiable placeholder entries (famous ustadz names, day-name
+    # scheduling with no real dates, placeholder post URLs like
+    # ".../post/C_1a2b3c4d5") marked verified=True - the same fabrication
+    # pattern the user ordered deleted from index.html. Never auto-seed.
+    # Real data only comes from Meta tokens.
+    if args.seed_meta:
+        print("[!] --seed-meta is disabled: the curated seed entries are unverified placeholders.")
+        print("    Provide --threads-token / --fb-token to ingest real Meta data instead.")
+        sys.exit(2)
+    if not args.threads_token and not args.fb_token and not collected:
+        print("[!] No Meta tokens provided and nothing collected - nothing to sync.")
+        print("    Usage: sync_meta.py --fb-token <token> --fb-page <page> [--threads-token <token>] --supabase-key <key>")
+        print("    Refusing to insert placeholder data (see audit 2026-10-16).")
+        sys.exit(2)
 
     print(f"[*] Processed {len(collected)} items.")
     for idx, c in enumerate(collected, 1):
