@@ -2190,8 +2190,9 @@
           attributionControl: false
         }).setView([userCoords.lat, userCoords.lon], 12);
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-          attribution: '&copy; OpenStreetMap &copy; CARTO',
+        // Esri World Street Map (tanpa API key; CartoDB kini mewajibkan API key)
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+          attribution: '&copy; Esri & contributors',
           maxZoom: 20
         }).addTo(miniMap);
       } else {
@@ -2233,17 +2234,17 @@
           zoomControl: false
         }).setView([userCoords.lat, userCoords.lon], 13);
 
-        // Layer peta: CartoDB Voyager (bersih) + Esri Satelit
-        const cartoLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-          attribution: '&copy; OpenStreetMap &copy; CARTO',
+        // Layer peta: Esri World Street Map (tanpa API key; CartoDB kini mewajibkan API key) + Esri Satelit
+        const streetLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+          attribution: '&copy; Esri & contributors',
           maxZoom: 20
         });
         const esriSatLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
           attribution: '&copy; Esri World Imagery',
           maxZoom: 20
         });
-        cartoLayer.addTo(map);
-        L.control.layers({ "🗺️ Peta": cartoLayer, "🛰️ Satelit": esriSatLayer }, null, { position: 'topright' }).addTo(map);
+        streetLayer.addTo(map);
+        L.control.layers({ "🗺️ Peta": streetLayer, "🛰️ Satelit": esriSatLayer }, null, { position: 'topright' }).addTo(map);
 
         L.control.zoom({ position: 'topright' }).addTo(map);
       } else {
@@ -2737,6 +2738,12 @@
     }
 
     let gpsWatchId = null;
+    // Guard akurasi GPS: fix pertama dari network/IP geolocation sering meleset
+    // berkilo-kilometer. Jangan terima & simpan fix yang akurasinya lebih buruk
+    // dari ambang ini sampai terkunci (gpsLocked), agar tidak meracuni
+    // localStorage dan membuat hitungan jarak melonjak setelah reload.
+    let gpsLocked = false;
+    const GPS_MIN_ACCURACY_M = 1500;
 
     function useGpsLocation() {
       const label = document.getElementById('gpsLocLabel');
@@ -2753,8 +2760,17 @@
       // Real-time: watchPosition update otomatis saat user bergerak
       gpsWatchId = navigator.geolocation.watchPosition(
         (pos) => {
+          const rawAcc = pos.coords.accuracy;
+          const acc = (typeof rawAcc === 'number' && rawAcc > 0) ? rawAcc : null;
+          if (!gpsLocked && acc !== null && acc > GPS_MIN_ACCURACY_M) {
+            const accTxt = acc >= 1000 ? `±${(acc/1000).toFixed(1)} km` : `±${Math.round(acc)} m`;
+            if (label) label.innerText = `⏳ Mencari fix akurat (${accTxt})…`;
+            return; // tunggu fix yang lebih akurat; jangan simpan yang buruk
+          }
+          gpsLocked = true;
+          const accTxt = acc !== null ? ` ±${acc >= 1000 ? (acc/1000).toFixed(1) + ' km' : Math.round(acc) + ' m'}` : '';
           userCoords = { lat: pos.coords.latitude, lon: pos.coords.longitude, name: 'Lokasi Saya' };
-          document.getElementById('currentLocationLabel').innerText = '📡 Lokasi Saya (live)';
+          document.getElementById('currentLocationLabel').innerText = `📡 Lokasi Saya (live${accTxt})`;
           localStorage.setItem('sinikajian_coords', JSON.stringify(userCoords));
           closeLocationSheet();
           renderKajianList();
@@ -2779,6 +2795,7 @@
       if (gpsWatchId !== null) {
         navigator.geolocation.clearWatch(gpsWatchId);
         gpsWatchId = null;
+        gpsLocked = false;
         document.getElementById('currentLocationLabel').innerText = userCoords.name || 'Cikampek';
         showToast('GPS live dimatikan');
       }
@@ -3135,12 +3152,21 @@
       const savedCoords = localStorage.getItem('sinikajian_coords');
       if (savedCoords) {
         try {
-          userCoords = JSON.parse(savedCoords);
-          document.getElementById('currentLocationLabel').innerText = userCoords.name;
-          const sbLoc = document.getElementById('sidebarPrayerLocationLabel');
-          if (sbLoc) sbLoc.innerText = `Wilayah ${userCoords.name} & sekitarnya`;
-          const sholatBadge = document.getElementById('sholatCityBadge');
-          if (sholatBadge) sholatBadge.innerText = userCoords.name;
+          const c = JSON.parse(savedCoords);
+          // Sanity: abaikan koordinat tersimpan di luar bbox Indonesia
+          // (mencegah state keracunan fix GPS buruk) — fallback ke Cikampek.
+          const sane = c && typeof c.lat === 'number' && typeof c.lon === 'number'
+            && c.lat >= -11 && c.lat <= 6 && c.lon >= 95 && c.lon <= 141;
+          if (sane) {
+            userCoords = c;
+            document.getElementById('currentLocationLabel').innerText = userCoords.name;
+            const sbLoc = document.getElementById('sidebarPrayerLocationLabel');
+            if (sbLoc) sbLoc.innerText = `Wilayah ${userCoords.name} & sekitarnya`;
+            const sholatBadge = document.getElementById('sholatCityBadge');
+            if (sholatBadge) sholatBadge.innerText = userCoords.name;
+          } else {
+            localStorage.removeItem('sinikajian_coords');
+          }
         } catch (e) {}
       }
 
