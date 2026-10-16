@@ -2190,8 +2190,9 @@
           attributionControl: false
         }).setView([userCoords.lat, userCoords.lon], 12);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom: 18
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+          attribution: '&copy; OpenStreetMap &copy; CARTO',
+          maxZoom: 20
         }).addTo(miniMap);
       } else {
         miniMap.invalidateSize();
@@ -2232,9 +2233,17 @@
           zoomControl: false
         }).setView([userCoords.lat, userCoords.lon], 13);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; OpenStreetMap'
-        }).addTo(map);
+        // Layer peta: CartoDB Voyager (bersih) + Esri Satelit
+        const cartoLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+          attribution: '&copy; OpenStreetMap &copy; CARTO',
+          maxZoom: 20
+        });
+        const esriSatLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+          attribution: '&copy; Esri World Imagery',
+          maxZoom: 20
+        });
+        cartoLayer.addTo(map);
+        L.control.layers({ "🗺️ Peta": cartoLayer, "🛰️ Satelit": esriSatLayer }, null, { position: 'topright' }).addTo(map);
 
         L.control.zoom({ position: 'topright' }).addTo(map);
       } else {
