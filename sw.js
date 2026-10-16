@@ -1,5 +1,5 @@
-// SiniKajian Service Worker - Version 12.3
-const CACHE_NAME = 'sinikajian-v12.3';
+// SiniKajian Service Worker - Version 12.4
+const CACHE_NAME = 'sinikajian-v12.4';
 
 const STATIC_ASSETS = [
   './manifest.json',
