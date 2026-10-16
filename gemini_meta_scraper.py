@@ -180,7 +180,7 @@ def call_gemini_vision_api(
     prompt: str,
     image_bytes: Optional[bytes] = None,
     image_mime: str = "image/jpeg",
-    model: str = "gemini-2.5-flash"
+    model: str = "gemma-4-26b-a4b-it"
 ) -> Dict[str, Any]:
     """
     Memanggil Google AI Studio API (Gemini) secara langsung menggunakan urllib.
@@ -228,10 +228,9 @@ def call_gemini_vision_api(
             return json.loads(candidate_text)
     except urllib.error.HTTPError as e:
         err_msg = e.read().decode("utf-8", errors="ignore")
-        # Jika model gemini-2.5-flash belum tersedia untuk endpoint ini, coba fallback ke gemini-1.5-flash
-        if model != "gemini-1.5-flash" and e.code in (404, 400):
-            print(f"[!] Fallback dari {model} ke gemini-1.5-flash...")
-            return call_gemini_vision_api(api_key, prompt, image_bytes, image_mime, model="gemini-1.5-flash")
+        # Jika model utama gagal, tidak ada fallback (gemini-* tidak tersedia untuk key ini)
+        if False and e.code in (404, 400):
+            pass
         raise RuntimeError(f"Gemini API HTTP Error {e.code}: {err_msg}")
 
 def extract_with_gemini(
