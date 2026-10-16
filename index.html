@@ -2727,26 +2727,33 @@
       onSearchChange();
     }
 
+    let gpsWatchId = null;
+
     function useGpsLocation() {
       const label = document.getElementById('gpsLocLabel');
       if (!navigator.geolocation) {
         if (label) label.innerText = '❌ GPS tidak didukung';
         return;
       }
+      // Hentikan watch lama jika ada
+      if (gpsWatchId !== null) {
+        navigator.geolocation.clearWatch(gpsWatchId);
+        gpsWatchId = null;
+      }
       if (label) label.innerText = '⏳ Mencari lokasi...';
-      navigator.geolocation.getCurrentPosition(
+      // Real-time: watchPosition update otomatis saat user bergerak
+      gpsWatchId = navigator.geolocation.watchPosition(
         (pos) => {
           userCoords = { lat: pos.coords.latitude, lon: pos.coords.longitude, name: 'Lokasi Saya' };
-          document.getElementById('currentLocationLabel').innerText = '📡 Lokasi Saya';
+          document.getElementById('currentLocationLabel').innerText = '📡 Lokasi Saya (live)';
           localStorage.setItem('sinikajian_coords', JSON.stringify(userCoords));
           closeLocationSheet();
-          showToast('Lokasi GPS aktif - kajian terdekat diperbarui');
           renderKajianList();
           updatePrayerSchedule();
           updateQiblaDisplay();
           if (map) initOrRefreshMap();
           initDesktopMiniMap();
-          if (label) label.innerText = '📡 Gunakan Lokasi HP Saya';
+          if (label) label.innerText = '📡 GPS Live Aktif';
         },
         (err) => {
           const msg = err.code === 1 ? 'Izin lokasi ditolak' : 'Gagal dapat lokasi';
@@ -2754,8 +2761,18 @@
           showToast(msg + ' - pilih kota manual');
           setTimeout(() => { if (label) label.innerText = '📡 Gunakan Lokasi HP Saya'; }, 2500);
         },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
       );
+      if (label) label.innerText = '⏳ Mengaktifkan GPS live...';
+    }
+
+    function stopGpsTracking() {
+      if (gpsWatchId !== null) {
+        navigator.geolocation.clearWatch(gpsWatchId);
+        gpsWatchId = null;
+        document.getElementById('currentLocationLabel').innerText = userCoords.name || 'Cikampek';
+        showToast('GPS live dimatikan');
+      }
     }
 
     function selectCity(name, lat, lon) {
