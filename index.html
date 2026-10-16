@@ -1071,6 +1071,11 @@
       <!-- Drag Handle -->
       <div class="w-12 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto"></div>
 
+      <!-- Flyer -->
+      <div id="detailFlyerContainer" class="hidden">
+        <img id="detailFlyer" src="" class="w-full rounded-2xl object-cover max-h-80" loading="lazy" onerror="this.parentElement.classList.add('hidden')"/>
+      </div>
+
       <div class="flex items-start justify-between gap-3">
         <div>
           <div class="flex items-center gap-2 mb-1">
@@ -2011,9 +2016,11 @@
 
             <!-- Title & Speaker with Monogram Avatar -->
             <div class="flex items-start gap-3">
-              <div class="w-9 h-9 rounded-2xl ${pal.avatar} flex items-center justify-center font-extrabold text-xs shadow-sm shrink-0">
+              ${ev.flyer_url
+                ? `<img src="${ev.flyer_url}" class="w-14 h-14 rounded-2xl object-cover shrink-0 shadow-sm cursor-pointer" loading="lazy" onclick="openDetailSheet(${ev.id})" onerror="this.style.display='none'"/>`
+                : `<div class="w-9 h-9 rounded-2xl ${pal.avatar} flex items-center justify-center font-extrabold text-xs shadow-sm shrink-0">
                 ${initials}
-              </div>
+              </div>`}
               <div class="min-w-0 flex-1">
                 <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white leading-snug line-clamp-2 hover:text-brand-700 transition cursor-pointer" onclick="openDetailSheet(${ev.id})">
                   ${ev.title}
@@ -2448,6 +2455,15 @@
       document.getElementById('detailMasjid').innerText = ev.masjid;
       document.getElementById('detailAddress').innerText = ev.address;
       document.getElementById('detailDescription').innerText = ev.description;
+
+      const flyerContainer = document.getElementById('detailFlyerContainer');
+      const flyerImg = document.getElementById('detailFlyer');
+      if (ev.flyer_url && flyerContainer && flyerImg) {
+        flyerImg.src = ev.flyer_url;
+        flyerContainer.classList.remove('hidden');
+      } else if (flyerContainer) {
+        flyerContainer.classList.add('hidden');
+      }
 
       const coordsEl = document.getElementById('detailCoordsText');
       if (coordsEl) coordsEl.innerText = `GPS: ${ev.lat.toFixed(6)}, ${ev.lon.toFixed(6)}`;
