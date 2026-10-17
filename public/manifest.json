@@ -2,11 +2,11 @@
   "name": "SiniKajian",
   "short_name": "SiniKajian",
   "description": "Temukan majelis ilmu terdekat, jadwal sholat akurat, dan kompas kiblat.",
-  "start_url": "./index.html",
+  "start_url": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#F8F9FA",
-  "theme_color": "#16422C",
+  "background_color": "#FAF8F3",
+  "theme_color": "#0C5C40",
   "icons": [
     {
       "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='128' fill='%2316422C'/%3E%3Cpath d='M256 120c-55 0-100 45-100 100 0 75 100 172 100 172s100-97 100-172c0-55-45-100-100-100zm0 135c-19.3 0-35-15.7-35-35s15.7-35 35-35 35 15.7 35 35-15.7 35-35 35z' fill='%23FBBF24'/%3E%3C/svg%3E",

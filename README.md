@@ -1,23 +1,24 @@
 # SiniKajian
 
-PWA (Progressive Web App) pencarian majelis ilmu sunnah, jadwal sholat astronomis presisi, dan kompas arah kiblat dengan antarmuka native mobile yang ringan, ergonomis, dan cepat.
+**Aplikasi Pencarian Majelis Ilmu Sunnah, Waktu Sholat Astronomis & Kompas Kiblat Presisi**  
+*Ultra-lightweight, zero-build Progressive Web App didukung oleh arsitektur Laravel 13 & Design System Tokens.*
 
-[![Live Demo](https://img.shields.io/badge/Demo-Vercel-black?style=flat-square&logo=vercel)](https://sinikajian.vercel.app)
-[![PWA](https://img.shields.io/badge/PWA-Installable-1E5E3A?style=flat-square)](https://sinikajian.vercel.app)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
+[![Live Demo](https://img.shields.io/badge/Demo-sinikajian.vercel.app-0C5C40?style=for-the-badge&logo=vercel&logoColor=white)](https://sinikajian.vercel.app)
+[![Laravel](https://img.shields.io/badge/Laravel-13.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com)
+[![PWA](https://img.shields.io/badge/PWA-Installable-0C5C40?style=for-the-badge&logo=pwa&logoColor=white)](https://sinikajian.vercel.app)
+[![Design Tokens](https://img.shields.io/badge/DESIGN.md-Google%20Token%20Spec-4285F4?style=for-the-badge)](DESIGN.md)
 
 ---
 
-## Fitur Utama
+## Ringkasan Fitur
 
-- **Navigasi Native Mobile PWA:** Navigasi bawah permanen (Kajian, Peta, Kiblat, Tersimpan) dengan safe-area inset dan micro-interactions responsif.
-- **Pencarian & Radius Geospasial:** Formula Haversine mandiri untuk menghitung jarak presisi dari titik lokasi pengguna ke lokasi masjid tanpa beban server.
-- **Peta Sebaran Interaktif:** Didukung Leaflet interaktif untuk navigasi spasial majelis ilmu di sekitar Anda.
-- **Waktu Sholat Presisi:** Kalkulasi astronomis waktu sholat surya (Subuh, Terbit, Dzuhur, Ashar, Maghrib, Isya) dengan hitung mundur detik real-time.
-- **Kompas Kiblat:** Perhitungan azimuth bola Ka'bah (Mekkah) dengan dukungan sensor orientasi kompas perangkat mobile.
-- **Bookmark & Kehadiran Offline:** Penyimpanan lokal favorit dan konfirmasi kehadiran majelis ilmu.
-- **Integrasi Supabase:** Skema database PostgreSQL dengan Row Level Security (RLS) untuk antrean moderasi kajian baru.
-- **Offline Shell PWA:** Service Worker dengan strategi cache-first untuk aset inti dan manifest standalone.
+1. **Jadwal Kajian Sunnah Real-Time:** Filter kategori majelis ilmu (Aqidah, Fiqih, Hadits, Sirah, Tazkiyatun Nufus, Bahasa Arab) serta jarak radius terdekat dengan formula Haversine geospasial.
+2. **Peta Interaktif Sebaran Majelis:** Didukung Leaflet dengan tile CartoDB Voyager dan bottom sheet drawer info detail.
+3. **Kompas Arah Kiblat Presisi:** Formula spherical azimuth langsung ke Ka'bah ($21.4225^\circ\text{ N}, 39.8262^\circ\text{ E}$) dipadu sensor gyro / accelerometer mobile dan getaran haptic feedback.
+4. **Waktu Sholat Astronomis:** Algoritma posisi matahari mandiri dengan penyesuaian sudut ikhtiyat dan hitung mundur menuju waktu sholat berikutnya.
+5. **Autentikasi & Keamanan Kredensial Pengguna:** Form login & register dengan hashing bcrypt, proteksi CSRF, sesi cookie terenkripsi, dan proteksi credential leakage.
+6. **Koleksi & Riwayat Kehadiran:** Simpan kajian favorit serta logging presensi majelis ilmu yang telah dihadiri.
+7. **PWA Standalone & Offline Shell:** Dilengkapi Service Worker v13.0, manifest maskable icon, dan cache stale-while-revalidate.
 
 ---
 
@@ -25,14 +26,26 @@ PWA (Progressive Web App) pencarian majelis ilmu sunnah, jadwal sholat astronomi
 
 ```
 SiniKajian/
-├── index.html            # Single Page Application (Tailwind CSS, Leaflet, ES6+)
-├── manifest.json         # Web App Manifest untuk instalasi layar utama
-├── sw.js                 # Service Worker offline caching & fallback
-├── vercel.json           # Konfigurasi routing Vercel, region sin1, cache headers
-├── supabase/
-│   └── schema.sql        # Migrasi tabel kajian, indeks, dan kebijakan RLS
-├── test_algorithms.js    # Pengujian invariant matematika (Haversine, Kiblat, Sholat)
-└── test_interactive.js   # Pengujian suite interaksi DOM dan fungsionalitas
+├── DESIGN.md                 # Token desain Google Design.md (linter terverifikasi)
+├── tailwind.theme.json       # Export tokens untuk styling Tailwind
+├── app/
+│   ├── Http/Controllers/    # KajianController, AuthController
+│   └── Models/              # Kajian, User, Bookmark, Attendance
+├── database/
+│   ├── migrations/          # Migrasi tabel users, kajians, bookmarks, attendances
+│   ├── seeders/             # KajianSeeder (13 data kajian sunnah awal)
+│   └── database.sqlite      # SQLite database mandiri
+├── resources/views/
+│   ├── layouts/app.blade.php # Layout utama PWA (bottom navigation bar & safe area)
+│   ├── kajian/              # Views: index, map, qibla, saved
+│   └── auth/                # Views: login, register, profile
+├── public/
+│   ├── index.php            # Front controller
+│   ├── sw.js                # Service Worker PWA v13.0
+│   └── manifest.json        # Web App Manifest standalone
+├── routes/web.php           # Routing web & API JSON
+├── vercel.json              # Konfigurasi Single-Lambda vercel-php@0.7.3 & headers
+└── api/index.php            # Bridge serverless ephemeral /tmp SQLite untuk Vercel
 ```
 
 ---
@@ -49,34 +62,31 @@ SiniKajian/
 
 ---
 
-## Setup & Menjalankan Lokal
+## Menjalankan di Lingkungan Lokal
 
 ```bash
-# Jalankan server lokal
-python -m http.server 4321
+# 1. Pastikan dependensi terpasang
+composer install
 
-# Buka di browser
-# http://127.0.0.1:4321
-```
+# 2. Setup database dan seeder data
+touch database/database.sqlite
+php artisan migrate --seed
 
-### Menjalankan Pengujian
-
-```bash
-node test_algorithms.js
-node test_interactive.js
-```
-
----
-
-## Deploy ke Vercel
-
-```bash
-npx --yes vercel link --yes
-npx --yes vercel deploy --prod --yes
+# 3. Jalankan development server
+php artisan serve
+# Kunjungi http://127.0.0.1:8000
 ```
 
 ---
 
-## Integrasi Database Supabase
+## Kredensial Default Pengujian (Seeded)
 
-Jalankan script SQL di file `supabase/schema.sql` pada menu **SQL Editor** di dashboard Supabase Anda. Tabel `public.kajian` akan otomatis terkonfigurasi dengan Row Level Security dan data awal terverifikasi.
+- **Email:** `jamaah@sinikajian.id`
+- **Kata Sandi:** `sunnah12345`
+*(Atau buat akun baru secara instan melalui menu Akun)*
+
+---
+
+<p align="center">
+  <sub>© 2026 Rizky Dwi — SiniKajian · Laravel 13 · PWA · Vercel Serverless</sub>
+</p>

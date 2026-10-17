@@ -1,27 +1,30 @@
-# Dependencies
-node_modules/
+/vendor
+/.env
+/.env.*
+!.env.example
+.phpunit.result.cache
+/storage/*.key
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
 
-# Local Environment
-.env
-.env.local
-.env.*.local
+# Node
+/node_modules
+npm-debug.log
+yarn-error.log
 
-# Vercel
-.vercel/
-
-# Logs & Cache
-*.log
+# Mac / Windows
 .DS_Store
 Thumbs.db
-
-# Test outputs
+*.png
 rendered_dom.html
-dump_mobile.html
-test_vp.html
+dump_*.html
+test_*.html
 probe.html
 capture_cdp.py
-*.png
+legacy_index.html
 
+# Vercel
 .vercel
-.env*
 supabase/.temp

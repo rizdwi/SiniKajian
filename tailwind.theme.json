@@ -1,0 +1,83 @@
+{
+  "theme": {
+    "extend": {
+      "colors": {
+        "primary": "#0c5c40",
+        "secondary": "#2c654c",
+        "tertiary": "#b45309",
+        "neutral": "#faf8f3",
+        "surface": "#ffffff",
+        "card-border": "#e2e8f0",
+        "text-primary": "#0f172a",
+        "text-secondary": "#475569",
+        "text-inverse": "#ffffff",
+        "gold-accent": "#fcd34d"
+      },
+      "fontFamily": {
+        "h1": [
+          "Plus Jakarta Sans"
+        ],
+        "h2": [
+          "Plus Jakarta Sans"
+        ],
+        "body-md": [
+          "Plus Jakarta Sans"
+        ],
+        "body-sm": [
+          "Plus Jakarta Sans"
+        ],
+        "arabic": [
+          "Amiri"
+        ]
+      },
+      "fontSize": {
+        "h1": [
+          "1.5rem",
+          {
+            "letterSpacing": "-0.02em",
+            "fontWeight": "700"
+          }
+        ],
+        "h2": [
+          "1.25rem",
+          {
+            "fontWeight": "600"
+          }
+        ],
+        "body-md": [
+          "0.9375rem",
+          {
+            "fontWeight": "400"
+          }
+        ],
+        "body-sm": [
+          "0.8125rem",
+          {
+            "fontWeight": "400"
+          }
+        ],
+        "arabic": [
+          "1.125rem",
+          {
+            "fontWeight": "700"
+          }
+        ]
+      },
+      "borderRadius": {
+        "sm": "6px",
+        "md": "12px",
+        "lg": "16px",
+        "xl": "24px",
+        "full": "9999px"
+      },
+      "spacing": {
+        "xs": "4px",
+        "sm": "8px",
+        "md": "12px",
+        "lg": "16px",
+        "xl": "24px",
+        "xxl": "32px"
+      }
+    }
+  }
+}
