@@ -49,3 +49,7 @@ Route::get('/sitemap.xml', function () {
     $xml .= '</urlset>';
     return response($xml, 200)->header('Content-Type', 'application/xml');
 });
+
+// Social login (Google & Facebook)
+Route::get('/auth/{provider}', [\App\Http\Controllers\SocialAuthController::class, 'redirect'])->name('social.redirect');
+Route::get('/auth/{provider}/callback', [\App\Http\Controllers\SocialAuthController::class, 'callback'])->name('social.callback');
