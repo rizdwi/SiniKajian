@@ -33,6 +33,24 @@ if (file_exists($sourceDb)) {
     @touch($targetDb);
 }
 
+// Pastikan skema tabel users selalu memiliki kolom provider & provider_id (self-healing migration)
+if (file_exists($targetDb)) {
+    try {
+        $pdo = new PDO('sqlite:' . $targetDb);
+        $cols = $pdo->query("PRAGMA table_info(users)")->fetchAll(PDO::FETCH_COLUMN, 1);
+        if (!empty($cols)) {
+            if (!in_array('provider', $cols)) {
+                $pdo->exec("ALTER TABLE users ADD COLUMN provider VARCHAR(255) NULL");
+            }
+            if (!in_array('provider_id', $cols)) {
+                $pdo->exec("ALTER TABLE users ADD COLUMN provider_id VARCHAR(255) NULL");
+            }
+        }
+    } catch (\Throwable $e) {
+        // Abaikan jika tabel users belum diinisialisasi
+    }
+}
+
 // 3. Konfigurasi runtime environment overrides untuk Vercel Serverless
 putenv('VERCEL=1');
 $_ENV['VERCEL'] = '1';

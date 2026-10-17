@@ -124,7 +124,8 @@ class SocialAuthController extends Controller
             return redirect()->intended(route('kajian.index'));
 
         } catch (\Exception $e) {
-            return redirect()->route('login')->withErrors(['social' => 'Login gagal: ' . $e->getMessage()]);
+            \Illuminate\Support\Facades\Log::error('Social OAuth Error [' . $provider . ']: ' . $e->getMessage());
+            return redirect()->route('login')->withErrors(['social' => 'Login dengan Google gagal diproses. Silakan coba kembali atau gunakan login email.']);
         }
     }
 }

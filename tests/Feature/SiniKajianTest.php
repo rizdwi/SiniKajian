@@ -112,4 +112,27 @@ class SiniKajianTest extends TestCase
             $response->assertSee('Saya ingin hadir');
         }
     }
+
+    /**
+     * Uji penyimpanan akun pengguna via OAuth provider (Google/Facebook).
+     */
+    public function test_social_user_can_be_stored_with_provider_columns(): void
+    {
+        $uniqueEmail = 'oauth_' . uniqid() . '@example.com';
+        $user = User::create([
+            'name' => 'OAuth User Test',
+            'email' => $uniqueEmail,
+            'password' => Hash::make(\Illuminate\Support\Str::random(16)),
+            'provider' => 'google',
+            'provider_id' => '108400634674929037655',
+        ]);
+
+        $this->assertDatabaseHas('users', [
+            'email' => $uniqueEmail,
+            'provider' => 'google',
+            'provider_id' => '108400634674929037655'
+        ]);
+        $this->assertEquals('google', $user->provider);
+        $this->assertEquals('108400634674929037655', $user->provider_id);
+    }
 }
