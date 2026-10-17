@@ -21,10 +21,13 @@ class SocialAuthController extends Controller
 
         $config = config("services.{$provider}");
 
+        // Force HTTPS untuk redirect URI (Vercel proxy)
+        $redirectUri = str_replace('http://', 'https://', route('social.callback', $provider));
+
         if ($provider === 'google') {
             $params = http_build_query([
                 'client_id' => $config['client_id'],
-                'redirect_uri' => route('social.callback', $provider),
+                'redirect_uri' => $redirectUri,
                 'response_type' => 'code',
                 'scope' => 'openid email profile',
                 'access_type' => 'online',
@@ -36,7 +39,7 @@ class SocialAuthController extends Controller
         // facebook
         $params = http_build_query([
             'client_id' => $config['client_id'],
-            'redirect_uri' => route('social.callback', $provider),
+            'redirect_uri' => $redirectUri,
             'response_type' => 'code',
             'scope' => 'email,public_profile',
         ]);
@@ -58,7 +61,7 @@ class SocialAuthController extends Controller
         }
 
         $config = config("services.{$provider}");
-        $redirectUri = route('social.callback', $provider);
+        $redirectUri = str_replace('http://', 'https://', route('social.callback', $provider));
 
         try {
             if ($provider === 'google') {
