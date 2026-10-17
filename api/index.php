@@ -1,5 +1,18 @@
 <?php
 
+if (isset($_GET['probe'])) {
+    header('Content-Type: text/plain');
+    echo "PHP Version: " . PHP_VERSION . "\n";
+    echo "Current dir: " . __DIR__ . "\n";
+    echo "Parent dir: " . dirname(__DIR__) . "\n";
+    $files = glob(dirname(__DIR__) . '/*');
+    echo "Files in root: " . implode(', ', $files) . "\n";
+    echo "Resources dir exists: " . (is_dir(dirname(__DIR__) . '/resources') ? 'YES' : 'NO') . "\n";
+    echo "Routes dir exists: " . (is_dir(dirname(__DIR__) . '/routes') ? 'YES' : 'NO') . "\n";
+    echo "Vendor dir exists: " . (is_dir(dirname(__DIR__) . '/vendor') ? 'YES' : 'NO') . "\n";
+    exit;
+}
+
 ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
