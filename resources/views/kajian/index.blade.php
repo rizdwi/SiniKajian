@@ -546,12 +546,10 @@
   // Titik koordinat Ka'bah (Mekkah)
   const KAABA_COORDS = { lat: 21.4225, lon: 39.8262 };
 
-  // Titik lokasi default (Jakarta Selatan)
-  let userCoords = {
-    lat: -6.2615,
-    lon: 106.8106,
-    name: 'Jakarta Selatan'
-  };
+  // Titik lokasi default (disinkronkan dari SiniKajianGeo)
+  let userCoords = (typeof window.SiniKajianGeo !== 'undefined')
+    ? window.SiniKajianGeo.getCoords()
+    : { lat: -6.8851, lon: 107.6136, name: 'Dago, Bandung' };
 
   // State Filter Aktif
   let activeSearch = '';
@@ -1043,38 +1041,54 @@
     renderKajianFeed();
   }
 
-  // 6. Lokasi GPS & Kota
+  // 6. Lokasi GPS & Kota (Auto Engine)
   function useGpsLocation() {
-    if (!navigator.geolocation) {
-      alert('Perangkat Anda tidak mendukung fitur geolokasi GPS.');
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
+    if (window.SiniKajianGeo) {
+      window.SiniKajianGeo.requestLiveGps();
+    } else if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((pos) => {
         userCoords = {
           lat: pos.coords.latitude,
           lon: pos.coords.longitude,
           name: 'Lokasi GPS Saya'
         };
-        document.getElementById('currentLocationName').innerText = userCoords.name;
+        const el = document.getElementById('currentLocationName');
+        if (el) el.innerText = userCoords.name;
         updatePrayerDisplay();
         renderKajianFeed();
-      },
-      (err) => {
-        alert('Gagal mendeteksi lokasi GPS. Mempertahankan lokasi default.');
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
+      }, (err) => {
+        alert('Gagal mendeteksi lokasi GPS.');
+      }, { enableHighAccuracy: true });
+    }
   }
 
   function setCityLocation(name, lat, lon) {
-    userCoords = { lat, lon, name };
-    document.getElementById('currentLocationName').innerText = name;
+    if (window.SiniKajianGeo) {
+      window.SiniKajianGeo.setManualCity(name, lat, lon);
+    } else {
+      userCoords = { lat, lon, name };
+      const el = document.getElementById('currentLocationName');
+      if (el) el.innerText = name;
+      updatePrayerDisplay();
+      renderKajianFeed();
+    }
     closeLocationModal();
-    updatePrayerDisplay();
-    renderKajianFeed();
   }
+
+  // Dengarkan event pembaruan GPS otomatis dari background
+  window.addEventListener('sk:location-updated', (e) => {
+    if (e.detail) {
+      userCoords = {
+        lat: e.detail.lat,
+        lon: e.detail.lon,
+        name: e.detail.name || 'Lokasi Saya'
+      };
+      const el = document.getElementById('currentLocationName');
+      if (el) el.innerText = userCoords.name;
+      updatePrayerDisplay();
+      renderKajianFeed();
+    }
+  });
 
   // 7. Rute & Berbagi
   function openGoogleMapsRoute(lat, lon) {
@@ -1153,6 +1167,11 @@
 
   // Inisialisasi awal
   document.addEventListener('DOMContentLoaded', () => {
+    if (window.SiniKajianGeo) {
+      userCoords = window.SiniKajianGeo.getCoords();
+      const el = document.getElementById('currentLocationName');
+      if (el) el.innerText = userCoords.name || 'Dago, Bandung';
+    }
     updatePrayerDisplay();
     renderKajianFeed();
     setInterval(updatePrayerDisplay, 60000); // Perbarui waktu sholat tiap menit

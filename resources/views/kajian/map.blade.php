@@ -136,9 +136,21 @@
       setTimeout(initMap, 500);
       return;
     }
-    const savedLoc = JSON.parse(localStorage.getItem('sk_user_loc') || 'null');
-    const centerLat = savedLoc ? savedLoc.lat : -6.2088;
-    const centerLon = savedLoc ? savedLoc.lon : 106.8456;
+
+    let centerLat = -6.8851;
+    let centerLon = 107.6136;
+
+    if (window.SiniKajianGeo) {
+      const coords = window.SiniKajianGeo.getCoords();
+      centerLat = coords.lat;
+      centerLon = coords.lon;
+    } else {
+      const savedLoc = JSON.parse(localStorage.getItem('sk_user_coords') || localStorage.getItem('sk_user_loc') || 'null');
+      if (savedLoc) {
+        centerLat = savedLoc.lat;
+        centerLon = savedLoc.lon;
+      }
+    }
 
     mapInstance = new google.maps.Map(document.getElementById('fullMap'), {
       center: { lat: centerLat, lng: centerLon },
@@ -151,12 +163,17 @@
 
     mapMarkers = [];
 
-    if (savedLoc) {
-      setUserLocationMarker(savedLoc.lat, savedLoc.lon);
-    }
-
+    setUserLocationMarker(centerLat, centerLon);
     renderMapMarkers(rawEvents);
   }
+
+  // Dengarkan pembaruan GPS otomatis dari background
+  window.addEventListener('sk:location-updated', (e) => {
+    if (e.detail && mapInstance) {
+      setUserLocationMarker(e.detail.lat, e.detail.lon);
+      renderListView(rawEvents);
+    }
+  });
 
   function renderMapMarkers(events) {
     mapMarkers.forEach(m => m.setMap(null));
@@ -344,18 +361,20 @@
   }
 
   function recenterMap() {
-    if ('geolocation' in navigator) {
+    if (window.SiniKajianGeo) {
+      window.SiniKajianGeo.requestLiveGps();
+      const coords = window.SiniKajianGeo.getCoords();
+      setUserLocationMarker(coords.lat, coords.lon);
+      mapInstance.flyTo([coords.lat, coords.lon], 14);
+    } else if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition((pos) => {
         const lat = pos.coords.latitude;
         const lon = pos.coords.longitude;
-        localStorage.setItem('sk_user_loc', JSON.stringify({ lat, lon, name: 'Lokasi Anda' }));
         setUserLocationMarker(lat, lon);
-        mapInstance.flyTo([lat, lon], 13);
+        mapInstance.flyTo([lat, lon], 14);
       }, (err) => {
         alert('Gagal mendeteksi lokasi GPS: ' + err.message);
-      });
-    } else {
-      alert('Geolokasi tidak didukung peramban.');
+      }, { enableHighAccuracy: true });
     }
   }
 

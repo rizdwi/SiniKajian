@@ -241,6 +241,9 @@
     }, 5000);
   </script>
 
+  <!-- Zero-Click Auto Geolocation & Sensor Engine -->
+  <script src="{{ asset('js/geo-engine.js') }}"></script>
+
   @yield('scripts')
 </body>
 </html>

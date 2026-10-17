@@ -20,18 +20,21 @@
     </button>
   </header>
 
-  <!-- 2. Location Capsule Card (Figma Screen 4: Soft Mint Bar) -->
+  <!-- 2. Location Capsule Card (Figma Screen 4: Soft Mint Bar - Auto Updating) -->
   <div class="rounded-2xl bg-[#E8F5F3] border border-[#D1ECE7] p-3 flex items-center justify-between gap-3 shadow-2xs">
     <div class="flex items-center gap-2.5 min-w-0">
-      <div class="w-8 h-8 rounded-full bg-[#1D4D4F] text-white flex items-center justify-center shrink-0 shadow-2xs">
+      <div id="qiblaGpsPinIcon" class="w-8 h-8 rounded-full bg-[#1D4D4F] text-white flex items-center justify-center shrink-0 shadow-2xs transition-all">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
         </svg>
       </div>
       <div class="min-w-0">
-        <h3 id="qiblaLocationName" class="text-xs font-bold text-[#1C2224] truncate">Dago, Bandung</h3>
-        <p id="qiblaCoordinates" class="text-[10px] text-[#607072] font-mono truncate">6.8851° LS, 107.6136° BT</p>
+        <div class="flex items-center gap-1.5">
+          <h3 id="qiblaLocationName" class="text-xs font-bold text-[#1C2224] truncate">Mendeteksi Lokasi...</h3>
+          <span id="gpsLiveBadge" class="hidden w-2 h-2 rounded-full bg-emerald-500 animate-ping" title="GPS Aktif"></span>
+        </div>
+        <p id="qiblaCoordinates" class="text-[10px] text-[#607072] font-mono truncate">Menghitung koordinat...</p>
       </div>
     </div>
     <button onclick="promptChangeLocation()" class="text-xs font-bold text-[#1D4D4F] hover:underline px-2 py-1 shrink-0">
@@ -49,12 +52,12 @@
     </div>
   </div>
 
-  <!-- 4. Compass Dial Card (Figma Screen 4) -->
+  <!-- 4. Compass Dial Card (Figma Screen 4 - Auto Live Tracking) -->
   <div class="w-full bg-white rounded-3xl p-5 shadow-xs border border-[#E5ECEB] flex flex-col items-center relative overflow-hidden">
     
-    <!-- Compass SVG Visualization -->
-    <div class="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center my-1 select-none">
-      <svg id="compassSvg" class="w-full h-full transition-transform duration-200 ease-out" viewBox="0 0 300 300">
+    <!-- Compass SVG Visualization with Auto-Gyro & Touch Rotation -->
+    <div id="compassTouchContainer" class="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center my-1 select-none cursor-grab active:cursor-grabbing">
+      <svg id="compassSvg" class="w-full h-full transition-transform duration-100 ease-out" viewBox="0 0 300 300">
         <defs>
           <!-- Mint green transparent gradient for the Qibla Wedge/Cone -->
           <radialGradient id="qiblaWedgeGrad" cx="50%" cy="50%" r="50%">
@@ -104,9 +107,8 @@
         <!-- Rotating Dial Layer (Contains Qibla Target Cone, Ka'bah Badge, and Needle) -->
         <g id="rotatingDialGroup" transform="rotate(0 150 150)">
           
-          <!-- Qibla Target Direction Wedge / Sector Cone (~295.2 deg, ~20 deg spread) -->
-          <!-- Sweeps from 285° to 305° centered at (150, 150) -->
-          <g transform="rotate(295.2 150 150)">
+          <!-- Qibla Target Direction Wedge / Sector Cone -->
+          <g id="qiblaTargetGroup" transform="rotate(295.2 150 150)">
             <path d="M 150 150 L 126 28 A 124 124 0 0 1 174 28 Z" fill="url(#qiblaWedgeGrad)" />
             
             <!-- Ka'bah Icon Badge at Azimuth Rim -->
@@ -160,17 +162,17 @@
   <div class="bg-white rounded-2xl p-4 border border-[#E5ECEB] shadow-xs space-y-3">
     <!-- Top Row: Icon and Title -->
     <div class="flex items-center gap-2.5">
-      <div id="statusIconWrap" class="w-7 h-7 rounded-full bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center font-bold text-xs shrink-0 border border-[#D1EAE5]">
+      <div id="statusIconWrap" class="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
         ✓
       </div>
       <div>
-        <h4 id="statusTitle" class="text-xs font-bold text-[#1C2224]">Kompas siap digunakan</h4>
+        <h4 id="statusTitle" class="text-xs font-bold text-[#1C2224]">Kompas aktif & mengikuti arah otomatis</h4>
       </div>
     </div>
 
     <!-- Description Text -->
     <p class="text-[11px] text-[#607072] leading-relaxed">
-      Letakkan ponsel mendatar dan jauhkan dari benda logam. Ikuti arah yang mengarah ke Ka'bah.
+      GPS dan kompas langsung aktif mengikuti posisi Anda. Letakkan ponsel mendatar untuk arah Ka'bah yang paling presisi.
     </p>
 
     <!-- Full-Width Pill Action Button: Kalibrasi kompas -->
@@ -178,87 +180,91 @@
       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
       </svg>
-      <span>Kalibrasi kompas</span>
+      <span>Kalibrasi Ulang Sensor</span>
     </button>
   </div>
 
 </div>
 
 <script>
-  // Ka'bah Geographical Coordinates (Mecca, Saudi Arabia)
-  const KAABA_LAT = 21.4225;
-  const KAABA_LON = 39.8262;
-
   let currentLat = -6.8851;
   let currentLon = 107.6136;
   let qiblaAzimuth = 295.2;
   let currentHeading = 0;
-  let hasSensorPermission = false;
+  let isDragging = false;
+  let dragStartAngle = 0;
 
   document.addEventListener('DOMContentLoaded', () => {
-    initLocationAndQibla();
+    // 1. Langsung baca koordinat otomatis dari Geo Engine begitu halaman dibuka
+    syncFromGeoEngine();
+
+    // 2. Langsung mulai dengarkan sensor kompas otomatis tanpa perlu klik tombol
     autoStartCompass();
+
+    // 3. Tambahkan touch / drag listener agar bisa diputar halus secara interaktif
+    setupInteractiveDrag();
   });
 
-  function initLocationAndQibla() {
-    try {
-      const saved = JSON.parse(localStorage.getItem('sk_user_loc') || 'null');
-      if (saved && saved.lat && saved.lon) {
-        currentLat = Number(saved.lat);
-        currentLon = Number(saved.lon);
-        document.getElementById('qiblaLocationName').textContent = saved.name || 'Lokasi Tersimpan';
-      } else {
-        document.getElementById('qiblaLocationName').textContent = 'Dago, Bandung';
-      }
-    } catch(e) {
-      console.warn('LocalStorage error:', e);
+  // Dengarkan pembaruan GPS otomatis dari background
+  window.addEventListener('sk:location-updated', (e) => {
+    if (e.detail) {
+      applyLocationData(e.detail);
     }
+  });
 
-    // Format coordinates label: e.g. 6.8851° LS, 107.6136° BT
+  function syncFromGeoEngine() {
+    if (window.SiniKajianGeo) {
+      const data = window.SiniKajianGeo.getCoords();
+      applyLocationData(data);
+    } else {
+      // Fallback lokal
+      applyLocationData({
+        lat: currentLat,
+        lon: currentLon,
+        name: 'Dago, Bandung',
+        qiblaAzimuth: 295.2,
+        kaabaDistance: 7924,
+        isGps: false
+      });
+    }
+  }
+
+  function applyLocationData(data) {
+    currentLat = data.lat;
+    currentLon = data.lon;
+    qiblaAzimuth = data.qiblaAzimuth || 295.2;
+
+    document.getElementById('qiblaLocationName').textContent = data.name || 'Lokasi Terdeteksi';
+    
     const latStr = `${Math.abs(currentLat).toFixed(4)}° ${currentLat < 0 ? 'LS' : 'LU'}`;
     const lonStr = `${Math.abs(currentLon).toFixed(4)}° ${currentLon < 0 ? 'BB' : 'BT'}`;
     document.getElementById('qiblaCoordinates').textContent = `${latStr}, ${lonStr}`;
 
-    // Calculate exact astronomical Qibla Azimuth
-    qiblaAzimuth = calculateQibla(currentLat, currentLon);
+    const dist = data.kaabaDistance || 7924;
+    document.getElementById('distKaabaText').textContent = dist.toLocaleString('id-ID') + ' km';
+
     document.getElementById('qiblaAngleText').textContent = qiblaAzimuth.toFixed(1).replace('.', ',') + '°';
 
-    // Calculate distance
-    const dist = calculateHaversine(currentLat, currentLon, KAABA_LAT, KAABA_LON);
-    document.getElementById('distKaabaText').textContent = Math.round(dist).toLocaleString('id-ID') + ' km';
+    // Putar target wedge & icon Ka'bah ke sudut Azimuth akurat
+    const targetGroup = document.getElementById('qiblaTargetGroup');
+    if (targetGroup) {
+      targetGroup.setAttribute('transform', `rotate(${qiblaAzimuth} 150 150)`);
+    }
 
-    updateCompassDisplay(0);
-  }
+    if (data.isGps) {
+      const liveBadge = document.getElementById('gpsLiveBadge');
+      if (liveBadge) liveBadge.classList.remove('hidden');
+    }
 
-  function calculateQibla(lat, lon) {
-    const phiK = KAABA_LAT * Math.PI / 180;
-    const lambdaK = KAABA_LON * Math.PI / 180;
-    const phi = lat * Math.PI / 180;
-    const lambda = lon * Math.PI / 180;
-
-    const numerator = Math.sin(lambdaK - lambda);
-    const denominator = Math.cos(phi) * Math.tan(phiK) - Math.sin(phi) * Math.cos(lambdaK - lambda);
-
-    let q = Math.atan2(numerator, denominator) * 180 / Math.PI;
-    return (q + 360) % 360;
-  }
-
-  function calculateHaversine(lat1, lon1, lat2, lon2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
+    updateCompassDisplay(currentHeading);
   }
 
   function autoStartCompass() {
     if (typeof DeviceOrientationEvent !== 'undefined') {
       if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-        // iOS requires user interaction, button will handle it
+        // iOS Safari membutuhkan izin interaksi pertama kali jika belum tersimpan
       } else {
+        // Android Chrome / Standard Browsers: langsung pasang listener seketika
         window.addEventListener('deviceorientationabsolute', handleOrientation, true);
         window.addEventListener('deviceorientation', handleOrientation, true);
       }
@@ -270,33 +276,31 @@
       DeviceOrientationEvent.requestPermission()
         .then(response => {
           if (response === 'granted') {
-            hasSensorPermission = true;
             window.addEventListener('deviceorientation', handleOrientation, true);
-            showSensorReadyStatus();
+            showSensorReadyStatus('Sensor iOS Terkalibrasi & Aktif');
           } else {
-            alert('Izin sensor orientasi kompas diperlukan untuk melacak arah secara real-time.');
+            alert('Izin sensor gerak kompas diperlukan di iOS untuk navigasi real-time.');
           }
         })
         .catch(err => {
           window.addEventListener('deviceorientation', handleOrientation, true);
-          showSensorReadyStatus();
+          showSensorReadyStatus('Sensor Kompas Aktif');
         });
     } else {
-      // Android / desktop fallback
       window.addEventListener('deviceorientationabsolute', handleOrientation, true);
       window.addEventListener('deviceorientation', handleOrientation, true);
-      showSensorReadyStatus();
-      alert('Putar ponsel perlahan membentuk pola angka 8 (delapan) di udara untuk mengkalibrasi sensor kompas internal.');
+      showSensorReadyStatus('Sensor Kompas Terkalibrasi');
+      alert('Putar perlahan ponsel Anda membentuk pola angka 8 di udara untuk mengkalibrasi magnetometer.');
     }
   }
 
-  function showSensorReadyStatus() {
+  function showSensorReadyStatus(msg) {
     const statusWrap = document.getElementById('statusIconWrap');
     const statusTitle = document.getElementById('statusTitle');
     if (statusWrap && statusTitle) {
       statusWrap.textContent = '✓';
       statusWrap.className = 'w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs';
-      statusTitle.textContent = 'Sensor Kompas Aktif & Akurat';
+      statusTitle.textContent = msg || 'Kompas aktif & mengikuti arah';
     }
   }
 
@@ -328,14 +332,14 @@
     const guidanceText = document.getElementById('guidanceText');
     if (!dial) return;
 
-    // Rotate compass dial opposite to phone heading
+    // Putar dial piringan kompas berlawanan dengan arah heading HP
     dial.setAttribute('transform', `rotate(${-heading} 150 150)`);
 
-    // Difference between phone heading and qibla azimuth
+    // Selisih sudut antara heading ponsel dengan sudut Kiblat
     const diff = Math.abs((heading - qiblaAzimuth + 540) % 360 - 180);
 
     if (diff <= 5) {
-      // Exactly pointing to Ka'bah!
+      // Tepat selaras mengarah ke Ka'bah!
       if (guidancePill) {
         guidancePill.className = 'inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#1D4D4F] text-white shadow-md text-[11px] font-bold animate-pulse';
         guidanceText.textContent = 'Tepat Menghadap Ka\'bah! ✓';
@@ -356,8 +360,50 @@
     }
   }
 
+  function setupInteractiveDrag() {
+    const container = document.getElementById('compassTouchContainer');
+    if (!container) return;
+
+    function getAngle(e) {
+      const rect = container.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const rad = Math.atan2(clientY - cy, clientX - cx);
+      return (rad * 180 / Math.PI + 90 + 360) % 360;
+    }
+
+    container.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      dragStartAngle = getAngle(e) - currentHeading;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      currentHeading = Math.round((getAngle(e) - dragStartAngle + 360) % 360);
+      updateCompassDisplay(currentHeading);
+    });
+
+    window.addEventListener('mouseup', () => { isDragging = false; });
+
+    container.addEventListener('touchstart', (e) => {
+      isDragging = true;
+      dragStartAngle = getAngle(e) - currentHeading;
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (e) => {
+      if (!isDragging) return;
+      currentHeading = Math.round((getAngle(e) - dragStartAngle + 360) % 360);
+      updateCompassDisplay(currentHeading);
+    }, { passive: true });
+
+    window.addEventListener('touchend', () => { isDragging = false; });
+  }
+
   function promptChangeLocation() {
-    const city = prompt('Masukkan nama kota atau daerah Anda (contoh: Bandung, Jakarta, Surabaya, Yogyakarta):', 'Bandung');
+    const currentName = document.getElementById('qiblaLocationName').textContent || 'Bandung';
+    const city = prompt('Masukkan nama kota atau daerah Anda (contoh: Bandung, Jakarta, Surabaya, Yogyakarta):', currentName);
     if (!city) return;
 
     const lower = city.toLowerCase();
@@ -378,15 +424,16 @@
       newLat = -5.1477; newLon = 119.4327;
     }
 
-    try {
-      localStorage.setItem('sk_user_loc', JSON.stringify({
-        name: city,
+    if (window.SiniKajianGeo) {
+      window.SiniKajianGeo.setManualCity(city, newLat, newLon);
+    } else {
+      applyLocationData({
         lat: newLat,
-        lon: newLon
-      }));
-    } catch(e) {}
-
-    initLocationAndQibla();
+        lon: newLon,
+        name: city,
+        isGps: false
+      });
+    }
   }
 </script>
 @endsection
