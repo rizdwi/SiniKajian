@@ -90,28 +90,17 @@ class AuthController extends Controller
     /**
      * Tampilkan dashboard profil jamaah & ringkasan akun.
      */
-    public function profile(): View
+    public function profile(): \Illuminate\Http\RedirectResponse|View
     {
-        /** @var User|null $user */
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('error', 'Silakan login dulu.');
+        }
+        /** @var User $user */
         $user = Auth::user();
 
-        if (!$user) {
-            $user = new User([
-                'name' => 'Ahmad Fauzan',
-                'email' => 'ahmad.fauzan@contoh.id',
-                'role' => 'Penuntut Ilmu',
-            ]);
-            $user->id = 0;
-            $bookmarkedKajians = \App\Models\Kajian::latest()->take(3)->get();
-            $attendances = collect([
-                (object)['id' => 1, 'kajian' => $bookmarkedKajians->first()],
-            ]);
-            $submittedKajians = collect();
-        } else {
-            $bookmarkedKajians = $user->bookmarkedKajians()->get();
-            $attendances = $user->attendances()->with('kajian')->latest()->take(10)->get();
-            $submittedKajians = $user->submittedKajians()->latest()->get();
-        }
+        $bookmarkedKajians = $user->bookmarkedKajians()->get();
+        $attendances = $user->attendances()->with('kajian')->latest()->take(10)->get();
+        $submittedKajians = $user->submittedKajians()->latest()->get();
 
         return view('auth.profile', [
             'user' => $user,
@@ -119,7 +108,6 @@ class AuthController extends Controller
             'bookmarkedKajians' => $bookmarkedKajians,
             'attendances' => $attendances,
             'submittedKajians' => $submittedKajians,
-            'isGuest' => !Auth::check(),
         ]);
     }
 
