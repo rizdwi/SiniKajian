@@ -536,11 +536,6 @@
   // Seluruh database kajian dari controller Laravel 13
   const rawKajians = {!! $allKajiansJson !!};
   const userBookmarkIds = new Set({!! json_encode($userBookmarks) !!});
-  // Merge bookmark guest dari localStorage
-  try {
-    const guestSaved = JSON.parse(localStorage.getItem('sk_bookmarks') || '[]');
-    guestSaved.forEach(id => userBookmarkIds.add(id));
-  } catch(e) {}
   const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
   // Titik koordinat Ka'bah (Mekkah)
@@ -1118,16 +1113,9 @@
 
   // 8. Bookmark Interaktif
   function toggleBookmarkAction(kajianId, btnEl) {
-    // Untuk guest: simpan di localStorage
     const isLoggedIn = {{ Auth::check() ? 'true' : 'false' }};
     if (!isLoggedIn) {
-      let saved = JSON.parse(localStorage.getItem('sk_bookmarks') || '[]');
-      const idx = saved.indexOf(kajianId);
-      const nowSaved = idx === -1;
-      if (nowSaved) saved.push(kajianId); else saved.splice(idx, 1);
-      localStorage.setItem('sk_bookmarks', JSON.stringify(saved));
-      updateBookmarkBtn(btnEl, nowSaved);
-      if (nowSaved) userBookmarkIds.add(kajianId); else userBookmarkIds.delete(kajianId);
+      window.location.href = '{{ route("login") }}';
       return;
     }
     fetch(`/kajian/${kajianId}/bookmark`, {
