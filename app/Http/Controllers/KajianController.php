@@ -416,5 +416,4 @@ class KajianController extends Controller
             'kajian_id' => $kajianId,
         ]);
     }
-    }
 }
