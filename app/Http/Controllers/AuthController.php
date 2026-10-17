@@ -98,6 +98,25 @@ class AuthController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
+        // Override dengan data terbaru dari session (jika baru update) atau Supabase
+        if (session()->has('profile_name')) {
+            $user->name = session('profile_name');
+            $user->email = session('profile_email', $user->email);
+        } else {
+            try {
+                $svc = new \App\Services\SupabaseUserService();
+                if ($svc->enabled()) {
+                    $sbUser = $svc->findOrCreate(['name' => $user->name, 'email' => $user->email]);
+                    if ($sbUser) {
+                        $user->name = $sbUser['name'] ?? $user->name;
+                        $user->email = $sbUser['email'] ?? $user->email;
+                    }
+                }
+            } catch (\Exception $e) {
+                \Log::warning('Ambil profil Supabase gagal: ' . $e->getMessage());
+            }
+        }
+
         // Ambil kajian tersimpan dari Supabase (persisten)
         $bookmarkedKajians = $this->getUserBookmarks($user->id);
 
@@ -164,6 +183,33 @@ class AuthController extends Controller
         }
 
         $user->save();
+
+        // Sync ke Supabase agar persisten (SQLite Vercel ephemeral)
+        try {
+            $svc = new \App\Services\SupabaseUserService();
+            if ($svc->enabled()) {
+                // Cari user di Supabase by email lama, update atau buat baru
+                $svc->findOrCreate([
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'provider' => $user->provider,
+                    'provider_id' => $user->provider_id,
+                ]);
+                // Update data terbaru
+                $sbUser = $svc->findOrCreate(['name' => $user->name, 'email' => $user->email]);
+                if ($sbUser && isset($sbUser['id'])) {
+                    $svc->update($sbUser['id'], [
+                        'name' => $request->name,
+                        'email' => $request->email,
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Sync profil ke Supabase gagal: ' . $e->getMessage());
+        }
+
+        // Simpan juga di session agar langsung terlihat
+        session(['profile_name' => $request->name, 'profile_email' => $request->email]);
 
         return redirect()->route('profile')->with('success', 'Profil dan foto berhasil diperbarui!');
     }
