@@ -98,11 +98,8 @@ class AuthController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        // Ambil kajian tersimpan yang masih aktif
-        $bookmarkedKajians = $user->bookmarkedKajians()
-            ->where('verified', true)
-            ->orderBy('event_datetime', 'asc')
-            ->get();
+        // Ambil kajian tersimpan dari Supabase (persisten)
+        $bookmarkedKajians = $this->getUserBookmarks($user->id);
 
         $attendances = $user->attendances()
             ->with('kajian')
@@ -180,5 +177,38 @@ class AuthController extends Controller
         $request->session()->flush();
 
         return redirect()->route('kajian.index');
+    }
+
+    /**
+     * Ambil bookmark user dari Supabase (persisten) dengan fallback lokal.
+     */
+    private function getUserBookmarks(int $userId)
+    {
+        $supabaseUrl = config('services.supabase.url');
+        $supabaseKey = config('services.supabase.service_key');
+
+        if ($supabaseUrl && $supabaseKey) {
+            try {
+                $client = new \GuzzleHttp\Client(['timeout' => 10]);
+                $res = $client->get("{$supabaseUrl}/rest/v1/bookmarks", [
+                    'headers' => [
+                        'apikey' => $supabaseKey,
+                        'Authorization' => 'Bearer ' . $supabaseKey,
+                    ],
+                    'query' => ['user_id' => "eq.{$userId}", 'select' => 'kajian_id'],
+                ]);
+                $rows = json_decode($res->getBody(), true);
+                $ids = array_column($rows ?? [], 'kajian_id');
+                if (!empty($ids)) {
+                    return \App\Models\Kajian::whereIn('id', $ids)->get();
+                }
+                return collect();
+            } catch (\Exception $e) {
+                \Log::warning('Supabase get bookmarks gagal: ' . $e->getMessage());
+            }
+        }
+
+        $user = User::find($userId);
+        return $user ? $user->bookmarkedKajians()->get() : collect();
     }
 }

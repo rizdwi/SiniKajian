@@ -152,7 +152,7 @@ class KajianController extends Controller
         $attendances = collect();
 
         if ($user) {
-            $bookmarkedKajians = $user->bookmarkedKajians()->get();
+            $bookmarkedKajians = $this->getUserBookmarks($user->id);
             $attendances = $user->attendances()->with('kajian')->latest()->get();
         }
 
@@ -161,6 +161,39 @@ class KajianController extends Controller
             'bookmarkedKajians' => $bookmarkedKajians,
             'attendances' => $attendances,
         ]);
+    }
+
+    /**
+     * Ambil bookmark user dari Supabase (persisten) dengan fallback lokal.
+     */
+    private function getUserBookmarks(int $userId)
+    {
+        $supabaseUrl = config('services.supabase.url');
+        $supabaseKey = config('services.supabase.service_key');
+
+        if ($supabaseUrl && $supabaseKey) {
+            try {
+                $client = new \GuzzleHttp\Client(['timeout' => 10]);
+                $res = $client->get("{$supabaseUrl}/rest/v1/bookmarks", [
+                    'headers' => [
+                        'apikey' => $supabaseKey,
+                        'Authorization' => 'Bearer ' . $supabaseKey,
+                    ],
+                    'query' => ['user_id' => "eq.{$userId}", 'select' => 'kajian_id'],
+                ]);
+                $rows = json_decode($res->getBody(), true);
+                $ids = array_column($rows ?? [], 'kajian_id');
+                if (!empty($ids)) {
+                    return Kajian::whereIn('id', $ids)->get();
+                }
+                return collect();
+            } catch (\Exception $e) {
+                \Log::warning('Supabase get bookmarks gagal: ' . $e->getMessage());
+            }
+        }
+
+        $user = \App\Models\User::find($userId);
+        return $user ? $user->bookmarkedKajians()->get() : collect();
     }
 
     /**
@@ -198,33 +231,81 @@ class KajianController extends Controller
      */
     public function toggleBookmark(Request $request, Kajian $kajian): JsonResponse
     {
-        if (Auth::check()) {
-            $existing = Bookmark::where('user_id', Auth::id())
-                ->where('kajian_id', $kajian->id)
-                ->first();
-
-            if ($existing) {
-                $existing->delete();
-                $saved = false;
-            } else {
-                Bookmark::create([
-                    'user_id' => Auth::id(),
-                    'kajian_id' => $kajian->id,
-                ]);
-                $saved = true;
-            }
-
+        if (!Auth::check()) {
             return response()->json([
-                'status' => 'success',
-                'saved' => $saved,
-                'kajian_id' => $kajian->id,
+                'status' => 'auth_required',
+                'message' => 'Silakan masuk untuk menyimpan bookmark ke akun Anda.',
+            ], 401);
+        }
+
+        $userId = Auth::id();
+        $kajianId = $kajian->id;
+
+        // Gunakan Supabase untuk persistensi (SQLite Vercel ephemeral)
+        $supabaseUrl = config('services.supabase.url');
+        $supabaseKey = config('services.supabase.service_key');
+
+        if ($supabaseUrl && $supabaseKey) {
+            $client = new \GuzzleHttp\Client(['timeout' => 10]);
+            $headers = [
+                'apikey' => $supabaseKey,
+                'Authorization' => 'Bearer ' . $supabaseKey,
+                'Content-Type' => 'application/json',
+            ];
+
+            try {
+                // Cek existing
+                $res = $client->get("{$supabaseUrl}/rest/v1/bookmarks", [
+                    'headers' => $headers,
+                    'query' => ['user_id' => "eq.{$userId}", 'kajian_id' => "eq.{$kajianId}", 'select' => 'id'],
+                ]);
+                $existing = json_decode($res->getBody(), true);
+
+                if (!empty($existing)) {
+                    $client->delete("{$supabaseUrl}/rest/v1/bookmarks", [
+                        'headers' => $headers,
+                        'query' => ['user_id' => "eq.{$userId}", 'kajian_id' => "eq.{$kajianId}"],
+                    ]);
+                    $saved = false;
+                } else {
+                    $client->post("{$supabaseUrl}/rest/v1/bookmarks", [
+                        'headers' => array_merge($headers, ['Prefer' => 'return=minimal']),
+                        'json' => ['user_id' => $userId, 'kajian_id' => $kajianId],
+                    ]);
+                    $saved = true;
+                }
+
+                return response()->json([
+                    'status' => 'success',
+                    'saved' => $saved,
+                    'kajian_id' => $kajianId,
+                ]);
+            } catch (\Exception $e) {
+                \Log::warning('Supabase bookmark gagal, fallback ke lokal: ' . $e->getMessage());
+            }
+        }
+
+        // Fallback: SQLite lokal
+        $existing = Bookmark::where('user_id', $userId)
+            ->where('kajian_id', $kajianId)
+            ->first();
+
+        if ($existing) {
+            $existing->delete();
+            $saved = false;
+        } else {
+            Bookmark::create([
+                'user_id' => $userId,
+                'kajian_id' => $kajianId,
             ]);
+            $saved = true;
         }
 
         return response()->json([
-            'status' => 'auth_required',
-            'message' => 'Silakan masuk untuk menyimpan bookmark ke akun Anda.',
-        ], 401);
+            'status' => 'success',
+            'saved' => $saved,
+            'kajian_id' => $kajianId,
+        ]);
     }
 
     /**
