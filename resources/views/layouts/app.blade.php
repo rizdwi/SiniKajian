@@ -183,22 +183,13 @@
         <span class="text-[11px] font-medium tracking-tight">Kiblat</span>
       </a>
 
-      <!-- Tab 4: Profil & Agenda -->
-      @auth
-      <a href="{{ route('profile') }}" class="flex flex-col items-center justify-center py-1 touch-btn {{ request()->routeIs('profile') || request()->routeIs('kajian.saved') ? 'text-[#1D4D4F] font-bold' : 'text-[#607072] hover:text-[#1D4D4F]' }}" aria-label="Profil & Agenda">
-        <div class="w-6 h-6 mb-0.5 rounded-full {{ request()->routeIs('profile') || request()->routeIs('kajian.saved') ? 'bg-[#1D4D4F] text-white' : 'bg-[#E6F4F1] text-[#1D4D4F]' }} text-[11px] font-bold flex items-center justify-center">
-          {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
-        </div>
-        <span class="text-[11px] font-medium tracking-tight">Profil</span>
-      </a>
-      @else
-      <a href="{{ route('login') }}" class="flex flex-col items-center justify-center py-1 touch-btn {{ request()->routeIs('login') || request()->routeIs('register') ? 'text-[#1D4D4F] font-bold' : 'text-[#607072] hover:text-[#1D4D4F]' }}" aria-label="Masuk Akun">
-        <svg class="w-6 h-6 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="{{ request()->routeIs('login') || request()->routeIs('register') ? '2.2' : '1.8' }}" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+      <!-- Tab 4: Profil -->
+      <a href="{{ route('profile') }}" class="flex flex-col items-center justify-center py-1 touch-btn {{ request()->routeIs('profile') || request()->routeIs('kajian.saved') ? 'text-[#1D4D4F] font-bold' : 'text-[#607072] hover:text-[#1D4D4F]' }}" aria-label="Profil">
+        <svg class="w-6 h-6 mb-0.5" fill="{{ request()->routeIs('profile') || request()->routeIs('kajian.saved') ? 'currentColor' : 'none' }}" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="{{ request()->routeIs('profile') ? '2' : '1.8' }}" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
         </svg>
         <span class="text-[11px] font-medium tracking-tight">Profil</span>
       </a>
-      @endauth
 
     </div>
   </nav>

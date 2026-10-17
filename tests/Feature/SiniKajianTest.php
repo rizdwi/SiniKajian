@@ -98,4 +98,18 @@ class SiniKajianTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Penuntut Ilmu Test');
     }
+
+    /**
+     * Uji pemuatan halaman detail kajian (Screen 2).
+     */
+    public function test_detail_page_returns_successful_response(): void
+    {
+        $kajian = Kajian::first();
+        if ($kajian) {
+            $response = $this->get('/kajian/' . $kajian->id);
+            $response->assertStatus(200);
+            $response->assertSee('Detail Kajian');
+            $response->assertSee('Saya ingin hadir');
+        }
+    }
 }

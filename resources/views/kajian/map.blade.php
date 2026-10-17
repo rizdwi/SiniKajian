@@ -76,8 +76,8 @@
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
           Petunjuk Arah ↗
         </a>
-        <a id="drawerSourceLink" href="#" target="_blank" rel="noopener" class="hidden py-2 px-3 rounded-full bg-[#E6F4F1] text-[#1D4D4F] text-xs font-bold hover:bg-[#D1EAE5] transition">
-          Sumber
+        <a id="drawerDetailBtn" href="#" class="py-2 px-3 rounded-full bg-[#EDF5F3] text-[#1D4D4F] border border-[#D1ECE7] text-xs font-bold hover:bg-[#DDEEEA] transition text-center flex items-center justify-center">
+          Detail ↗
         </a>
       </div>
     </div>
@@ -236,8 +236,7 @@
       const card = document.createElement('div');
       card.className = 'bg-white rounded-2xl p-3.5 border border-[#E5ECEB] shadow-xs flex items-center gap-3 hover:border-[#1D4D4F]/40 transition cursor-pointer';
       card.onclick = () => {
-        switchView('map');
-        showMapDrawer(item);
+        window.location.href = '/kajian/' + item.id;
       };
       card.innerHTML = `
         ${flyer}
@@ -308,13 +307,9 @@
       drawerFlyerThumb.classList.add('hidden');
     }
 
-    const drawerSourceLink = document.getElementById('drawerSourceLink');
-    if (item.source_url && item.source_url !== '#') {
-      drawerSourceLink.href = item.source_url;
-      drawerSourceLink.textContent = (item.source ? item.source.charAt(0).toUpperCase() + item.source.slice(1) : 'Sumber') + ' ↗';
-      drawerSourceLink.classList.remove('hidden');
-    } else {
-      drawerSourceLink.classList.add('hidden');
+    const drawerDetailBtn = document.getElementById('drawerDetailBtn');
+    if (drawerDetailBtn) {
+      drawerDetailBtn.href = '/kajian/' + item.id;
     }
 
     const savedLoc = JSON.parse(localStorage.getItem('sk_user_loc') || 'null');

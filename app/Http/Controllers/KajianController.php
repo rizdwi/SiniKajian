@@ -78,6 +78,24 @@ class KajianController extends Controller
     }
 
     /**
+     * Tampilkan halaman detail kajian (Screen 2).
+     */
+    public function show(Kajian $kajian): View
+    {
+        $isBookmarked = false;
+        if (Auth::check()) {
+            $isBookmarked = Bookmark::where('user_id', Auth::id())
+                ->where('kajian_id', $kajian->id)
+                ->exists();
+        }
+
+        return view('kajian.show', [
+            'kajian' => $kajian,
+            'isBookmarked' => $isBookmarked,
+        ]);
+    }
+
+    /**
      * API JSON untuk integrasi mobile atau map renderer.
      */
     public function apiList(Request $request): JsonResponse

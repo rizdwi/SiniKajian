@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Route;
 
 // Beranda & Modul Utama
 Route::get('/', [KajianController::class, 'index'])->name('kajian.index');
+Route::get('/kajian/{kajian}', [KajianController::class, 'show'])->name('kajian.show');
 Route::get('/peta', [KajianController::class, 'map'])->name('kajian.map');
 Route::get('/kiblat', [KajianController::class, 'qibla'])->name('kajian.qibla');
 Route::get('/tersimpan', [KajianController::class, 'saved'])->name('kajian.saved');
@@ -31,8 +32,10 @@ Route::middleware('guest')->group(function () {
     Route::post('/daftar', [AuthController::class, 'register'])->name('register.post');
 });
 
+// Profil Jamaah (Screen 5)
+Route::get('/profil', [AuthController::class, 'profile'])->name('profile');
+
 Route::middleware('auth')->group(function () {
-    Route::get('/profil', [AuthController::class, 'profile'])->name('profile');
     Route::post('/keluar', [AuthController::class, 'logout'])->name('logout');
 });
 
