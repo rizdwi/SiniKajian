@@ -837,7 +837,7 @@
     document.getElementById('modalHeroSub').innerText = `${ev.ustadz} • ${ev.masjid}`;
     document.getElementById('modalDescription').innerText = ev.description || 'Kajian ilmiah ahlussunnah wal jamaah, terbuka untuk jamaah yang ingin menuntut ilmu syar\'i.';
     
-    // Flyer Preview
+    // Flyer Preview - hanya tampil jika ada flyer asli
     const flyerWrapper = document.getElementById('modalFlyerWrapper');
     const flyerImg = document.getElementById('modalFlyerImg');
     const flyerLink = document.getElementById('modalFlyerFullLink');
@@ -846,9 +846,7 @@
       flyerLink.href = ev.poster_url;
       flyerWrapper.classList.remove('hidden');
     } else {
-      flyerImg.src = 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=800&q=80';
-      flyerLink.href = flyerImg.src;
-      flyerWrapper.classList.remove('hidden');
+      flyerWrapper.classList.add('hidden');
     }
 
     // Sumber Asli Link
