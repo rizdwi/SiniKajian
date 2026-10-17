@@ -56,10 +56,10 @@ class KajianController extends Controller
         // Pagination 20 per halaman (bukan load semua)
         $kajians = $query->orderBy('event_date')->paginate(20)->withQueryString();
 
-        // JSON untuk peta: hanya kolom ringan, cache 5 menit
+        // JSON untuk peta & kartu: cache 5 menit
         $mapJson = Cache::remember('kajian_map_json', 300, function () {
             return Kajian::where('verified', true)
-                ->select(['id', 'title', 'ustadz', 'masjid', 'lat', 'lon', 'category'])
+                ->select(['id', 'title', 'ustadz', 'day', 'time', 'masjid', 'address', 'lat', 'lon', 'category', 'audience', 'poster_url', 'event_date', 'source', 'source_url', 'description'])
                 ->get()
                 ->toJson();
         });
