@@ -202,8 +202,8 @@
         </label>
       </div>
 
-      <!-- Item 4: Privasi & Keamanan -->
-      <a href="{{ route('login') }}" class="flex items-center justify-between p-3.5 hover:bg-[#F8FAF9] transition">
+      <!-- Item 4: Privasi & Keamanan (Modal Informasi Keamanan & Enkripsi) -->
+      <button type="button" onclick="openPrivacyModal()" class="w-full flex items-center justify-between p-3.5 hover:bg-[#F8FAF9] text-left transition">
         <div class="flex items-center gap-3 min-w-0">
           <div class="w-9 h-9 rounded-xl bg-[#EDF5F3] text-[#1D4D4F] flex items-center justify-center shrink-0 border border-[#D1ECE7]">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -212,15 +212,24 @@
           </div>
           <div class="min-w-0">
             <span class="text-xs sm:text-sm font-bold text-[#1C2224] block">Privasi & keamanan</span>
+            <span class="text-[11px] text-[#607072] block truncate">Enkripsi kredensial & privasi data</span>
           </div>
         </div>
         <svg class="w-4 h-4 text-[#607072] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
         </svg>
-      </a>
+      </button>
 
-      <!-- Item 5: Bantuan & Tentang Majelisku -->
-      <a href="{{ route('kajian.index') }}" class="flex items-center justify-between p-3.5 hover:bg-[#F8FAF9] transition">
+      <!-- Item 5: Bantuan & Tentang Majelisku (Kirim Pesan Langsung ke Email Owner) -->
+      @php
+        $ownerEmail = 'rizkidwisandy@gmail.com';
+        $userName = Auth::check() ? Auth::user()->name : 'Jamaah Pengguna Majelisku';
+        $userEmail = Auth::check() ? Auth::user()->email : 'Belum login';
+        $mailSubject = rawurlencode('Bantuan Aplikasi Majelisku');
+        $mailBody = rawurlencode("Assalamu'alaikum Owner Majelisku,\n\nSaya pengguna aplikasi Majelisku ingin menyampaikan kendala / pertanyaan / masukan:\n\n- Nama: {$userName}\n- Email Akun: {$userEmail}\n- Detail Pesan:\n");
+        $mailUrl = "mailto:{$ownerEmail}?subject={$mailSubject}&body={$mailBody}";
+      @endphp
+      <button type="button" onclick="openHelpModal()" class="w-full flex items-center justify-between p-3.5 hover:bg-[#F8FAF9] text-left transition">
         <div class="flex items-center gap-3 min-w-0">
           <div class="w-9 h-9 rounded-xl bg-[#EDF5F3] text-[#1D4D4F] flex items-center justify-center shrink-0 border border-[#D1ECE7]">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -229,12 +238,13 @@
           </div>
           <div class="min-w-0">
             <span class="text-xs sm:text-sm font-bold text-[#1C2224] block">Bantuan & tentang Majelisku</span>
+            <span class="text-[11px] text-[#607072] block truncate">Kirim pesan langsung ke email owner</span>
           </div>
         </div>
         <svg class="w-4 h-4 text-[#607072] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
         </svg>
-      </a>
+      </button>
 
     </div>
   </div>
@@ -268,4 +278,176 @@
   </div>
 
 </div>
+
+<!-- Modal Bantuan & Kontak Owner -->
+<div id="helpModal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 transition-opacity duration-300">
+  <div class="bg-white rounded-3xl w-full max-w-md p-5 border border-[#E5ECEB] shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
+    
+    <div class="flex items-start justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-[#EDF5F3] text-[#1D4D4F] flex items-center justify-center border border-[#D1ECE7]">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-base font-extrabold text-[#1D4D4F]">Bantuan & Kontak Owner</h3>
+          <p class="text-xs text-[#607072]">Hubungi langsung pemilik aplikasi Majelisku</p>
+        </div>
+      </div>
+      <button onclick="closeHelpModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Informasi Email Owner -->
+    <div class="p-3.5 rounded-2xl bg-[#F0F7F6] border border-[#D1ECE7] space-y-2">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-bold text-[#1D4D4F] uppercase tracking-wider">Email Resmi Pengembang</span>
+        <span class="text-[10px] font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">Owner</span>
+      </div>
+      <p class="text-xs font-mono font-bold text-[#1C2224] break-all select-all">
+        {{ $ownerEmail }}
+      </p>
+      <p class="text-[11px] text-[#607072] leading-relaxed">
+        Punya pertanyaan seputar jadwal kajian, laporan kendala teknis, atau saran pengembangan? Pesan Anda akan langsung diterima oleh owner Majelisku.
+      </p>
+    </div>
+
+    <!-- Aksi Kirim Email & Salin -->
+    <div class="space-y-2 pt-1">
+      <a href="{{ $mailUrl }}" class="w-full py-3.5 rounded-full bg-[#1D4D4F] hover:bg-[#153A3B] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition touch-btn">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+        </svg>
+        <span>Kirim Pesan ke Email Sekarang</span>
+      </a>
+
+      <button type="button" onclick="copyOwnerEmail('{{ $ownerEmail }}')" id="btnCopyEmail" class="w-full py-3 rounded-full bg-white border border-[#E5ECEB] hover:bg-[#F8FAF9] text-[#1D4D4F] font-bold text-xs flex items-center justify-center gap-2 transition touch-btn">
+        <svg class="w-4 h-4 text-[#607072]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+        </svg>
+        <span id="copyEmailText">Salin Alamat Email</span>
+      </button>
+    </div>
+
+    <!-- Ringkasan Versi Aplikasi -->
+    <div class="border-t border-[#E5ECEB] pt-3 text-center">
+      <span class="text-[10px] text-[#607072]">Majelisku Progressive Web App • Versi 1.2.0</span>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal Privasi & Keamanan -->
+<div id="privacyModal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 transition-opacity duration-300">
+  <div class="bg-white rounded-3xl w-full max-w-md p-5 border border-[#E5ECEB] shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
+    
+    <div class="flex items-start justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-[#EDF5F3] text-[#1D4D4F] flex items-center justify-center border border-[#D1ECE7]">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-base font-extrabold text-[#1D4D4F]">Privasi & Keamanan</h3>
+          <p class="text-xs text-[#607072]">Komitmen keamanan data jamaah Majelisku</p>
+        </div>
+      </div>
+      <button onclick="closePrivacyModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+
+    <div class="space-y-2.5 text-xs text-[#607072]">
+      <div class="p-3 rounded-2xl bg-[#F0F7F6] border border-[#D1ECE7] flex items-start gap-2.5">
+        <span class="text-sm">🔒</span>
+        <div>
+          <strong class="text-[#1C2224] block">Kredensial Terenkripsi</strong>
+          Kata sandi Anda dilindungi menggunakan hashing satu arah Bcrypt (12 rounds) standar industri dan tidak pernah disimpan dalam bentuk teks biasa.
+        </div>
+      </div>
+
+      <div class="p-3 rounded-2xl bg-[#F0F7F6] border border-[#D1ECE7] flex items-start gap-2.5">
+        <span class="text-sm">📍</span>
+        <div>
+          <strong class="text-[#1C2224] block">Privasi Lokasi GPS</strong>
+          Koordinat GPS Anda hanya diproses di browser/perangkat Anda sendiri untuk mencari kajian terdekat dan menghitung kiblat. Lokasi tidak pernah dilacak atau disimpan di server.
+        </div>
+      </div>
+
+      <div class="p-3 rounded-2xl bg-[#F0F7F6] border border-[#D1ECE7] flex items-start gap-2.5">
+        <span class="text-sm">🛡️</span>
+        <div>
+          <strong class="text-[#1C2224] block">Perlindungan Akun</strong>
+          Seluruh komunikasi dilindungi dengan SSL HTTPS dan token perlindungan CSRF untuk mencegah akses tidak sah.
+        </div>
+      </div>
+    </div>
+
+    <button type="button" onclick="closePrivacyModal()" class="w-full py-3 rounded-full bg-[#1D4D4F] hover:bg-[#153A3B] text-white font-bold text-xs transition touch-btn">
+      Saya Mengerti
+    </button>
+
+  </div>
+</div>
+
+<script>
+  function openHelpModal() {
+    const modal = document.getElementById('helpModal');
+    if (modal) {
+      modal.classList.remove('hidden');
+    }
+  }
+
+  function closeHelpModal() {
+    const modal = document.getElementById('helpModal');
+    if (modal) {
+      modal.classList.add('hidden');
+    }
+  }
+
+  function openPrivacyModal() {
+    const modal = document.getElementById('privacyModal');
+    if (modal) {
+      modal.classList.remove('hidden');
+    }
+  }
+
+  function closePrivacyModal() {
+    const modal = document.getElementById('privacyModal');
+    if (modal) {
+      modal.classList.add('hidden');
+    }
+  }
+
+  function copyOwnerEmail(email) {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(email).then(() => {
+        const text = document.getElementById('copyEmailText');
+        if (text) {
+          text.innerText = '✓ Email Berhasil Disalin!';
+          setTimeout(() => {
+            text.innerText = 'Salin Alamat Email';
+          }, 2500);
+        }
+      });
+    } else {
+      prompt('Salin email owner di bawah ini:', email);
+    }
+  }
+
+  // Tutup modal jika klik di luar area konten
+  window.addEventListener('click', function(e) {
+    const helpModal = document.getElementById('helpModal');
+    const privacyModal = document.getElementById('privacyModal');
+    if (e.target === helpModal) closeHelpModal();
+    if (e.target === privacyModal) closePrivacyModal();
+  });
+</script>
 @endsection
