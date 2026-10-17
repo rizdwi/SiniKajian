@@ -20,9 +20,23 @@
   </div>
   @endif
 
-  <form method="POST" action="{{ route('profile.update') }}" class="bg-white rounded-3xl p-5 border border-[#E5ECEB] space-y-4">
+  <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="bg-white rounded-3xl p-5 border border-[#E5ECEB] space-y-4">
     @csrf
     @method('PUT')
+
+    <div class="text-center">
+      <div class="w-20 h-20 rounded-full bg-[#1D4D4F] text-white flex items-center justify-center text-2xl font-black mx-auto overflow-hidden">
+        @if($user->avatar)
+          <img src="{{ $user->avatar }}" alt="Foto" class="w-full h-full object-cover">
+        @else
+          {{ strtoupper(substr($user->name, 0, 2)) }}
+        @endif
+      </div>
+      <label class="text-xs font-bold text-[#1D4D4F] mt-2 inline-block cursor-pointer hover:underline">
+        Ganti Foto
+        <input type="file" name="avatar" accept="image/*" class="hidden">
+      </label>
+    </div>
 
     <div>
       <label class="text-xs font-bold text-[#1C2224] block mb-1.5">Nama Lengkap</label>
