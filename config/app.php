@@ -97,15 +97,8 @@ return [
 
     'cipher' => 'AES-256-CBC',
 
-    'key' => (function () {
-        $key = env('APP_KEY');
-        // Validasi format: harus base64: + 44 char (32 bytes)
-        if ($key && preg_match('/^base64:[A-Za-z0-9+\/=]{43}=$/', $key)) {
-            return $key;
-        }
-        // Fallback jika env invalid
-        return 'base64:8dltvkKpI0Y1MStJ5V2hzjXmqUu8slWynCGKodKshc0=';
-    })(),
+    // Hardcoded valid key (env APP_KEY di Vercel invalid, belum bisa diupdate via API)
+    'key' => 'base64:8dltvkKpI0Y1MStJ5V2hzjXmqUu8slWynCGKodKshc0=',
 
     'previous_keys' => [
         ...array_filter(
