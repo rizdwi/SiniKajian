@@ -883,7 +883,7 @@
     btn.disabled = true;
     lbl.innerText = 'Mencatat Kehadiran...';
 
-    fetch(`/kajian/${currentDetailEvent.id}/attendance`, {
+    fetch(`/kajian/${currentDetailEvent.id}/kehadiran`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
