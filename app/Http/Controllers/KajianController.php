@@ -80,8 +80,13 @@ class KajianController extends Controller
     /**
      * Tampilkan halaman detail kajian (Screen 2).
      */
-    public function show(Kajian $kajian): View
+    public function show($id): View|\Illuminate\Http\RedirectResponse
     {
+        $kajian = Kajian::find($id);
+        if (!$kajian) {
+            return redirect()->route('kajian.index')->with('error', 'Kajian tidak ditemukan atau telah berakhir.');
+        }
+
         $isBookmarked = false;
         if (Auth::check()) {
             $isBookmarked = Bookmark::where('user_id', Auth::id())
