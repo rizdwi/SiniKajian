@@ -4,8 +4,7 @@ ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
-try {
-    // 1. Inisialisasi struktur direktori /tmp untuk Vercel Serverless
+// 1. Inisialisasi struktur direktori /tmp untuk Vercel Serverless
 $tmp = sys_get_temp_dir();
 $storage = $tmp . '/storage';
 $dirs = [
@@ -46,7 +45,11 @@ if (!getenv('APP_KEY') && !isset($_ENV['APP_KEY'])) {
     $_SERVER['APP_KEY'] = $fallbackKey;
 }
 
-putenv('VIEW_COMPILED_PATH=' . $storage . '/framework/views');
+$viewCompiledPath = $storage . '/framework/views';
+putenv('VIEW_COMPILED_PATH=' . $viewCompiledPath);
+$_ENV['VIEW_COMPILED_PATH'] = $viewCompiledPath;
+$_SERVER['VIEW_COMPILED_PATH'] = $viewCompiledPath;
+
 putenv('DB_CONNECTION=sqlite');
 putenv('DB_DATABASE=' . $targetDb);
 $_ENV['DB_DATABASE'] = $targetDb;
@@ -60,21 +63,30 @@ putenv('SESSION_LIFETIME=120');
 putenv('CACHE_STORE=array');
 
 $_ENV['APP_NAME'] = 'SiniKajian';
+$_ENV['APP_DEBUG'] = 'true';
 $_ENV['APP_URL'] = 'https://sinikajian.vercel.app';
 $_ENV['SESSION_DRIVER'] = 'cookie';
 $_ENV['SESSION_LIFETIME'] = '120';
 $_ENV['CACHE_STORE'] = 'array';
 
 $_SERVER['APP_NAME'] = 'SiniKajian';
+$_SERVER['APP_DEBUG'] = 'true';
 $_SERVER['APP_URL'] = 'https://sinikajian.vercel.app';
 $_SERVER['SESSION_DRIVER'] = 'cookie';
 $_SERVER['SESSION_LIFETIME'] = '120';
 $_SERVER['CACHE_STORE'] = 'array';
 
-    // 4. Delegasikan eksekusi request ke Front Controller Laravel 13
-    require __DIR__ . '/../public/index.php';
-} catch (\Throwable $e) {
-    http_response_code(500);
-    echo "<h1>SiniKajian Error</h1>";
-    echo "<pre>" . htmlspecialchars($e->getMessage()) . "\n\n" . htmlspecialchars($e->getTraceAsString()) . "</pre>";
+// Diagnostic log viewer
+if (str_contains($_SERVER['REQUEST_URI'] ?? '', 'view-log')) {
+    header('Content-Type: text/plain');
+    $logFile = $storage . '/logs/laravel.log';
+    if (file_exists($logFile)) {
+        echo file_get_contents($logFile);
+    } else {
+        echo "No log file found at: " . $logFile;
+    }
+    exit;
 }
+
+// 4. Delegasikan eksekusi request ke Front Controller Laravel 13
+require __DIR__ . '/../public/index.php';
