@@ -35,6 +35,20 @@
       }
     },
     {
+      "src": "/images/(.*)",
+      "dest": "/public/images/$1",
+      "headers": {
+        "Cache-Control": "public, max-age=86400"
+      }
+    },
+    {
+      "src": "/js/(.*)",
+      "dest": "/public/js/$1",
+      "headers": {
+        "Cache-Control": "public, max-age=3600"
+      }
+    },
+    {
       "src": "/(.*)",
       "dest": "/api/index.php"
     }
