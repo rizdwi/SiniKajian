@@ -69,10 +69,10 @@ putenv('APP_ENV=production');
 $_ENV['APP_ENV'] = 'production';
 $_SERVER['APP_ENV'] = 'production';
 
-// Force file session driver (cookie bermasalah di Vercel)
-putenv('SESSION_DRIVER=file');
-$_ENV['SESSION_DRIVER'] = 'file';
-$_SERVER['SESSION_DRIVER'] = 'file';
+// Force cookie session driver (file tidak shared antar instance Vercel)
+putenv('SESSION_DRIVER=cookie');
+$_ENV['SESSION_DRIVER'] = 'cookie';
+$_SERVER['SESSION_DRIVER'] = 'cookie';
 
 if (!getenv('APP_KEY') && !isset($_ENV['APP_KEY'])) {
     $fallbackKey = 'base64:eneFvNA7mfb/CrYt8SVrrRaHH+nRCD+cZ8pZDsnV72M=';
