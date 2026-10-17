@@ -18,6 +18,14 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+        $exceptions->render(function (\Throwable $e, Request $request) {
+            if ($request->has('debug') || env('APP_DEBUG', true)) {
+                return response(
+                    "<h1>SiniKajian Debug</h1><p><strong>" . get_class($e) . ":</strong> " . e($e->getMessage()) . "</p><pre>" . e($e->getFile() . ':' . $e->getLine()) . "\n\n" . e($e->getTraceAsString()) . "</pre>",
+                    500
+                );
+            }
+        });
     })->create();
 
 if (isset($_SERVER['VERCEL']) || isset($_ENV['VERCEL']) || getenv('VERCEL')) {
