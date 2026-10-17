@@ -120,11 +120,8 @@ class AuthController extends Controller
         // Ambil kajian tersimpan dari Supabase (persisten)
         $bookmarkedKajians = $this->getUserBookmarks($user->id);
 
-        $attendances = $user->attendances()
-            ->with('kajian')
-            ->latest()
-            ->take(10)
-            ->get();
+        // Ambil kehadiran dari Supabase (persisten)
+        $attendances = $this->getUserAttendances($user->id);
 
         $submittedKajians = $user->submittedKajians()->latest()->get();
 
@@ -257,5 +254,46 @@ class AuthController extends Controller
 
         $user = User::find($userId);
         return $user ? $user->bookmarkedKajians()->get() : collect();
+    }
+
+    /**
+     * Ambil attendance user dari Supabase (persisten) dengan fallback lokal.
+     */
+    private function getUserAttendances(int $userId)
+    {
+        $supabaseUrl = config('services.supabase.url');
+        $supabaseKey = config('services.supabase.service_key');
+
+        if ($supabaseUrl && $supabaseKey) {
+            try {
+                $res = \Illuminate\Support\Facades\Http::withHeaders([
+                        'apikey' => $supabaseKey,
+                        'Authorization' => 'Bearer ' . $supabaseKey,
+                    ])
+                    ->timeout(10)
+                    ->get("{$supabaseUrl}/rest/v1/attendances", [
+                        'user_id' => "eq.{$userId}",
+                        'select' => 'kajian_id,attendance_date',
+                        'order' => 'attendance_date.desc',
+                    ]);
+                $rows = $res->json();
+                $ids = array_column($rows ?? [], 'kajian_id');
+                if (!empty($ids)) {
+                    $kajians = \App\Models\Kajian::whereIn('id', $ids)->get()->keyBy('id');
+                    // Kembalikan sebagai collection dengan info tanggal
+                    return collect($rows)->map(function ($r) use ($kajians) {
+                        $k = $kajians[$r['kajian_id']] ?? null;
+                        if ($k) $k->attendance_date = $r['attendance_date'];
+                        return $k;
+                    })->filter();
+                }
+                return collect();
+            } catch (\Exception $e) {
+                \Log::warning('Supabase get attendances gagal: ' . $e->getMessage());
+            }
+        }
+
+        $user = User::find($userId);
+        return $user ? $user->attendances()->with('kajian')->latest()->take(10)->get() : collect();
     }
 }
