@@ -28,3 +28,4 @@ legacy_index.html
 # Vercel
 .vercel
 supabase/.temp
+__pycache__/
