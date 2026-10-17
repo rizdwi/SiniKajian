@@ -96,7 +96,7 @@
 <script>
   let mapInstance = null;
   let userMarker = null;
-  let markersLayer = null;
+  let mapMarkers = [];
   const rawEvents = @json($events);
   let currentActiveView = 'map';
 
@@ -132,20 +132,24 @@
   }
 
   function initMap() {
+    if (!window.google || !window.google.maps) {
+      setTimeout(initMap, 500);
+      return;
+    }
     const savedLoc = JSON.parse(localStorage.getItem('sk_user_loc') || 'null');
     const centerLat = savedLoc ? savedLoc.lat : -6.2088;
     const centerLon = savedLoc ? savedLoc.lon : 106.8456;
 
-    mapInstance = L.map('fullMap', {
-      zoomControl: false,
-      attributionControl: false
-    }).setView([centerLat, centerLon], 12);
+    mapInstance = new google.maps.Map(document.getElementById('fullMap'), {
+      center: { lat: centerLat, lng: centerLon },
+      zoom: 12,
+      zoomControl: true,
+      mapTypeControl: true,
+      streetViewControl: false,
+      fullscreenControl: false
+    });
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19
-    }).addTo(mapInstance);
-
-    markersLayer = L.layerGroup().addTo(mapInstance);
+    mapMarkers = [];
 
     if (savedLoc) {
       setUserLocationMarker(savedLoc.lat, savedLoc.lon);
@@ -155,29 +159,27 @@
   }
 
   function renderMapMarkers(events) {
-    markersLayer.clearLayers();
-    
+    mapMarkers.forEach(m => m.setMap(null));
+    mapMarkers = [];
+
+    const pinIcon = {
+      url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="#1D4D4F" stroke="#fff" stroke-width="2"/><text x="16" y="21" text-anchor="middle" font-size="14">🕌</text></svg>'),
+      scaledSize: new google.maps.Size(32, 32)
+    };
+
     events.forEach(item => {
       if (!item.lat || !item.lon) return;
 
-      const customIcon = L.divIcon({
-        className: 'custom-map-pin',
-        html: `
-          <div class="w-8 h-8 rounded-full bg-[#1D4D4F] text-white flex items-center justify-center shadow-lg border-2 border-white cursor-pointer transform hover:scale-110 transition-transform">
-            <svg class="w-4 h-4 text-[#E6F4F1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V11a7 7 0 00-14 0v10m0 0h14M12 4v3m-3-1l3-3 3 3"></path>
-            </svg>
-          </div>
-        `,
-        iconSize: [32, 32],
-        iconAnchor: [16, 32]
+      const marker = new google.maps.Marker({
+        position: { lat: parseFloat(item.lat), lng: parseFloat(item.lon) },
+        map: mapInstance,
+        icon: pinIcon,
+        title: item.title
       });
-
-      const marker = L.marker([item.lat, item.lon], { icon: customIcon });
-      marker.on('click', () => {
+      marker.addListener('click', () => {
         showMapDrawer(item);
       });
-      markersLayer.addLayer(marker);
+      mapMarkers.push(marker);
     });
   }
 
@@ -320,22 +322,25 @@
   }
 
   function setUserLocationMarker(lat, lon) {
+    const pos = { lat: parseFloat(lat), lng: parseFloat(lon) };
     if (userMarker) {
-      userMarker.setLatLng([lat, lon]);
+      userMarker.setPosition(pos);
     } else {
-      const userDotIcon = L.divIcon({
-        className: 'user-loc-dot',
-        html: `
-          <div class="relative flex items-center justify-center w-6 h-6">
-            <div class="absolute w-6 h-6 rounded-full bg-[#1D4D4F]/30 animate-ping"></div>
-            <div class="w-3.5 h-3.5 rounded-full bg-[#1D4D4F] border-2 border-white shadow-md"></div>
-          </div>
-        `,
-        iconSize: [24, 24],
-        iconAnchor: [12, 12]
+      userMarker = new google.maps.Marker({
+        position: pos,
+        map: mapInstance,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 8,
+          fillColor: '#1D4D4F',
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 2
+        },
+        title: 'Lokasi Saya'
       });
-      userMarker = L.marker([lat, lon], { icon: userDotIcon }).addTo(mapInstance);
     }
+    mapInstance.setCenter(pos);
   }
 
   function recenterMap() {

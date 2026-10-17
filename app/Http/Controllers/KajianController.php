@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class KajianController extends Controller
@@ -18,7 +19,18 @@ class KajianController extends Controller
      */
     public function index(Request $request): View
     {
-        $query = Kajian::where('verified', true);
+        // Cache categories (berubah jarang)
+        $categories = Cache::remember('kajian_categories', 3600, function () {
+            return Kajian::where('verified', true)
+                ->distinct()
+                ->pluck('category')
+                ->filter()
+                ->values();
+        });
+
+        // Single query dengan select kolom yang dibutuhkan saja
+        $query = Kajian::where('verified', true)
+            ->select(['id', 'title', 'ustadz', 'day', 'time', 'masjid', 'address', 'lat', 'lon', 'category', 'audience', 'flyer_url', 'event_date', 'source', 'source_url']);
 
         if ($request->filled('kategori') && $request->kategori !== 'Semua') {
             $query->where('category', $request->kategori);
@@ -37,19 +49,20 @@ class KajianController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', $search)
                   ->orWhere('ustadz', 'like', $search)
-                  ->orWhere('masjid', 'like', $search)
-                  ->orWhere('address', 'like', $search);
+                  ->orWhere('masjid', 'like', $search);
             });
         }
 
-        $kajians = $query->orderBy('day')->get();
-        $allKajians = Kajian::where('verified', true)->get();
+        // Pagination 20 per halaman (bukan load semua)
+        $kajians = $query->orderBy('event_date')->paginate(20)->withQueryString();
 
-        $categories = Kajian::where('verified', true)
-            ->distinct()
-            ->pluck('category')
-            ->filter()
-            ->values();
+        // JSON untuk peta: hanya kolom ringan, cache 5 menit
+        $mapJson = Cache::remember('kajian_map_json', 300, function () {
+            return Kajian::where('verified', true)
+                ->select(['id', 'title', 'ustadz', 'masjid', 'lat', 'lon', 'category'])
+                ->get()
+                ->toJson();
+        });
 
         $userBookmarks = [];
         if (Auth::check()) {
@@ -58,7 +71,7 @@ class KajianController extends Controller
 
         return view('kajian.index', [
             'kajians' => $kajians,
-            'allKajiansJson' => $allKajians->toJson(),
+            'allKajiansJson' => $mapJson,
             'categories' => $categories,
             'userBookmarks' => $userBookmarks,
         ]);

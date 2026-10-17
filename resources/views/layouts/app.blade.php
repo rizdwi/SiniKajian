@@ -19,9 +19,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
-  <!-- Leaflet CSS & JS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Google Maps JS API -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDTqyoEtgTz9LCk5kQYGA486DR-NAgw-lA&loading=async" async defer></script>
 
   <script>
     tailwind.config = {
