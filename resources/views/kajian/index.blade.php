@@ -536,6 +536,11 @@
   // Seluruh database kajian dari controller Laravel 13
   const rawKajians = {!! $allKajiansJson !!};
   const userBookmarkIds = new Set({!! json_encode($userBookmarks) !!});
+  // Merge bookmark guest dari localStorage
+  try {
+    const guestSaved = JSON.parse(localStorage.getItem('sk_bookmarks') || '[]');
+    guestSaved.forEach(id => userBookmarkIds.add(id));
+  } catch(e) {}
   const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
   // Titik koordinat Ka'bah (Mekkah)
@@ -1096,6 +1101,18 @@
 
   // 8. Bookmark Interaktif
   function toggleBookmarkAction(kajianId, btnEl) {
+    // Untuk guest: simpan di localStorage
+    const isLoggedIn = {{ Auth::check() ? 'true' : 'false' }};
+    if (!isLoggedIn) {
+      let saved = JSON.parse(localStorage.getItem('sk_bookmarks') || '[]');
+      const idx = saved.indexOf(kajianId);
+      const nowSaved = idx === -1;
+      if (nowSaved) saved.push(kajianId); else saved.splice(idx, 1);
+      localStorage.setItem('sk_bookmarks', JSON.stringify(saved));
+      updateBookmarkBtn(btnEl, nowSaved);
+      if (nowSaved) userBookmarkIds.add(kajianId); else userBookmarkIds.delete(kajianId);
+      return;
+    }
     fetch(`/kajian/${kajianId}/bookmark`, {
       method: 'POST',
       headers: {
@@ -1112,21 +1129,26 @@
     })
     .then(data => {
       if (!data) return;
-      if (data.saved) {
-        userBookmarkIds.add(kajianId);
-        btnEl.classList.remove('bg-slate-50', 'text-slate-500', 'border-slate-200');
-        btnEl.classList.add('bg-amber-50', 'text-amber-600', 'border-amber-300');
-        btnEl.querySelector('svg').setAttribute('fill', 'currentColor');
-      } else {
-        userBookmarkIds.delete(kajianId);
-        btnEl.classList.remove('bg-amber-50', 'text-amber-600', 'border-amber-300');
-        btnEl.classList.add('bg-slate-50', 'text-slate-500', 'border-slate-200');
-        btnEl.querySelector('svg').setAttribute('fill', 'none');
-      }
+      updateBookmarkBtn(btnEl, data.saved);
+      if (data.saved) userBookmarkIds.add(kajianId); else userBookmarkIds.delete(kajianId);
     })
     .catch(err => {
       console.warn('Gagal mengubah bookmark:', err);
     });
+  }
+
+  function updateBookmarkBtn(btnEl, saved) {
+    if (saved) {
+      btnEl.classList.remove('text-[#607072]');
+      btnEl.classList.add('text-amber-500', 'bg-amber-50');
+      const svg = btnEl.querySelector('svg');
+      if (svg) svg.setAttribute('fill', 'currentColor');
+    } else {
+      btnEl.classList.add('text-[#607072]');
+      btnEl.classList.remove('text-amber-500', 'bg-amber-50');
+      const svg = btnEl.querySelector('svg');
+      if (svg) svg.setAttribute('fill', 'none');
+    }
   }
 
   // Inisialisasi awal
