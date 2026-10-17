@@ -105,6 +105,8 @@ $_SERVER['APP_URL'] = 'https://sinikajian.vercel.app';
 $_SERVER['SESSION_DRIVER'] = 'cookie';
 $_SERVER['SESSION_LIFETIME'] = '120';
 $_SERVER['CACHE_STORE'] = 'array';
+$_SERVER['SCRIPT_NAME'] = '/index.php';
+$_SERVER['PHP_SELF'] = '/index.php';
 
 // Diagnostic log viewer
 if (str_contains($_SERVER['REQUEST_URI'] ?? '', 'view-log')) {
