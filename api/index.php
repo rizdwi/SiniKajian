@@ -26,7 +26,7 @@ $sourceDb = __DIR__ . '/../database/database.sqlite';
 $targetDb = $tmp . '/database.sqlite';
 
 if (file_exists($sourceDb)) {
-    if (!file_exists($targetDb) || filesize($targetDb) === 0 || (filemtime($sourceDb) > filemtime($targetDb))) {
+    if (!file_exists($targetDb) || filesize($targetDb) !== filesize($sourceDb) || @md5_file($sourceDb) !== @md5_file($targetDb)) {
         @copy($sourceDb, $targetDb);
     }
 } elseif (!file_exists($targetDb)) {
