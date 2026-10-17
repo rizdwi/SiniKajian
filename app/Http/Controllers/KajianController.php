@@ -45,22 +45,12 @@ class KajianController extends Controller
         }
 
         if ($request->filled('q')) {
-            $search = $request->q;
-            // Gunakan FTS5 untuk search cepat, fallback ke LIKE
-            try {
-                $ids = DB::table('kajians_fts')
-                    ->whereRaw("kajians_fts MATCH ?", [$search])
-                    ->pluck('rowid')
-                    ->toArray();
-                $query->whereIn('kajians.id', $ids);
-            } catch (\Exception $e) {
-                $like = '%' . $search . '%';
-                $query->where(function ($q) use ($like) {
-                    $q->where('title', 'like', $like)
-                      ->orWhere('ustadz', 'like', $like)
-                      ->orWhere('masjid', 'like', $like);
-                });
-            }
+            $like = '%' . $request->q . '%';
+            $query->where(function ($q) use ($like) {
+                $q->where('title', 'like', $like)
+                  ->orWhere('ustadz', 'like', $like)
+                  ->orWhere('masjid', 'like', $like);
+            });
         }
 
         // Pagination 20 per halaman (bukan load semua)

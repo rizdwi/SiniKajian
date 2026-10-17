@@ -79,10 +79,6 @@ class SyncKajianFromSupabase extends Command
         Cache::forget('kajian_categories');
         Cache::forget('kajian_map_json');
 
-        // Rebuild FTS index
-        DB::statement('DELETE FROM kajians_fts');
-        DB::statement('INSERT INTO kajians_fts(rowid, title, ustadz, masjid, address) SELECT id, title, ustadz, masjid, address FROM kajians');
-
         $this->info("Sync selesai: {$synced} kajian");
         return 0;
     }
