@@ -35,3 +35,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/profil', [AuthController::class, 'profile'])->name('profile');
     Route::post('/keluar', [AuthController::class, 'logout'])->name('logout');
 });
+
+// Sitemap XML
+Route::get('/sitemap.xml', function () {
+    $kajians = \App\Models\Kajian::where('verified', true)->select('id', 'updated_at')->get();
+    $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+    $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+    $xml .= '  <url><loc>' . url('/') . '</loc><changefreq>hourly</changefreq><priority>1.0</priority></url>' . "\n";
+    $xml .= '  <url><loc>' . url('/peta') . '</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>' . "\n";
+    foreach ($kajians as $k) {
+        $xml .= '  <url><loc>' . url("/kajian/{$k->id}") . '</loc><lastmod>' . $k->updated_at->toDateString() . '</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>' . "\n";
+    }
+    $xml .= '</urlset>';
+    return response($xml, 200)->header('Content-Type', 'application/xml');
+});

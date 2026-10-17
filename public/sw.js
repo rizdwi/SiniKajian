@@ -1,12 +1,10 @@
-// SiniKajian Service Worker - Version 13.0 (Laravel 13 PWA)
-const CACHE_NAME = 'sinikajian-v13.0';
+// SiniKajian Service Worker - Version 14.0 (Laravel PWA)
+const CACHE_NAME = 'sinikajian-v14.0';
 
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
   'https://cdn.tailwindcss.com',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
 ];
 
 self.addEventListener('install', (event) => {

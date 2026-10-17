@@ -755,9 +755,12 @@
       const isSaved = userBookmarkIds.has(ev.id);
       const srcMeta = SOURCE_META[ev.source] || SOURCE_META.facebook;
       const hasSource = ev.source_url && ev.source_url !== '#';
-      const flyerThumb = ev.poster_url 
+      const thumbUrl = ev.poster_url
+        ? ev.poster_url + (ev.poster_url.includes('?') ? '&' : '?') + 'width=200&quality=70'
+        : null;
+      const flyerThumb = thumbUrl
         ? `<div class="w-16 h-16 rounded-2xl overflow-hidden shrink-0 bg-slate-100 border border-[#E5ECEB] shadow-xs">
-             <img src="${ev.poster_url}" alt="Flyer" class="w-full h-full object-cover" loading="lazy" onerror="this.parentElement.style.display='none'">
+             <img src="${thumbUrl}" alt="Flyer" class="w-full h-full object-cover" loading="lazy" decoding="async" onerror="this.parentElement.style.display='none'">
            </div>`
         : `<div class="w-16 h-16 rounded-2xl overflow-hidden shrink-0 bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center font-bold text-xs border border-[#E5ECEB]">
              <span>${(ev.category || 'ILMU').substring(0, 4)}</span>
