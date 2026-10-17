@@ -38,6 +38,11 @@ putenv('VERCEL=1');
 $_ENV['VERCEL'] = '1';
 $_SERVER['VERCEL'] = '1';
 
+// Force file session driver (cookie bermasalah di Vercel)
+putenv('SESSION_DRIVER=file');
+$_ENV['SESSION_DRIVER'] = 'file';
+$_SERVER['SESSION_DRIVER'] = 'file';
+
 if (!getenv('APP_KEY') && !isset($_ENV['APP_KEY'])) {
     $fallbackKey = 'base64:eneFvNA7mfb/CrYt8SVrrRaHH+nRCD+cZ8pZDsnV72M=';
     putenv('APP_KEY=' . $fallbackKey);
