@@ -201,4 +201,15 @@ class SiniKajianTest extends TestCase
         $profileResponse->assertSee('Jamaah Pembelajar Sunnah');
         $profileResponse->assertSee($avatarData);
     }
+
+    /**
+     * Uji penegakan skema HTTPS dan trust proxy agar tidak muncul mixed-form warning.
+     */
+    public function test_https_scheme_is_enforced_in_production(): void
+    {
+        \Illuminate\Support\Facades\URL::forceScheme('https');
+        $this->assertStringStartsWith('https://', route('login'));
+        $this->assertStringStartsWith('https://', route('logout'));
+        $this->assertStringStartsWith('https://', route('profile.update'));
+    }
 }

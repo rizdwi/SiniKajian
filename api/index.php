@@ -62,6 +62,12 @@ if (file_exists($targetDb)) {
 putenv('VERCEL=1');
 $_ENV['VERCEL'] = '1';
 $_SERVER['VERCEL'] = '1';
+$_SERVER['HTTPS'] = 'on';
+$_SERVER['SERVER_PORT'] = '443';
+$_SERVER['HTTP_X_FORWARDED_PROTO'] = 'https';
+putenv('APP_ENV=production');
+$_ENV['APP_ENV'] = 'production';
+$_SERVER['APP_ENV'] = 'production';
 
 // Force file session driver (cookie bermasalah di Vercel)
 putenv('SESSION_DRIVER=file');
