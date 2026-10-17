@@ -77,10 +77,14 @@ class AuthController extends Controller
         ]);
 
         Auth::login($user);
+
+        // Kirim email verifikasi
+        $user->sendEmailVerificationNotification();
+
         $request->session()->regenerate();
 
-        return redirect()->route('profile')
-            ->with('success', 'Akun berhasil dibuat. Kredensial dan data tersimpan aman.');
+        return redirect()->route('verification.notice')
+            ->with('success', 'Akun berhasil dibuat. Cek email untuk verifikasi.');
     }
 
     /**
