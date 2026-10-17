@@ -24,14 +24,7 @@ Route::post('/kajian/{kajian}/kehadiran', [KajianController::class, 'logAttendan
 Route::get('/api/kajian', [KajianController::class, 'apiList'])->name('api.kajian');
 Route::get('/api/kajians', [KajianController::class, 'apiList']);
 Route::get('/kajians', [KajianController::class, 'apiList']);
-
-// Fallback jika Vercel me-rewrite /api/kajian menjadi /kajian
-Route::get('/kajian', function (\Illuminate\Http\Request $request) {
-    if ($request->wantsJson() || $request->header('Accept') === 'application/json') {
-        return app(KajianController::class)->apiList($request);
-    }
-    return redirect()->route('kajian.index');
-});
+Route::get('/kajian', [KajianController::class, 'apiList']);
 
 // Autentikasi Pengguna & Kredensial
 Route::redirect('/login', '/masuk');
