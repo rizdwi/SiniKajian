@@ -3,14 +3,14 @@ version: alpha
 name: SiniKajian
 description: Native-feel Islamic knowledge finder, astronomical prayer times, and Qibla compass with lightweight, high-contrast, tactile UI.
 colors:
-  primary: "#0C5C40"
-  secondary: "#2C654C"
-  tertiary: "#B45309"
-  neutral: "#FAF8F3"
+  primary: "#1D4D4F"
+  secondary: "#235B5E"
+  tertiary: "#E6F4F1"
+  neutral: "#F8FAF9"
   surface: "#FFFFFF"
-  card-border: "#E2E8F0"
-  text-primary: "#0F172A"
-  text-secondary: "#475569"
+  card-border: "#E5ECEB"
+  text-primary: "#1C2224"
+  text-secondary: "#607072"
   text-inverse: "#FFFFFF"
   gold-accent: "#FCD34D"
 typography:

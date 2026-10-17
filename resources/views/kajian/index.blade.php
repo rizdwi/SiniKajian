@@ -5,88 +5,80 @@
 @section('content')
 <div class="max-w-md mx-auto px-4 pt-4 pb-8 space-y-5">
   
-  <!-- Baris Lokasi Pengguna & Penunjuk Presisi -->
-  <header class="flex items-center justify-between">
-    <div class="flex items-center space-x-2">
-      <div class="w-8 h-8 rounded-full bg-emerald-800 text-white flex items-center justify-center shadow-sm">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-        </svg>
-      </div>
-      <div>
-        <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Lokasi Pencarian</p>
-        <button type="button" onclick="openLocationModal()" class="flex items-center space-x-1 text-sm font-bold text-slate-900 hover:text-emerald-800">
-          <span id="currentLocationName">Jakarta Selatan (Default)</span>
-          <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-          </svg>
-        </button>
-      </div>
+  <!-- Header Area Sesuai Desain Figma (Assalamu'alaikum & Lokasi) -->
+  <header class="flex items-center justify-between pt-1">
+    <div>
+      <p class="text-xs text-[#607072] font-medium">Assalamu'alaikum, {{ Auth::check() ? Auth::user()->name : 'Ahmad' }}</p>
+      <h1 class="text-xl font-extrabold text-[#1D4D4F] tracking-tight mt-0.5">Yuk, dekatkan hati.</h1>
+      <button type="button" onclick="openLocationModal()" class="inline-flex items-center gap-1 text-[11px] font-semibold text-[#1D4D4F] bg-[#E6F4F1] hover:bg-[#D1EAE5] px-2.5 py-0.5 rounded-full mt-1.5 transition">
+        <svg class="w-3 h-3 text-[#1D4D4F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+        <span id="currentLocationName">Dago, Bandung</span>
+        <svg class="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+      </button>
     </div>
 
-    <!-- Tombol GPS & Tambah Kajian -->
-    <div class="flex items-center space-x-1.5">
-      <button type="button" onclick="useGpsLocation()" title="Gunakan Lokasi GPS Saya" class="p-2 bg-white rounded-xl border border-slate-200 text-slate-700 hover:text-emerald-800 hover:border-emerald-700 shadow-sm touch-btn" aria-label="Gunakan GPS">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
+    <div class="flex items-center gap-2">
+      <button type="button" onclick="useGpsLocation()" title="Gunakan Lokasi GPS Saya" class="w-10 h-10 rounded-full bg-white border border-[#E5ECEB] text-[#1D4D4F] flex items-center justify-center shadow-xs touch-btn hover:bg-[#E6F4F1] transition" aria-label="Gunakan GPS">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
       </button>
 
-      <button type="button" onclick="openSubmitModal()" class="flex items-center space-x-1 bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-semibold py-2 px-3 rounded-xl shadow-sm touch-btn" aria-label="Ajukan Kajian">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-        </svg>
-        <span>Kirim Info</span>
+      <button type="button" onclick="openSubmitModal()" class="w-10 h-10 rounded-full bg-[#1D4D4F] text-white flex items-center justify-center font-bold text-sm shadow-xs touch-btn hover:bg-[#153A3B] transition" aria-label="Kirim Info Kajian">
+        @auth
+          {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+        @else
+          <svg class="w-5 h-5 text-[#E6F4F1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          </svg>
+        @endauth
       </button>
     </div>
   </header>
 
-  <!-- Waktu Sholat Astronomis Surya Presisi -->
-  <section class="bg-gradient-to-br from-emerald-900 to-emerald-950 text-white p-4 rounded-2xl shadow-sm border border-emerald-800/80">
-    <div class="flex items-center justify-between mb-3 border-b border-emerald-800/60 pb-2">
-      <div class="flex items-center space-x-2">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span class="text-xs font-semibold text-emerald-200 tracking-wide">WAKTU SHOLAT HARI INI</span>
+  <!-- Waktu Sholat Astronomis Surya Presisi (Spruce Teal Aesthetic) -->
+  <section class="bg-gradient-to-br from-[#1D4D4F] to-[#153A3B] text-white p-3.5 rounded-2xl shadow-xs border border-[#1D4D4F]/80">
+    <div class="flex items-center justify-between mb-2.5 border-b border-white/15 pb-2">
+      <div class="flex items-center space-x-1.5">
+        <span class="w-2 h-2 rounded-full bg-[#FCD34D] animate-pulse"></span>
+        <span class="text-[11px] font-bold text-[#E6F4F1] tracking-wider uppercase">JADWAL SHOLAT ASTRONOMIS</span>
       </div>
-      <div id="nextPrayerCountdown" class="text-xs font-medium text-amber-300">
+      <div id="nextPrayerCountdown" class="text-[11px] font-semibold text-[#FCD34D]">
         Menghitung jadwal...
       </div>
     </div>
 
     <div class="grid grid-cols-6 gap-1 text-center" id="prayerTimesGrid">
-      <div class="bg-emerald-800/50 p-1.5 rounded-lg border border-emerald-700/50" id="prayer-subuh">
-        <p class="text-[10px] text-emerald-300">Subuh</p>
+      <div class="bg-white/10 p-1.5 rounded-xl border border-white/10" id="prayer-subuh">
+        <p class="text-[9px] text-[#A4D3CC] font-medium">Subuh</p>
         <p class="text-xs font-bold text-white font-mono mt-0.5" id="time-subuh">--:--</p>
       </div>
-      <div class="bg-emerald-800/30 p-1.5 rounded-lg border border-emerald-700/30" id="prayer-terbit">
-        <p class="text-[10px] text-emerald-400">Terbit</p>
-        <p class="text-xs font-medium text-emerald-200 font-mono mt-0.5" id="time-terbit">--:--</p>
+      <div class="bg-white/5 p-1.5 rounded-xl border border-white/5" id="prayer-terbit">
+        <p class="text-[9px] text-[#A4D3CC] font-medium">Terbit</p>
+        <p class="text-xs font-medium text-white/80 font-mono mt-0.5" id="time-terbit">--:--</p>
       </div>
-      <div class="bg-emerald-800/50 p-1.5 rounded-lg border border-emerald-700/50" id="prayer-dzuhur">
-        <p class="text-[10px] text-emerald-300">Dzuhur</p>
+      <div class="bg-white/10 p-1.5 rounded-xl border border-white/10" id="prayer-dzuhur">
+        <p class="text-[9px] text-[#A4D3CC] font-medium">Dzuhur</p>
         <p class="text-xs font-bold text-white font-mono mt-0.5" id="time-dzuhur">--:--</p>
       </div>
-      <div class="bg-emerald-800/50 p-1.5 rounded-lg border border-emerald-700/50" id="prayer-ashar">
-        <p class="text-[10px] text-emerald-300">Ashar</p>
+      <div class="bg-white/10 p-1.5 rounded-xl border border-white/10" id="prayer-ashar">
+        <p class="text-[9px] text-[#A4D3CC] font-medium">Ashar</p>
         <p class="text-xs font-bold text-white font-mono mt-0.5" id="time-ashar">--:--</p>
       </div>
-      <div class="bg-emerald-800/50 p-1.5 rounded-lg border border-emerald-700/50" id="prayer-maghrib">
-        <p class="text-[10px] text-emerald-300">Maghrib</p>
+      <div class="bg-white/10 p-1.5 rounded-xl border border-white/10" id="prayer-maghrib">
+        <p class="text-[9px] text-[#A4D3CC] font-medium">Maghrib</p>
         <p class="text-xs font-bold text-white font-mono mt-0.5" id="time-maghrib">--:--</p>
       </div>
-      <div class="bg-emerald-800/50 p-1.5 rounded-lg border border-emerald-700/50" id="prayer-isya">
-        <p class="text-[10px] text-emerald-300">Isya</p>
+      <div class="bg-white/10 p-1.5 rounded-xl border border-white/10" id="prayer-isya">
+        <p class="text-[9px] text-[#A4D3CC] font-medium">Isya</p>
         <p class="text-xs font-bold text-white font-mono mt-0.5" id="time-isya">--:--</p>
       </div>
     </div>
   </section>
 
-  <!-- Kolom Pencarian & Aksi Filter -->
+  <!-- Kolom Pencarian & Aksi Filter (Figma Screen 1: Search Pill & Slider Button) -->
   <section class="space-y-3">
-    <div class="flex items-center space-x-2">
+    <div class="flex items-center gap-2">
       <div class="relative flex-1">
-        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#607072]">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
           </svg>
@@ -94,110 +86,107 @@
         <input 
           type="text" 
           id="searchInput"
-          placeholder="Cari ustadz, kitab, atau masjid..." 
-          class="w-full pl-10 pr-9 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700 focus:border-emerald-700 shadow-sm"
+          placeholder="Cari tema kajian, ustadz, atau masjid" 
+          class="w-full pl-10 pr-9 py-2.5 bg-white border border-[#E5ECEB] rounded-2xl text-xs sm:text-sm text-[#1C2224] placeholder-[#607072] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F] focus:border-[#1D4D4F] shadow-xs"
           oninput="onSearchFilterChange()"
         >
         <button 
           id="clearSearchBtn"
           onclick="clearSearchInput()"
-          class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+          class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-[#607072] hover:text-[#1C2224]"
           aria-label="Bersihkan pencarian"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
 
       <button 
         type="button" 
         onclick="openFilterModal()" 
-        class="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-700 hover:text-emerald-800 hover:border-emerald-700 shadow-sm touch-btn flex items-center justify-center"
+        class="w-10 h-10 bg-white border border-[#E5ECEB] rounded-2xl text-[#1D4D4F] hover:bg-[#E6F4F1] shadow-xs touch-btn flex items-center justify-center shrink-0 transition"
         aria-label="Buka Filter"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
         </svg>
       </button>
     </div>
 
-    <!-- Quick Chips: Kategori Kajian -->
-    <div class="flex items-center space-x-2 overflow-x-auto no-scrollbar py-1 text-xs">
-      <button onclick="setCategoryFilter('Semua')" class="category-chip whitespace-nowrap px-3.5 py-1.5 rounded-full font-semibold transition-colors bg-emerald-800 text-white shadow-sm" data-cat="Semua">
-        Semua
+    <!-- Quick Chips: Kategori Kajian (Figma Screen 1: Filter Chips) -->
+    <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 text-xs">
+      <button onclick="setCategoryFilter('Semua')" class="category-chip whitespace-nowrap px-4 py-2 rounded-full font-bold transition-all bg-[#1D4D4F] text-white shadow-xs" data-cat="Semua">
+        Untukmu
       </button>
       @foreach($categories as $cat)
-      <button onclick="setCategoryFilter('{{ $cat }}')" class="category-chip whitespace-nowrap px-3.5 py-1.5 rounded-full font-medium transition-colors bg-white text-slate-700 border border-slate-200 hover:border-emerald-700 hover:text-emerald-800" data-cat="{{ $cat }}">
+      <button onclick="setCategoryFilter('{{ $cat }}')" class="category-chip whitespace-nowrap px-4 py-2 rounded-full font-medium transition-all bg-white text-[#607072] border border-[#E5ECEB] hover:border-[#1D4D4F] hover:text-[#1D4D4F]" data-cat="{{ $cat }}">
         {{ $cat }}
       </button>
       @endforeach
     </div>
 
     <!-- Quick Chips: Radius Jarak & Hari -->
-    <div class="flex items-center justify-between text-xs text-slate-500 pt-0.5">
+    <div class="flex items-center justify-between text-xs text-[#607072] pt-0.5">
       <div class="flex items-center space-x-1.5 overflow-x-auto no-scrollbar">
-        <span class="text-[11px] font-medium text-slate-400">Radius:</span>
-        <button onclick="setRadiusFilter(5)" class="radius-chip px-2.5 py-1 rounded-lg border border-slate-200 bg-white font-medium hover:border-emerald-700" data-radius="5">5 km</button>
-        <button onclick="setRadiusFilter(15)" class="radius-chip px-2.5 py-1 rounded-lg border border-slate-200 bg-white font-medium hover:border-emerald-700" data-radius="15">15 km</button>
-        <button onclick="setRadiusFilter(25)" class="radius-chip px-2.5 py-1 rounded-lg border border-emerald-700 bg-emerald-50 text-emerald-800 font-bold" data-radius="25">25 km</button>
-        <button onclick="setRadiusFilter(999)" class="radius-chip px-2.5 py-1 rounded-lg border border-slate-200 bg-white font-medium hover:border-emerald-700" data-radius="999">Semua</button>
+        <span class="text-[11px] font-medium text-[#607072]">Radius:</span>
+        <button onclick="setRadiusFilter(5)" class="radius-chip px-2.5 py-1 rounded-xl border border-[#E5ECEB] bg-white font-medium hover:border-[#1D4D4F]" data-radius="5">5 km</button>
+        <button onclick="setRadiusFilter(15)" class="radius-chip px-2.5 py-1 rounded-xl border border-[#E5ECEB] bg-white font-medium hover:border-[#1D4D4F]" data-radius="15">15 km</button>
+        <button onclick="setRadiusFilter(25)" class="radius-chip px-2.5 py-1 rounded-xl border border-[#1D4D4F] bg-[#E6F4F1] text-[#1D4D4F] font-bold" data-radius="25">25 km</button>
+        <button onclick="setRadiusFilter(999)" class="radius-chip px-2.5 py-1 rounded-xl border border-[#E5ECEB] bg-white font-medium hover:border-[#1D4D4F]" data-radius="999">Semua</button>
       </div>
 
       <div class="flex items-center space-x-1">
-        <span id="filteredCountText" class="font-bold text-slate-800">{{ $kajians->count() }}</span>
-        <span>Kajian</span>
+        <span id="filteredCountBadge" class="font-bold text-[#1D4D4F] bg-[#E6F4F1] px-2 py-0.5 rounded-full">{{ $kajians->count() }}</span>
+        <span class="text-[11px]">Kajian</span>
       </div>
     </div>
   </section>
 
-  <!-- Hero Spotlight: Majelis Pilihan Terdekat -->
+  <!-- Hero Spotlight: Majelis Pilihan Terdekat (Figma Screen 1: KAJIAN PILIHAN) -->
   <section id="heroSpotlightContainer" class="hidden">
-    <div class="bg-gradient-to-r from-emerald-800 to-emerald-900 rounded-2xl p-4 text-white shadow-md relative overflow-hidden border border-emerald-700">
-      <div class="flex items-start justify-between">
-        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-400 text-slate-900 uppercase tracking-wider">
-          Majelis Terdekat
+    <div class="relative rounded-3xl overflow-hidden shadow-md border border-[#E5ECEB] bg-[#153A3B] group cursor-pointer" onclick="document.getElementById('spotlightDetailBtn').click()">
+      <!-- Hero Image / Flyer Background -->
+      <img id="spotlightHeroImg" src="https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=800&q=80" alt="Kajian Pilihan" class="w-full h-52 object-cover opacity-85 group-hover:scale-105 transition-transform duration-500">
+      <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/30"></div>
+
+      <!-- Top Badge & Bookmark Button -->
+      <div class="absolute top-3 inset-x-3 flex items-center justify-between">
+        <span class="px-3 py-1 rounded-full text-[10px] font-extrabold tracking-wider uppercase bg-[#E6F4F1] text-[#1D4D4F] shadow-xs">
+          KAJIAN PILIHAN
         </span>
-        <span id="spotlightDistance" class="text-xs font-semibold text-emerald-200">
-          -- km
-        </span>
-      </div>
-
-      <h2 id="spotlightTitle" class="text-base font-bold mt-2 leading-snug line-clamp-2">
-        Memuat majelis terdekat...
-      </h2>
-      <p id="spotlightSpeaker" class="text-xs text-emerald-100 font-medium mt-1">
-        -
-      </p>
-
-      <div class="flex items-center space-x-3 mt-3 text-xs text-emerald-200">
-        <div class="flex items-center space-x-1">
-          <svg class="w-3.5 h-3.5 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-          </svg>
-          <span id="spotlightMasjid" class="truncate max-w-[140px]">-</span>
-        </div>
-        <div class="flex items-center space-x-1">
-          <svg class="w-3.5 h-3.5 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          <span id="spotlightTime">-</span>
-        </div>
-      </div>
-
-      <div class="mt-4 pt-3 border-t border-emerald-700/60 flex items-center justify-between">
-        <button id="spotlightDetailBtn" class="text-xs font-semibold text-white underline hover:text-amber-300">
-          Buka Detail
-        </button>
-        <button id="spotlightRouteBtn" class="bg-white text-emerald-900 hover:bg-emerald-50 text-xs font-bold py-1.5 px-3 rounded-lg shadow-sm touch-btn flex items-center space-x-1">
-          <svg class="w-3.5 h-3.5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
-          </svg>
-          <span>Panduan Rute</span>
+        <button id="spotlightBookmarkBtn" type="button" class="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/60 transition touch-btn" onclick="event.stopPropagation();">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
         </button>
       </div>
+
+      <!-- Bottom Floating Glassmorphism Overlay Card -->
+      <div class="absolute bottom-3 inset-x-3 p-3.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-white shadow-sm">
+        <div class="flex items-center gap-2 mb-1">
+          <span id="spotlightTimePill" class="text-[10px] font-bold uppercase tracking-wider text-[#FCD34D]">Ahad • 09.00 WIB</span>
+          <span class="text-white/40">•</span>
+          <span id="spotlightDistance" class="text-[10px] text-white/90 font-medium">850 m</span>
+        </div>
+        <h2 id="spotlightTitle" class="text-sm sm:text-base font-bold text-white leading-snug line-clamp-1">
+          Menata Hati, Menemukan Tenang
+        </h2>
+        <p id="spotlightMasjid" class="text-xs text-white/85 mt-0.5 flex items-center gap-1 truncate">
+          <svg class="w-3.5 h-3.5 text-[#E6F4F1] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+          <span>Masjid Taman Ilmu • Dago, Bandung</span>
+        </p>
+      </div>
+      <button id="spotlightDetailBtn" class="hidden"></button>
     </div>
   </section>
+
+  <!-- Feed Section Header: Luangkan waktu untuk ilmu -->
+  <div class="flex items-center justify-between pt-1">
+    <div>
+      <h2 class="text-sm font-bold text-[#1C2224]">Luangkan waktu untuk ilmu</h2>
+      <p class="text-[11px] text-[#607072]">Kajian sunnah pilihan di sekitarmu</p>
+    </div>
+    <span id="filteredCountText" class="text-xs font-bold text-[#1D4D4F] bg-[#E6F4F1] px-2.5 py-0.5 rounded-full">
+      {{ $kajians->count() }} Kajian
+    </span>
+  </div>
 
   <!-- Feed Daftar Kajian -->
   <section class="space-y-3" id="kajianCardsList">
@@ -225,82 +214,135 @@
 
 </div>
 
-<!-- Modal Bottom Sheet: Detail Kajian -->
+<!-- Modal Bottom Sheet: Detail Kajian (Sesuai Desain Figma Screen 2) -->
 <div id="detailModal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 transition-opacity">
-  <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-2xl max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl p-5 space-y-4">
-    <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto sm:hidden mb-2"></div>
+  <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto no-scrollbar shadow-2xl p-4 sm:p-5 space-y-4">
+    <!-- Mobile Drag Handle -->
+    <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto sm:hidden mb-1"></div>
     
-    <div class="flex items-start justify-between border-b border-slate-100 pb-3">
-      <div>
-        <span id="modalCategory" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-800">Kategori</span>
-        <h3 id="modalTitle" class="text-base font-bold text-slate-900 mt-1.5 leading-snug">Judul Kajian</h3>
-        <p id="modalSpeaker" class="text-xs font-medium text-slate-600 mt-0.5">Ustadz</p>
-      </div>
-      <button onclick="closeDetailModal()" class="text-slate-400 hover:text-slate-600 p-1" aria-label="Tutup Detail">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-        </svg>
+    <!-- Top Navigation Bar: Back Chevron, Title, Share Button -->
+    <div class="flex items-center justify-between border-b border-[#E5ECEB] pb-3">
+      <button onclick="closeDetailModal()" class="w-9 h-9 rounded-full bg-[#F8FAF9] hover:bg-[#E6F4F1] border border-[#E5ECEB] text-[#1D4D4F] flex items-center justify-center touch-btn" aria-label="Kembali">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+      </button>
+      <h2 class="text-sm font-bold text-[#1C2224]">Detail Kajian</h2>
+      <button onclick="shareCurrentKajian()" class="w-9 h-9 rounded-full bg-[#F8FAF9] hover:bg-[#E6F4F1] border border-[#E5ECEB] text-[#1D4D4F] flex items-center justify-center touch-btn" aria-label="Bagikan">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
       </button>
     </div>
 
-    <!-- Informasi Pelaksanaan -->
-    <div class="space-y-2 text-xs">
-      <div class="flex items-center space-x-2 text-slate-700">
-        <svg class="w-4 h-4 text-emerald-800 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-        </svg>
-        <span class="font-bold text-slate-900" id="modalMasjid">Masjid</span>
+    <!-- Hero Media Card (Flyer Preview / Mosque) -->
+    <div id="modalFlyerWrapper" class="relative rounded-2xl overflow-hidden border border-[#E5ECEB] bg-slate-900 group">
+      <img id="modalFlyerImg" src="" alt="Flyer Kajian" class="w-full h-48 sm:h-56 object-cover" loading="lazy">
+      <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/20"></div>
+      
+      <!-- Badges on Image -->
+      <div class="absolute top-2.5 inset-x-2.5 flex items-center justify-between">
+        <span class="px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-[#E6F4F1] text-[#1D4D4F] shadow-xs">
+          KAJIAN PILIHAN
+        </span>
+        <a id="modalFlyerFullLink" href="#" target="_blank" rel="noopener" class="bg-black/60 hover:bg-black text-white text-[10px] font-bold px-2 py-0.5 rounded-lg backdrop-blur-xs flex items-center gap-1">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+          <span>Buka Penuh ↗</span>
+        </a>
       </div>
 
-      <div class="flex items-start space-x-2 text-slate-600">
-        <svg class="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-        </svg>
-        <span id="modalAddress">Alamat masjid lengkap...</span>
+      <div class="absolute bottom-2.5 inset-x-2.5 text-white">
+        <p id="modalHeroSub" class="text-xs text-white/90 font-medium truncate"></p>
+      </div>
+    </div>
+
+    <!-- Metadata Badges Row -->
+    <div class="flex items-center gap-1.5 flex-wrap">
+      <span id="modalCategory" class="px-3 py-1 rounded-full text-[10px] font-bold bg-[#E6F4F1] text-[#1D4D4F]">
+        Akhlak & Hati
+      </span>
+      <span id="modalAudience" class="px-3 py-1 rounded-full text-[10px] font-medium bg-[#F8FAF9] text-[#607072] border border-[#E5ECEB]">
+        Terbuka untuk umum
+      </span>
+      <span class="px-3 py-1 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-100">
+        Gratis
+      </span>
+    </div>
+
+    <!-- Main Title Heading -->
+    <div>
+      <h1 id="modalTitle" class="text-lg font-extrabold text-[#1C2224] leading-snug">Judul Kajian</h1>
+    </div>
+
+    <!-- Detail Cards List (Figma Screen 2) -->
+    <div class="space-y-2.5">
+      <!-- Card 1: Tanggal & Waktu -->
+      <div class="bg-[#F8FAF9] p-3 rounded-2xl border border-[#E5ECEB] flex items-start gap-3">
+        <div class="w-9 h-9 rounded-full bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center shrink-0 mt-0.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-[10px] font-extrabold uppercase tracking-wider text-[#607072]">TANGGAL & WAKTU</p>
+          <p id="modalDateTimeStr" class="text-xs font-bold text-[#1C2224] mt-0.5">Ahad • 09:00 WIB</p>
+          <p class="text-[11px] text-[#607072] mt-0.5">Hadir 15 menit lebih awal untuk menyempurnakan shaf</p>
+        </div>
       </div>
 
-      <div class="flex items-center space-x-4 pt-1">
-        <div class="flex items-center space-x-1.5 text-slate-700">
-          <svg class="w-4 h-4 text-emerald-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-          </svg>
-          <span class="font-semibold" id="modalDay">Ahad</span>
+      <!-- Card 2: Tempat Kajian -->
+      <div class="bg-[#F8FAF9] p-3 rounded-2xl border border-[#E5ECEB] flex items-start gap-3">
+        <div class="w-9 h-9 rounded-full bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center shrink-0 mt-0.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
         </div>
-        <div class="flex items-center space-x-1.5 text-slate-700">
-          <svg class="w-4 h-4 text-emerald-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          <span id="modalTime">09:00 WIB</span>
+        <div class="flex-1 min-w-0">
+          <p class="text-[10px] font-extrabold uppercase tracking-wider text-[#607072]">TEMPAT KAJIAN</p>
+          <p id="modalMasjid" class="text-xs font-bold text-[#1C2224] mt-0.5">Masjid</p>
+          <p id="modalAddress" class="text-[11px] text-[#607072] mt-0.5">Alamat lengkap...</p>
+          <a id="modalRouteBtn" href="#" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-[11px] font-bold text-[#1D4D4F] mt-1.5 hover:underline">
+            <span>Lihat petunjuk arah ↗</span>
+          </a>
         </div>
-        <div class="flex items-center space-x-1 text-slate-700">
-          <span class="px-2 py-0.5 rounded bg-slate-100 font-medium" id="modalAudience">Umum</span>
+      </div>
+
+      <!-- Card 3: Pembicara / Ustadz -->
+      <div class="bg-[#F8FAF9] p-3 rounded-2xl border border-[#E5ECEB] flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full bg-[#1D4D4F] text-white flex items-center justify-center font-bold text-xs shrink-0">
+          <span id="modalSpeakerInitial">U</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-[10px] font-extrabold uppercase tracking-wider text-[#607072]">PEMBICARA / USTADZ</p>
+          <p id="modalSpeaker" class="text-xs font-bold text-[#1C2224] mt-0.5 truncate">Ustadz</p>
+          <p class="text-[10px] text-[#607072]">Pengasuh Kajian Sunnah</p>
         </div>
       </div>
     </div>
 
-    <!-- Deskripsi Kajian -->
-    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80">
-      <h4 class="text-xs font-bold text-slate-800 mb-1">Deskripsi & Pokok Bahasan</h4>
-      <p id="modalDescription" class="text-xs text-slate-600 leading-relaxed">
-        Deskripsi materi kajian sunnah.
+    <!-- Deskripsi & Pokok Bahasan -->
+    <div class="bg-white p-3.5 rounded-2xl border border-[#E5ECEB] space-y-2">
+      <h4 class="text-xs font-bold text-[#1C2224]">Apa yang akan dibahas?</h4>
+      <p id="modalDescription" class="text-xs text-[#607072] leading-relaxed">
+        Kajian ilmiah sunnah ahlussunnah wal jamaah, terbuka untuk jamaah ikhwan dan akhwat yang ingin memperdalam ilmu syar'i.
       </p>
+      <div class="space-y-1.5 pt-1 text-[11px] text-[#1C2224]">
+        <div class="flex items-center gap-2">
+          <span class="w-4 h-4 rounded-full bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center text-[10px] font-bold shrink-0">✓</span>
+          <span>Pembahasan dalil shahih dari Al-Qur'an dan As-Sunnah</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-4 h-4 rounded-full bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center text-[10px] font-bold shrink-0">✓</span>
+          <span>Tanya jawab seputar persoalan ibadah dan muamalah</span>
+        </div>
+      </div>
     </div>
 
-    <!-- Tombol Aksi -->
-    <div class="grid grid-cols-2 gap-2 pt-2">
-      <button id="modalRouteBtn" class="flex items-center justify-center space-x-1.5 bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-sm touch-btn">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-        </svg>
-        <span>Petunjuk Arah</span>
-      </button>
+    <!-- Tombol Sumber Asli Meta (Facebook / Instagram / Threads) -->
+    <a id="modalSourceBtn" href="#" target="_blank" rel="noopener noreferrer" class="hidden w-full touch-btn py-2.5 rounded-2xl text-white font-bold text-xs flex items-center justify-center gap-2 no-underline shadow-xs transition hover:opacity-90">
+      <span id="modalSourceGlyph" class="font-extrabold text-sm"></span>
+      <span id="modalSourceLabel">Buka Sumber Asli di Facebook ↗</span>
+    </a>
 
-      <button id="modalShareBtn" onclick="shareCurrentKajian()" class="flex items-center justify-center space-x-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold py-2.5 px-4 rounded-xl touch-btn">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path>
-        </svg>
-        <span>Bagikan Info</span>
+    <!-- Sticky Bottom CTA Action (Figma Screen 2: Saya Ingin Hadir) -->
+    <div class="pt-2 space-y-1.5">
+      <button id="modalAttendBtn" onclick="submitModalAttendance()" class="w-full py-3 rounded-full bg-[#1D4D4F] hover:bg-[#153A3B] text-white text-xs font-extrabold shadow-sm touch-btn flex items-center justify-center gap-2 transition">
+        <svg class="w-4 h-4 text-[#FCD34D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+        <span id="modalAttendLabel">Saya Ingin Hadir</span>
       </button>
+      <p class="text-[10px] text-center text-[#607072]">Tempat terbatas dan ada konfirmasi pencatatan kehadiran majelis.</p>
     </div>
   </div>
 </div>
@@ -624,6 +666,12 @@
     document.getElementById('nextPrayerCountdown').innerText = `Menuju ${nextPrayer.name}: ${diffH > 0 ? diffH + 'j ' : ''}${diffM}m`;
   }
 
+  const SOURCE_META = {
+    instagram: { label: 'Instagram', style: 'background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)', glyph: 'IG' },
+    facebook: { label: 'Facebook', style: 'background:#1877F2', glyph: 'f' },
+    threads: { label: 'Threads', style: 'background:#111111', glyph: '@' },
+  };
+
   // 3. Render Daftar Kajian
   function renderKajianFeed() {
     const container = document.getElementById('kajianCardsList');
@@ -658,17 +706,35 @@
 
     countDisplay.innerText = filtered.length;
 
-    // Spotlight pada item terdekat jika ada
+    // Spotlight pada item terdekat jika ada (Figma Screen 1)
     if (filtered.length > 0 && !activeSearch) {
       const top = filtered[0];
       heroSpotlight.classList.remove('hidden');
       document.getElementById('spotlightTitle').innerText = top.title;
-      document.getElementById('spotlightSpeaker').innerText = top.ustadz;
-      document.getElementById('spotlightMasjid').innerText = top.masjid;
-      document.getElementById('spotlightTime').innerText = `${top.day}, ${top.time}`;
+      document.getElementById('spotlightMasjid').innerHTML = `
+        <svg class="w-3.5 h-3.5 text-[#E6F4F1] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+        <span>${top.masjid} • ${top.address ? top.address.split(',')[0] : 'Bandung'}</span>
+      `;
+      document.getElementById('spotlightTimePill').innerText = `${top.day.toUpperCase()} • ${top.time}`;
       document.getElementById('spotlightDistance').innerText = `${top.distance.toFixed(1)} km`;
+      if (top.poster_url) {
+        document.getElementById('spotlightHeroImg').src = top.poster_url;
+      }
       document.getElementById('spotlightDetailBtn').onclick = () => openDetailModalWithEvent(top);
-      document.getElementById('spotlightRouteBtn').onclick = () => openGoogleMapsRoute(top.lat, top.lon);
+      
+      const isTopSaved = userBookmarkIds.has(top.id);
+      const topBookmarkBtn = document.getElementById('spotlightBookmarkBtn');
+      if (topBookmarkBtn) {
+        topBookmarkBtn.innerHTML = `
+          <svg class="w-4 h-4" fill="${isTopSaved ? '#FCD34D' : 'none'}" stroke="${isTopSaved ? '#FCD34D' : 'currentColor'}" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+          </svg>
+        `;
+        topBookmarkBtn.onclick = (e) => {
+          e.stopPropagation();
+          toggleBookmarkAction(top.id, topBookmarkBtn);
+        };
+      }
     } else {
       heroSpotlight.classList.add('hidden');
     }
@@ -684,68 +750,66 @@
 
     filtered.forEach(ev => {
       const isSaved = userBookmarkIds.has(ev.id);
+      const srcMeta = SOURCE_META[ev.source] || SOURCE_META.facebook;
+      const hasSource = ev.source_url && ev.source_url !== '#';
+      const flyerThumb = ev.poster_url 
+        ? `<div class="w-16 h-16 rounded-2xl overflow-hidden shrink-0 bg-slate-100 border border-[#E5ECEB] shadow-xs">
+             <img src="${ev.poster_url}" alt="Flyer" class="w-full h-full object-cover" loading="lazy" onerror="this.parentElement.style.display='none'">
+           </div>`
+        : `<div class="w-16 h-16 rounded-2xl overflow-hidden shrink-0 bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center font-bold text-xs border border-[#E5ECEB]">
+             <span>${(ev.category || 'ILMU').substring(0, 4)}</span>
+           </div>`;
+      
       const card = document.createElement('article');
-      card.className = 'bg-white rounded-2xl p-4 border border-slate-200/90 shadow-sm hover:border-emerald-700/60 transition-all space-y-3';
+      card.className = 'bg-white rounded-2xl p-3.5 border border-[#E5ECEB] shadow-xs hover:border-[#1D4D4F]/50 transition-all cursor-pointer';
+      card.onclick = () => openDetailModalWithId(ev.id);
       card.innerHTML = `
-        <div class="flex items-start justify-between">
-          <div class="flex items-center space-x-1.5 flex-wrap">
-            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-100">
-              ${ev.category || 'Kajian'}
-            </span>
-            <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600">
-              ${ev.audience || 'Umum'}
-            </span>
-            ${ev.status === 'batal' ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700">Dibatalkan</span>' : ''}
+        <div class="flex items-start gap-3">
+          ${flyerThumb}
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="text-[10px] font-bold text-[#1D4D4F] bg-[#E6F4F1] px-2 py-0.5 rounded-full">
+                ${ev.day}, ${ev.time}
+              </span>
+              <div class="flex items-center gap-1 text-[11px] font-bold text-[#1D4D4F]">
+                <svg class="w-3 h-3 text-[#1D4D4F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                </svg>
+                <span>${ev.distance.toFixed(1)} km</span>
+              </div>
+            </div>
+            
+            <h3 class="text-xs sm:text-sm font-bold text-[#1C2224] leading-snug line-clamp-2 hover:text-[#1D4D4F]">
+              ${ev.title}
+            </h3>
+            
+            <p class="text-[11px] text-[#607072] mt-0.5 truncate">
+              ${ev.ustadz} • ${ev.masjid}
+            </p>
+            
+            <div class="flex items-center gap-1.5 mt-2 flex-wrap" onclick="event.stopPropagation();">
+              <span class="text-[9px] font-medium text-[#607072] bg-[#F8FAF9] border border-[#E5ECEB] px-2 py-0.5 rounded-md">
+                ${ev.category || 'Umum'}
+              </span>
+              ${hasSource ? `
+                <a href="${ev.source_url}" target="_blank" rel="noopener noreferrer" title="Buka sumber asli di ${srcMeta.label}" class="inline-flex items-center gap-1 text-[9px] font-bold text-white px-2 py-0.5 rounded-full shadow-xs no-underline transition hover:opacity-90 cursor-pointer" style="${srcMeta.style}">
+                  <span class="font-extrabold text-[9px]">${srcMeta.glyph}</span>
+                  <span>${srcMeta.label} ↗</span>
+                </a>
+              ` : ''}
+              ${ev.status === 'batal' ? '<span class="px-2 py-0.5 rounded text-[9px] font-bold bg-rose-50 text-rose-700">Dibatalkan</span>' : ''}
+            </div>
           </div>
-          <div class="flex items-center space-x-1 text-xs font-bold text-emerald-800">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-            </svg>
-            <span>${ev.distance.toFixed(1)} km</span>
-          </div>
-        </div>
-
-        <div>
-          <h3 class="text-sm font-bold text-slate-900 leading-snug line-clamp-2 hover:text-emerald-800 cursor-pointer" onclick="openDetailModalWithId(${ev.id})">
-            ${ev.title}
-          </h3>
-          <p class="text-xs font-medium text-slate-600 mt-1 flex items-center space-x-1">
-            <span>${ev.ustadz}</span>
-          </p>
-        </div>
-
-        <div class="space-y-1 text-xs text-slate-500 pt-1 border-t border-slate-100">
-          <div class="flex items-center space-x-1.5">
-            <svg class="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-            </svg>
-            <span class="font-medium text-slate-700 truncate">${ev.masjid}</span>
-          </div>
-          <div class="flex items-center space-x-1.5">
-            <svg class="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <span>${ev.day}, ${ev.time}</span>
-          </div>
-        </div>
-
-        <div class="pt-2 flex items-center justify-between">
-          <button onclick="toggleBookmarkAction(${ev.id}, this)" class="bookmark-btn p-2 rounded-xl border ${isSaved ? 'bg-amber-50 text-amber-600 border-amber-300' : 'bg-slate-50 text-slate-500 border-slate-200'} hover:border-amber-400 touch-btn" aria-label="Simpan Kajian">
-            <svg class="w-4 h-4" fill="${isSaved ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
-            </svg>
-          </button>
-
-          <div class="flex items-center space-x-1.5">
-            <button onclick="openDetailModalWithId(${ev.id})" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl touch-btn">
-              Detail
-            </button>
-            <button onclick="openGoogleMapsRoute(${ev.lat}, ${ev.lon})" class="px-3 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold rounded-xl shadow-sm touch-btn flex items-center space-x-1">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+          
+          <div class="self-center flex flex-col items-center gap-2 pl-1">
+            <button onclick="event.stopPropagation(); toggleBookmarkAction(${ev.id}, this)" class="bookmark-btn p-1.5 rounded-full ${isSaved ? 'text-amber-500 bg-amber-50' : 'text-[#607072] hover:text-[#1D4D4F]'} transition touch-btn" aria-label="Simpan">
+              <svg class="w-4 h-4" fill="${isSaved ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
               </svg>
-              <span>Rute</span>
             </button>
+            <svg class="w-4 h-4 text-[#607072]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
           </div>
         </div>
       `;
@@ -764,15 +828,92 @@
     document.getElementById('modalCategory').innerText = ev.category || 'Kajian Sunnah';
     document.getElementById('modalTitle').innerText = ev.title;
     document.getElementById('modalSpeaker').innerText = ev.ustadz;
+    document.getElementById('modalSpeakerInitial').innerText = (ev.ustadz || 'U').replace(/^Ustadz\s+/i, '').charAt(0) || 'U';
     document.getElementById('modalMasjid').innerText = ev.masjid;
     document.getElementById('modalAddress').innerText = ev.address;
-    document.getElementById('modalDay').innerText = ev.day;
-    document.getElementById('modalTime').innerText = ev.time;
-    document.getElementById('modalAudience').innerText = ev.audience || 'Umum';
+    document.getElementById('modalDateTimeStr').innerText = `${ev.day} • ${ev.time}`;
+    document.getElementById('modalAudience').innerText = ev.audience ? `Terbuka untuk ${ev.audience}` : 'Terbuka untuk umum';
+    document.getElementById('modalHeroSub').innerText = `${ev.ustadz} • ${ev.masjid}`;
     document.getElementById('modalDescription').innerText = ev.description || 'Kajian ilmiah ahlussunnah wal jamaah, terbuka untuk jamaah yang ingin menuntut ilmu syar\'i.';
     
+    // Flyer Preview
+    const flyerWrapper = document.getElementById('modalFlyerWrapper');
+    const flyerImg = document.getElementById('modalFlyerImg');
+    const flyerLink = document.getElementById('modalFlyerFullLink');
+    if (ev.poster_url) {
+      flyerImg.src = ev.poster_url;
+      flyerLink.href = ev.poster_url;
+      flyerWrapper.classList.remove('hidden');
+    } else {
+      flyerImg.src = 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=800&q=80';
+      flyerLink.href = flyerImg.src;
+      flyerWrapper.classList.remove('hidden');
+    }
+
+    // Sumber Asli Link
+    const sourceBtn = document.getElementById('modalSourceBtn');
+    const sourceGlyph = document.getElementById('modalSourceGlyph');
+    const sourceLabel = document.getElementById('modalSourceLabel');
+    const targetUrl = ev.source_url || ev.sourceUrl;
+    if (targetUrl && targetUrl !== '#') {
+      const srcMeta = SOURCE_META[ev.source] || SOURCE_META.facebook;
+      sourceBtn.href = targetUrl;
+      sourceBtn.style.cssText = srcMeta.style;
+      sourceGlyph.innerText = srcMeta.glyph;
+      sourceLabel.innerText = `Buka Sumber Asli di ${srcMeta.label} ↗`;
+      sourceBtn.classList.remove('hidden');
+    } else {
+      sourceBtn.classList.add('hidden');
+    }
+
+    // Reset tombol kehadiran
+    const attendBtn = document.getElementById('modalAttendBtn');
+    const attendLabel = document.getElementById('modalAttendLabel');
+    attendBtn.disabled = false;
+    attendBtn.className = 'w-full py-3 rounded-full bg-[#1D4D4F] hover:bg-[#153A3B] text-white text-xs font-extrabold shadow-sm touch-btn flex items-center justify-center gap-2 transition';
+    attendLabel.innerText = 'Saya Ingin Hadir';
+
     document.getElementById('modalRouteBtn').onclick = () => openGoogleMapsRoute(ev.lat, ev.lon);
     document.getElementById('detailModal').classList.remove('hidden');
+  }
+
+  function submitModalAttendance() {
+    if (!currentDetailEvent) return;
+    const btn = document.getElementById('modalAttendBtn');
+    const lbl = document.getElementById('modalAttendLabel');
+    btn.disabled = true;
+    lbl.innerText = 'Mencatat Kehadiran...';
+
+    fetch(`/kajian/${currentDetailEvent.id}/attendance`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': CSRF_TOKEN
+      }
+    })
+    .then(res => {
+      if (res.status === 401) {
+        window.location.href = '{{ route("login") }}';
+        return;
+      }
+      return res.json();
+    })
+    .then(data => {
+      btn.disabled = false;
+      if (!data) return;
+      if (data.attended) {
+        lbl.innerText = 'Sudah Terdaftar Hadir ✓';
+        btn.className = 'w-full py-3 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-sm touch-btn flex items-center justify-center gap-2 transition';
+      } else {
+        lbl.innerText = 'Saya Ingin Hadir';
+        btn.className = 'w-full py-3 rounded-full bg-[#1D4D4F] hover:bg-[#153A3B] text-white text-xs font-extrabold shadow-sm touch-btn flex items-center justify-center gap-2 transition';
+      }
+    })
+    .catch(err => {
+      btn.disabled = false;
+      lbl.innerText = 'Saya Ingin Hadir';
+      console.warn('Gagal mencatat kehadiran:', err);
+    });
   }
 
   function closeDetailModal() {
@@ -817,11 +958,9 @@
     activeCategory = cat;
     document.querySelectorAll('.category-chip').forEach(btn => {
       if (btn.getAttribute('data-cat') === cat) {
-        btn.classList.remove('bg-white', 'text-slate-700', 'border', 'border-slate-200');
-        btn.classList.add('bg-emerald-800', 'text-white', 'font-semibold', 'shadow-sm');
+        btn.className = 'category-chip whitespace-nowrap px-4 py-2 rounded-full font-bold transition-all bg-[#1D4D4F] text-white shadow-xs';
       } else {
-        btn.classList.remove('bg-emerald-800', 'text-white', 'font-semibold', 'shadow-sm');
-        btn.classList.add('bg-white', 'text-slate-700', 'border', 'border-slate-200');
+        btn.className = 'category-chip whitespace-nowrap px-4 py-2 rounded-full font-medium transition-all bg-white text-[#607072] border border-[#E5ECEB] hover:border-[#1D4D4F] hover:text-[#1D4D4F]';
       }
     });
     renderKajianFeed();

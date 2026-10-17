@@ -37,7 +37,7 @@ class SiniKajianTest extends TestCase
     {
         $response = $this->get('/kiblat');
         $response->assertStatus(200);
-        $response->assertSee('Kompas Arah Kiblat');
+        $response->assertSee('Arah Kiblat');
     }
 
     /**

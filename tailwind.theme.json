@@ -2,14 +2,14 @@
   "theme": {
     "extend": {
       "colors": {
-        "primary": "#0c5c40",
-        "secondary": "#2c654c",
-        "tertiary": "#b45309",
-        "neutral": "#faf8f3",
+        "primary": "#1d4d4f",
+        "secondary": "#235b5e",
+        "tertiary": "#e6f4f1",
+        "neutral": "#f8faf9",
         "surface": "#ffffff",
-        "card-border": "#e2e8f0",
-        "text-primary": "#0f172a",
-        "text-secondary": "#475569",
+        "card-border": "#e5eceb",
+        "text-primary": "#1c2224",
+        "text-secondary": "#607072",
         "text-inverse": "#ffffff",
         "gold-accent": "#fcd34d"
       },

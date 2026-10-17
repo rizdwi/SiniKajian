@@ -1,50 +1,95 @@
 @extends('layouts.app')
 
-@section('title', 'Peta Kajian Sunnah Terdekat - SiniKajian')
+@section('title', 'Majelis Terdekat - SiniKajian')
 
 @section('content')
-<div class="relative h-[calc(100vh-4.5rem)] w-full overflow-hidden flex flex-col">
-  <!-- Top Bar Controls -->
-  <div class="absolute top-3 inset-x-3 z-[1000] flex items-center gap-2">
-    <div class="flex-1 bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-slate-200/80 px-3.5 py-2.5 flex items-center gap-2.5">
-      <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-      <input type="text" id="mapSearchInput" placeholder="Cari ustadz, masjid, atau tema..." class="w-full text-xs font-medium text-slate-800 placeholder-slate-400 bg-transparent focus:outline-none">
+<div class="space-y-3 pb-20">
+  <!-- Top Header Area (Figma Screen 3: Majelis Terdekat) -->
+  <header class="flex items-center justify-between pt-1">
+    <div>
+      <h1 class="text-xl font-extrabold text-[#1D4D4F] tracking-tight">Majelis Terdekat</h1>
+      <p class="text-xs text-[#607072] mt-0.5">Temukan ruang untuk bertumbuh di sekitarmu.</p>
     </div>
-    <button onclick="recenterMap()" title="Lokasi Saya" class="w-11 h-11 bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-slate-200/80 flex items-center justify-center text-emerald-800 hover:bg-emerald-50 active:scale-95 transition-all">
+    <button onclick="recenterMap()" title="Lokasi GPS Saya" class="w-10 h-10 rounded-full bg-white border border-[#E5ECEB] text-[#1D4D4F] flex items-center justify-center shadow-xs touch-btn hover:bg-[#E6F4F1] transition">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
     </button>
-  </div>
+  </header>
 
-  <!-- Leaflet Map Container -->
-  <div id="fullMap" class="w-full h-full z-0"></div>
-
-  <!-- Bottom Drawer for Selected Kajian -->
-  <div id="mapDrawer" class="hidden absolute bottom-4 inset-x-3 z-[1000] bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-4 transition-all animate-slideUp">
-    <div class="flex items-start justify-between gap-3">
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-2 mb-1">
-          <span id="drawerCat" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800"></span>
-          <span id="drawerDay" class="text-[11px] font-semibold text-slate-500"></span>
-          <span id="drawerDist" class="text-[11px] font-bold text-emerald-700 ml-auto"></span>
-        </div>
-        <h3 id="drawerTitle" class="text-sm font-bold text-slate-900 truncate"></h3>
-        <p id="drawerUstadz" class="text-xs font-medium text-slate-600 truncate mt-0.5"></p>
-        <p id="drawerMasjid" class="text-[11px] text-slate-500 truncate mt-0.5"></p>
-      </div>
-      <button onclick="closeMapDrawer()" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-      </button>
+  <!-- Search & Radius Bar -->
+  <div class="flex items-center gap-2">
+    <div class="relative flex-1">
+      <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#607072]">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+      </span>
+      <input 
+        type="text" 
+        id="mapSearchInput" 
+        placeholder="Cari masjid, daerah, atau ustadz" 
+        class="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E5ECEB] rounded-2xl text-xs sm:text-sm text-[#1C2224] placeholder-[#607072] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F] shadow-xs"
+      >
     </div>
     
-    <div class="mt-3 pt-3 border-t border-slate-100 flex items-center gap-2">
-      <a id="drawerGmapsBtn" href="#" target="_blank" rel="noopener" class="flex-1 py-2 px-3 rounded-xl bg-emerald-800 text-white text-xs font-bold text-center flex items-center justify-center gap-1.5 hover:bg-emerald-900 transition-colors">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
-        Buka Google Maps
-      </a>
-      <button id="drawerDetailBtn" class="py-2 px-3 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200 transition-colors">
-        Detail
+    <!-- Segmented Control Switcher: Peta vs Daftar (Figma Screen 3) -->
+    <div class="inline-flex bg-[#E6F4F1] p-1 rounded-2xl border border-[#D1EAE5] shrink-0 text-xs font-bold">
+      <button id="viewToggleMap" onclick="switchView('map')" class="px-3 py-1.5 rounded-xl bg-[#1D4D4F] text-white shadow-xs transition">
+        Peta
+      </button>
+      <button id="viewToggleList" onclick="switchView('list')" class="px-3 py-1.5 rounded-xl text-[#1D4D4F] hover:bg-white/60 transition">
+        Daftar
       </button>
     </div>
+  </div>
+
+  <!-- Map View Container -->
+  <div id="mapViewWrapper" class="relative rounded-3xl overflow-hidden border border-[#E5ECEB] shadow-sm bg-slate-100 h-[62vh]">
+    <div id="fullMap" class="w-full h-full z-0"></div>
+
+    <!-- Radius Pill Indicator on Map -->
+    <div class="absolute top-3 left-3 z-[1000] bg-white/90 backdrop-blur-md px-3 py-1 rounded-full border border-[#E5ECEB] shadow-xs text-[11px] font-bold text-[#1D4D4F] flex items-center gap-1.5">
+      <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+      <span id="radiusLabel">Radius: 15 km</span>
+    </div>
+
+    <!-- Floating Bottom Drawer on Map (Selected Venue) -->
+    <div id="mapDrawer" class="hidden absolute bottom-3 inset-x-3 z-[1000] bg-white rounded-2xl shadow-xl border border-[#E5ECEB] p-3.5 transition-all animate-slideUp">
+      <div class="flex items-start gap-3">
+        <div id="drawerFlyerThumb" class="hidden w-14 h-14 rounded-2xl overflow-hidden shrink-0 bg-slate-100 border border-[#E5ECEB]">
+          <img id="drawerFlyerImg" src="" alt="Flyer" class="w-full h-full object-cover">
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-1.5 mb-1 flex-wrap">
+            <span id="drawerCat" class="px-2.5 py-0.5 rounded-full text-[9px] font-bold bg-[#E6F4F1] text-[#1D4D4F]"></span>
+            <span id="drawerDay" class="text-[10px] text-[#607072]"></span>
+            <span id="drawerDist" class="text-[10px] font-extrabold text-[#1D4D4F] ml-auto bg-[#E6F4F1] px-2 py-0.5 rounded-full"></span>
+          </div>
+          <h3 id="drawerTitle" class="text-xs sm:text-sm font-bold text-[#1C2224] truncate"></h3>
+          <p id="drawerUstadz" class="text-[11px] text-[#607072] truncate mt-0.5"></p>
+          <p id="drawerMasjid" class="text-[10px] text-[#607072] truncate mt-0.5"></p>
+        </div>
+        <button onclick="closeMapDrawer()" class="p-1 rounded-lg text-[#607072] hover:text-[#1C2224]">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+      
+      <div class="mt-3 pt-2.5 border-t border-[#E5ECEB] flex items-center gap-2">
+        <a id="drawerGmapsBtn" href="#" target="_blank" rel="noopener" class="flex-1 py-2 px-3 rounded-full bg-[#1D4D4F] text-white text-xs font-bold text-center flex items-center justify-center gap-1.5 hover:bg-[#153A3B] transition">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+          Petunjuk Arah ↗
+        </a>
+        <a id="drawerSourceLink" href="#" target="_blank" rel="noopener" class="hidden py-2 px-3 rounded-full bg-[#E6F4F1] text-[#1D4D4F] text-xs font-bold hover:bg-[#D1EAE5] transition">
+          Sumber
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- List View Container (Figma Screen 3: Di sekitarmu) -->
+  <div id="listViewWrapper" class="hidden space-y-2.5">
+    <div class="flex items-center justify-between px-1">
+      <h2 class="text-xs font-bold uppercase tracking-wider text-[#607072]">Di sekitarmu</h2>
+      <span id="listCountLabel" class="text-xs font-bold text-[#1D4D4F]"></span>
+    </div>
+    <div id="nearMosqueCards" class="space-y-2.5"></div>
   </div>
 </div>
 
@@ -53,13 +98,38 @@
   let userMarker = null;
   let markersLayer = null;
   const rawEvents = @json($events);
+  let currentActiveView = 'map';
 
   document.addEventListener('DOMContentLoaded', () => {
     initMap();
+    renderListView(rawEvents);
     document.getElementById('mapSearchInput').addEventListener('input', (e) => {
-      filterMapMarkers(e.target.value.toLowerCase());
+      const q = e.target.value.toLowerCase();
+      filterMapMarkers(q);
+      filterListView(q);
     });
   });
+
+  function switchView(view) {
+    currentActiveView = view;
+    const mapWrapper = document.getElementById('mapViewWrapper');
+    const listWrapper = document.getElementById('listViewWrapper');
+    const btnMap = document.getElementById('viewToggleMap');
+    const btnList = document.getElementById('viewToggleList');
+
+    if (view === 'map') {
+      mapWrapper.classList.remove('hidden');
+      listWrapper.classList.add('hidden');
+      btnMap.className = 'px-3 py-1.5 rounded-xl bg-[#1D4D4F] text-white shadow-xs transition';
+      btnList.className = 'px-3 py-1.5 rounded-xl text-[#1D4D4F] hover:bg-white/60 transition';
+      if (mapInstance) mapInstance.invalidateSize();
+    } else {
+      mapWrapper.classList.add('hidden');
+      listWrapper.classList.remove('hidden');
+      btnList.className = 'px-3 py-1.5 rounded-xl bg-[#1D4D4F] text-white shadow-xs transition';
+      btnMap.className = 'px-3 py-1.5 rounded-xl text-[#1D4D4F] hover:bg-white/60 transition';
+    }
+  }
 
   function initMap() {
     const savedLoc = JSON.parse(localStorage.getItem('sk_user_loc') || 'null');
@@ -93,9 +163,9 @@
       const customIcon = L.divIcon({
         className: 'custom-map-pin',
         html: `
-          <div class="w-8 h-8 rounded-full bg-emerald-800 text-white flex items-center justify-center shadow-lg border-2 border-white cursor-pointer transform hover:scale-110 transition-transform">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+          <div class="w-8 h-8 rounded-full bg-[#1D4D4F] text-white flex items-center justify-center shadow-lg border-2 border-white cursor-pointer transform hover:scale-110 transition-transform">
+            <svg class="w-4 h-4 text-[#E6F4F1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V11a7 7 0 00-14 0v10m0 0h14M12 4v3m-3-1l3-3 3 3"></path>
             </svg>
           </div>
         `,
@@ -108,6 +178,69 @@
         showMapDrawer(item);
       });
       markersLayer.addLayer(marker);
+    });
+  }
+
+  function renderListView(events) {
+    const container = document.getElementById('nearMosqueCards');
+    const countLabel = document.getElementById('listCountLabel');
+    countLabel.textContent = `${events.length} Majelis`;
+
+    const savedLoc = JSON.parse(localStorage.getItem('sk_user_loc') || 'null');
+    let processed = events.map(e => {
+      let d = 0;
+      if (savedLoc && e.lat && e.lon) {
+        d = haversineDistance(savedLoc.lat, savedLoc.lon, e.lat, e.lon);
+      }
+      return { ...e, distance: d };
+    });
+
+    if (savedLoc) {
+      processed.sort((a, b) => a.distance - b.distance);
+    }
+
+    container.innerHTML = '';
+    processed.forEach(item => {
+      const distStr = item.distance > 0 ? (item.distance < 1 ? Math.round(item.distance * 1000) + ' m' : item.distance.toFixed(1) + ' km') : 'Terdekat';
+      const flyer = item.poster_url 
+        ? `<div class="w-14 h-14 rounded-2xl overflow-hidden shrink-0 bg-slate-100 border border-[#E5ECEB]">
+             <img src="${item.poster_url}" alt="Foto" class="w-full h-full object-cover">
+           </div>`
+        : `<div class="w-14 h-14 rounded-2xl overflow-hidden shrink-0 bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center font-bold text-xs border border-[#E5ECEB]">
+             <span>MASJID</span>
+           </div>`;
+
+      const gmapsUrl = item.lat && item.lon 
+        ? `https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lon}`
+        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.masjid + ' ' + (item.address || ''))}`;
+
+      const card = document.createElement('div');
+      card.className = 'bg-white rounded-2xl p-3.5 border border-[#E5ECEB] shadow-xs flex items-center gap-3 hover:border-[#1D4D4F]/40 transition cursor-pointer';
+      card.onclick = () => {
+        switchView('map');
+        showMapDrawer(item);
+      };
+      card.innerHTML = `
+        ${flyer}
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-1 mb-0.5">
+            <span class="text-[9px] font-bold text-[#1D4D4F] bg-[#E6F4F1] px-2 py-0.5 rounded-full uppercase">${item.category || 'Sunnah'}</span>
+            <span class="text-[10px] font-extrabold text-[#1D4D4F] bg-[#E6F4F1] px-2 py-0.5 rounded-full">${distStr}</span>
+          </div>
+          <h3 class="text-xs sm:text-sm font-bold text-[#1C2224] truncate">${item.masjid}</h3>
+          <p class="text-[11px] text-[#607072] truncate mt-0.5">${item.address || 'Bandung'}</p>
+          <p class="text-[10px] text-[#1D4D4F] font-semibold mt-1 flex items-center gap-1">
+            <svg class="w-3 h-3 text-[#1D4D4F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span>${item.day}, ${item.time}</span>
+          </p>
+        </div>
+        <div class="self-center">
+          <a href="${gmapsUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation();" class="w-8 h-8 rounded-full bg-[#F8FAF9] hover:bg-[#E6F4F1] border border-[#E5ECEB] text-[#1D4D4F] flex items-center justify-center transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+          </a>
+        </div>
+      `;
+      container.appendChild(card);
     });
   }
 
@@ -125,13 +258,45 @@
     renderMapMarkers(filtered);
   }
 
+  function filterListView(keyword) {
+    if (!keyword) {
+      renderListView(rawEvents);
+      return;
+    }
+    const filtered = rawEvents.filter(e => 
+      (e.title && e.title.toLowerCase().includes(keyword)) ||
+      (e.ustadz && e.ustadz.toLowerCase().includes(keyword)) ||
+      (e.masjid && e.masjid.toLowerCase().includes(keyword)) ||
+      (e.category && e.category.toLowerCase().includes(keyword))
+    );
+    renderListView(filtered);
+  }
+
   function showMapDrawer(item) {
     const drawer = document.getElementById('mapDrawer');
     document.getElementById('drawerTitle').textContent = item.title;
     document.getElementById('drawerUstadz').textContent = item.ustadz;
     document.getElementById('drawerMasjid').textContent = item.masjid + (item.address ? ', ' + item.address : '');
-    document.getElementById('drawerCat').textContent = item.category || 'Kajian';
-    document.getElementById('drawerDay').textContent = (item.day || '') + ' ' + (item.time || '');
+    document.getElementById('drawerCat').textContent = item.category || 'Kajian Sunnah';
+    document.getElementById('drawerDay').textContent = (item.day || '') + ' • ' + (item.time || '');
+
+    const drawerFlyerThumb = document.getElementById('drawerFlyerThumb');
+    const drawerFlyerImg = document.getElementById('drawerFlyerImg');
+    if (item.poster_url) {
+      drawerFlyerImg.src = item.poster_url;
+      drawerFlyerThumb.classList.remove('hidden');
+    } else {
+      drawerFlyerThumb.classList.add('hidden');
+    }
+
+    const drawerSourceLink = document.getElementById('drawerSourceLink');
+    if (item.source_url && item.source_url !== '#') {
+      drawerSourceLink.href = item.source_url;
+      drawerSourceLink.textContent = (item.source ? item.source.charAt(0).toUpperCase() + item.source.slice(1) : 'Sumber') + ' ↗';
+      drawerSourceLink.classList.remove('hidden');
+    } else {
+      drawerSourceLink.classList.add('hidden');
+    }
 
     const savedLoc = JSON.parse(localStorage.getItem('sk_user_loc') || 'null');
     if (savedLoc && item.lat && item.lon) {
@@ -162,8 +327,8 @@
         className: 'user-loc-dot',
         html: `
           <div class="relative flex items-center justify-center w-6 h-6">
-            <div class="absolute w-6 h-6 rounded-full bg-blue-500/30 animate-ping"></div>
-            <div class="w-3.5 h-3.5 rounded-full bg-blue-600 border-2 border-white shadow-md"></div>
+            <div class="absolute w-6 h-6 rounded-full bg-[#1D4D4F]/30 animate-ping"></div>
+            <div class="w-3.5 h-3.5 rounded-full bg-[#1D4D4F] border-2 border-white shadow-md"></div>
           </div>
         `,
         iconSize: [24, 24],
