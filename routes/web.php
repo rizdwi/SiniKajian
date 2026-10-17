@@ -40,6 +40,8 @@ Route::get('/profil', [AuthController::class, 'profile'])->name('profile');
 
 Route::middleware('auth')->group(function () {
     Route::post('/keluar', [AuthController::class, 'logout'])->name('logout');
+    Route::get('/profil/edit', [AuthController::class, 'editProfile'])->name('profile.edit');
+    Route::put('/profil', [AuthController::class, 'updateProfile'])->name('profile.update');
 });
 
 // Sitemap XML

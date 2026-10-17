@@ -121,4 +121,29 @@ class AuthController extends Controller
 
         return redirect()->route('kajian.index');
     }
+
+    /**
+     * Form edit profil.
+     */
+    public function editProfile(): View
+    {
+        return view('auth.edit-profile', ['user' => Auth::user()]);
+    }
+
+    /**
+     * Update profil.
+     */
+    public function updateProfile(Request $request): RedirectResponse
+    {
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+        ]);
+
+        $user->update($validated);
+
+        return redirect()->route('profile')->with('success', 'Profil berhasil diperbarui.');
+    }
 }

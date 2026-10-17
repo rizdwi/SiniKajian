@@ -46,18 +46,18 @@
 
     <hr class="border-[#D1ECE7] my-4">
 
-    <!-- 3-Column Metrics Row: Disimpan, Agenda saya, Majelis diikuti (Figma Screen 5) -->
+    <!-- 3-Column Metrics Row: Disimpan, Agenda saya, Majelis diikuti -->
     <div class="grid grid-cols-3 divide-x divide-[#D1ECE7] text-center">
       <div class="px-2">
-        <span class="text-lg font-black text-[#1D4D4F] block leading-tight">12</span>
+        <span class="text-lg font-black text-[#1D4D4F] block leading-tight">{{ count($savedKajians ?? []) }}</span>
         <span class="text-[11px] font-medium text-[#607072] block mt-0.5">Disimpan</span>
       </div>
       <div class="px-2">
-        <span class="text-lg font-black text-[#1D4D4F] block leading-tight">3</span>
+        <span class="text-lg font-black text-[#1D4D4F] block leading-tight">{{ count($attendances ?? []) }}</span>
         <span class="text-[11px] font-medium text-[#607072] block mt-0.5">Agenda saya</span>
       </div>
       <div class="px-2">
-        <span class="text-lg font-black text-[#1D4D4F] block leading-tight">8</span>
+        <span class="text-lg font-black text-[#1D4D4F] block leading-tight">{{ count($submittedKajians ?? []) }}</span>
         <span class="text-[11px] font-medium text-[#607072] block mt-0.5">Majelis diikuti</span>
       </div>
     </div>
@@ -73,28 +73,23 @@
       </a>
     </div>
 
-    <!-- Active Agenda Card Matching Figma Screen 5 -->
+    <!-- Active Agenda Card - data asli atau empty state -->
+    @if(($savedKajians ?? collect())->isNotEmpty())
+    @php $next = ($savedKajians ?? collect())->first(); @endphp
     <a href="{{ route('kajian.saved') }}" class="block p-3 rounded-2xl bg-white border border-[#E5ECEB] hover:border-[#1D4D4F]/40 shadow-2xs transition group">
       <div class="flex items-center gap-3">
-        <!-- Vertical Date Block: 25 OKT -->
         <div class="w-12 h-12 rounded-xl bg-[#EDF5F3] border border-[#D1ECE7] text-[#1D4D4F] flex flex-col items-center justify-center shrink-0">
-          <span class="text-base font-black leading-none">25</span>
-          <span class="text-[9px] font-extrabold uppercase tracking-wider mt-0.5">OKT</span>
+          <span class="text-base font-black leading-none">{{ \Carbon\Carbon::parse($next->event_date ?? $next->tanggal ?? now())->format('d') }}</span>
+          <span class="text-[9px] font-extrabold uppercase tracking-wider mt-0.5">{{ \Carbon\Carbon::parse($next->event_date ?? $next->tanggal ?? now())->locale('id')->format('M') }}</span>
         </div>
-
         <div class="flex-1 min-w-0">
           <h4 class="text-xs sm:text-sm font-bold text-[#1C2224] truncate group-hover:text-[#1D4D4F] transition">
-            Menata Hati, Menemukan Tenang
+            {{ $next->title ?? $next->nama ?? 'Kajian' }}
           </h4>
           <p class="text-[11px] text-[#607072] mt-0.5 truncate">
-            09:00 WIB • Masjid Taman Ilmu
+            {{ $next->waktu ?? '' }} • {{ $next->venue ?? $next->masjid ?? '' }}
           </p>
-          <div class="inline-flex items-center gap-1 text-[9px] font-bold text-[#1D4D4F] bg-[#E8F5F2] px-2 py-0.5 rounded-full mt-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#1D4D4F]"></span>
-            <span>Pengingat aktif</span>
-          </div>
         </div>
-
         <div class="text-[#607072] group-hover:text-[#1D4D4F] transition pr-1">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -102,6 +97,11 @@
         </div>
       </div>
     </a>
+    @else
+    <div class="p-4 rounded-2xl bg-white border border-dashed border-[#D1ECE7] text-center">
+      <p class="text-xs text-[#607072]">Belum ada kajian tersimpan.<br>Simpan kajian dari halaman utama untuk melihat agenda di sini.</p>
+    </div>
+    @endif
   </div>
 
   <!-- 4. Akun & Preferensi Grouped Card (Figma Screen 5) -->
@@ -113,7 +113,7 @@
     <div class="rounded-3xl bg-white border border-[#E5ECEB] divide-y divide-[#E5ECEB] overflow-hidden shadow-2xs">
       
       <!-- Item 1: Edit Profil -->
-      <a href="{{ route('login') }}" class="flex items-center justify-between p-3.5 hover:bg-[#F8FAF9] transition">
+      <a href="{{ route('profile.edit') }}" class="flex items-center justify-between p-3.5 hover:bg-[#F8FAF9] transition">
         <div class="flex items-center gap-3 min-w-0">
           <div class="w-9 h-9 rounded-xl bg-[#EDF5F3] text-[#1D4D4F] flex items-center justify-center shrink-0 border border-[#D1ECE7]">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
