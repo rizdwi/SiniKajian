@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Agenda & Tersimpan - SiniKajian')
+@section('title', 'Agenda & Tersimpan - Majelisku')
 
 @section('content')
 <div class="max-w-md mx-auto space-y-4 pb-24 pt-1">

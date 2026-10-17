@@ -254,7 +254,39 @@
     }
   }
 
+  // Sinkronisasi status awal dari localStorage
+  document.addEventListener('DOMContentLoaded', () => {
+    try {
+      const savedList = JSON.parse(localStorage.getItem('sinikajian_bookmarks') || '[]');
+      const rsvpList = JSON.parse(localStorage.getItem('sinikajian_attendances') || '[]');
+      const currentId = {{ $kajian->id }};
+      
+      if (savedList.includes(currentId)) {
+        const icon = document.getElementById('bookmarkDetailIcon');
+        if (icon) {
+          icon.classList.add('text-amber-300');
+          icon.setAttribute('fill', 'currentColor');
+        }
+      }
+
+      if (rsvpList.includes(currentId)) {
+        const btn = document.getElementById('btnRsvpDetail');
+        if (btn) {
+          btn.innerHTML = `<span>✓ Tersimpan di Agenda Saya</span>`;
+          btn.className = "w-full py-3.5 rounded-full bg-emerald-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition touch-btn";
+        }
+      }
+    } catch(e) {}
+  });
+
   function toggleBookmarkDetailPage(id, btn) {
+    let savedList = [];
+    try {
+      savedList = JSON.parse(localStorage.getItem('sinikajian_bookmarks') || '[]');
+    } catch(e) {}
+
+    const icon = document.getElementById('bookmarkDetailIcon');
+
     fetch(`/kajian/${id}/bookmark`, {
       method: 'POST',
       headers: {
@@ -264,19 +296,41 @@
     })
     .then(r => r.json())
     .then(res => {
-      const icon = document.getElementById('bookmarkDetailIcon');
       if (res.saved) {
+        if (!savedList.includes(id)) savedList.push(id);
         icon.classList.add('text-amber-300');
         icon.setAttribute('fill', 'currentColor');
       } else {
+        savedList = savedList.filter(x => x !== id);
         icon.classList.remove('text-amber-300');
         icon.setAttribute('fill', 'none');
       }
+      localStorage.setItem('sinikajian_bookmarks', JSON.stringify(savedList));
     })
-    .catch(() => {});
+    .catch(() => {
+      if (savedList.includes(id)) {
+        savedList = savedList.filter(x => x !== id);
+        icon.classList.remove('text-amber-300');
+        icon.setAttribute('fill', 'none');
+      } else {
+        savedList.push(id);
+        icon.classList.add('text-amber-300');
+        icon.setAttribute('fill', 'currentColor');
+      }
+      localStorage.setItem('sinikajian_bookmarks', JSON.stringify(savedList));
+    });
   }
 
   function rsvpAttendance(id) {
+    let rsvpList = [];
+    let savedList = [];
+    try {
+      rsvpList = JSON.parse(localStorage.getItem('sinikajian_attendances') || '[]');
+      savedList = JSON.parse(localStorage.getItem('sinikajian_bookmarks') || '[]');
+    } catch(e) {}
+
+    const btn = document.getElementById('btnRsvpDetail');
+
     fetch(`/kajian/${id}/kehadiran`, {
       method: 'POST',
       headers: {
@@ -286,18 +340,32 @@
     })
     .then(r => r.json())
     .then(res => {
-      const btn = document.getElementById('btnRsvpDetail');
       if (res.attended) {
+        if (!rsvpList.includes(id)) rsvpList.push(id);
+        if (!savedList.includes(id)) savedList.push(id);
         btn.innerHTML = `<span>✓ Tersimpan di Agenda Saya</span>`;
-        btn.className = "w-full py-3 rounded-2xl bg-emerald-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md transition touch-btn";
-        alert('Jadwal kajian berhasil disimpan ke Agenda Terdekat Anda!');
+        btn.className = "w-full py-3.5 rounded-full bg-emerald-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition touch-btn";
       } else {
+        rsvpList = rsvpList.filter(x => x !== id);
         btn.innerHTML = `<span>Saya ingin hadir</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`;
-        btn.className = "w-full py-3 rounded-2xl bg-[#1D4D4F] hover:bg-[#153A3B] active:scale-98 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md transition touch-btn";
+        btn.className = "w-full py-3.5 rounded-full bg-[#1D4D4F] hover:bg-[#153A3B] active:scale-98 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition touch-btn";
       }
+      localStorage.setItem('sinikajian_attendances', JSON.stringify(rsvpList));
+      localStorage.setItem('sinikajian_bookmarks', JSON.stringify(savedList));
     })
     .catch(() => {
-      alert('Jadwal kajian berhasil ditambahkan ke agenda!');
+      if (rsvpList.includes(id)) {
+        rsvpList = rsvpList.filter(x => x !== id);
+        btn.innerHTML = `<span>Saya ingin hadir</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`;
+        btn.className = "w-full py-3.5 rounded-full bg-[#1D4D4F] hover:bg-[#153A3B] active:scale-98 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition touch-btn";
+      } else {
+        rsvpList.push(id);
+        if (!savedList.includes(id)) savedList.push(id);
+        btn.innerHTML = `<span>✓ Tersimpan di Agenda Saya</span>`;
+        btn.className = "w-full py-3.5 rounded-full bg-emerald-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition touch-btn";
+      }
+      localStorage.setItem('sinikajian_attendances', JSON.stringify(rsvpList));
+      localStorage.setItem('sinikajian_bookmarks', JSON.stringify(savedList));
     });
   }
 </script>

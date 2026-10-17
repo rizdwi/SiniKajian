@@ -33,21 +33,28 @@ if (file_exists($sourceDb)) {
     @touch($targetDb);
 }
 
-// Pastikan skema tabel users selalu memiliki kolom provider & provider_id (self-healing migration)
+// Pastikan skema tabel users & kajians selalu mutakhir (self-healing migration)
 if (file_exists($targetDb)) {
     try {
         $pdo = new PDO('sqlite:' . $targetDb);
-        $cols = $pdo->query("PRAGMA table_info(users)")->fetchAll(PDO::FETCH_COLUMN, 1);
-        if (!empty($cols)) {
-            if (!in_array('provider', $cols)) {
+        $userCols = $pdo->query("PRAGMA table_info(users)")->fetchAll(PDO::FETCH_COLUMN, 1);
+        if (!empty($userCols)) {
+            if (!in_array('provider', $userCols)) {
                 $pdo->exec("ALTER TABLE users ADD COLUMN provider VARCHAR(255) NULL");
             }
-            if (!in_array('provider_id', $cols)) {
+            if (!in_array('provider_id', $userCols)) {
                 $pdo->exec("ALTER TABLE users ADD COLUMN provider_id VARCHAR(255) NULL");
             }
+            if (!in_array('avatar', $userCols)) {
+                $pdo->exec("ALTER TABLE users ADD COLUMN avatar TEXT NULL");
+            }
+        }
+        $kajianCols = $pdo->query("PRAGMA table_info(kajians)")->fetchAll(PDO::FETCH_COLUMN, 1);
+        if (!empty($kajianCols) && !in_array('event_datetime', $kajianCols)) {
+            $pdo->exec("ALTER TABLE kajians ADD COLUMN event_datetime DATETIME NULL");
         }
     } catch (\Throwable $e) {
-        // Abaikan jika tabel users belum diinisialisasi
+        // Abaikan jika tabel belum diinisialisasi
     }
 }
 

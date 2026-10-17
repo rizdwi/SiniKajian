@@ -98,9 +98,23 @@ class AuthController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        $bookmarkedKajians = $user->bookmarkedKajians()->get();
-        $attendances = $user->attendances()->with('kajian')->latest()->take(10)->get();
+        // Ambil kajian tersimpan yang masih aktif
+        $bookmarkedKajians = $user->bookmarkedKajians()
+            ->where('verified', true)
+            ->orderBy('event_datetime', 'asc')
+            ->get();
+
+        $attendances = $user->attendances()
+            ->with('kajian')
+            ->latest()
+            ->take(10)
+            ->get();
+
         $submittedKajians = $user->submittedKajians()->latest()->get();
+
+        $savedCount = $bookmarkedKajians->count();
+        $agendaCount = $attendances->count();
+        $majelisCount = $user->bookmarkedKajians()->distinct('masjid')->count('masjid');
 
         return view('auth.profile', [
             'user' => $user,
@@ -108,7 +122,53 @@ class AuthController extends Controller
             'bookmarkedKajians' => $bookmarkedKajians,
             'attendances' => $attendances,
             'submittedKajians' => $submittedKajians,
+            'savedCount' => $savedCount,
+            'agendaCount' => $agendaCount,
+            'majelisCount' => $majelisCount,
         ]);
+    }
+
+    /**
+     * Tampilkan formulir edit profil (Screen Edit Profil).
+     */
+    public function editProfile(): View
+    {
+        return view('auth.edit', [
+            'user' => Auth::user(),
+        ]);
+    }
+
+    /**
+     * Perbarui data profil dan simpan foto avatar secara persisten.
+     */
+    public function updateProfile(Request $request): RedirectResponse
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'avatar' => 'nullable|image|max:3072',
+            'avatar_data' => 'nullable|string',
+        ]);
+
+        $user->name = $request->name;
+        $user->email = $request->email;
+
+        // Simpan avatar sebagai base64 string di SQLite agar tidak hilang pada lingkungan serverless/container
+        if ($request->hasFile('avatar') && $request->file('avatar')->isValid()) {
+            $file = $request->file('avatar');
+            $mime = $file->getMimeType();
+            $base64 = base64_encode(file_get_contents($file->getRealPath()));
+            $user->avatar = 'data:' . $mime . ';base64,' . $base64;
+        } elseif ($request->filled('avatar_data') && str_starts_with($request->avatar_data, 'data:image')) {
+            $user->avatar = $request->avatar_data;
+        }
+
+        $user->save();
+
+        return redirect()->route('profile')->with('success', 'Profil dan foto berhasil diperbarui!');
     }
 
     /**

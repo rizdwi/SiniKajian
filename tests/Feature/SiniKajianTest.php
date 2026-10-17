@@ -135,4 +135,70 @@ class SiniKajianTest extends TestCase
         $this->assertEquals('google', $user->provider);
         $this->assertEquals('108400634674929037655', $user->provider_id);
     }
+
+    /**
+     * Uji pembersihan otomatis kajian yang telah kadaluarsa (> 4 jam).
+     */
+    public function test_purge_expired_kajians_removes_old_events(): void
+    {
+        $expiredKajian = Kajian::create([
+            'title' => 'Kajian Subuh Masa Lalu',
+            'ustadz' => 'Ustadz Fulan',
+            'masjid' => 'Masjid Fulan',
+            'address' => 'Jl. Masa Lalu No. 1',
+            'lat' => -6.9,
+            'lon' => 107.6,
+            'category' => 'Tematik',
+            'day' => 'Kemarin',
+            'time' => '05.00 WIB',
+            'event_datetime' => \Carbon\Carbon::now()->subHours(8),
+            'verified' => true,
+            'is_rutin' => false,
+        ]);
+
+        $this->assertDatabaseHas('kajians', ['id' => $expiredKajian->id]);
+
+        $deletedCount = Kajian::purgeExpiredKajians(4);
+        $this->assertGreaterThanOrEqual(1, $deletedCount);
+        $this->assertDatabaseMissing('kajians', ['id' => $expiredKajian->id]);
+    }
+
+    /**
+     * Uji fitur edit profil dan penyimpanan avatar pengguna secara persisten.
+     */
+    public function test_edit_profile_and_avatar_update_flow(): void
+    {
+        $user = User::create([
+            'name' => 'Jamaah Test',
+            'email' => 'jamaah_' . uniqid() . '@contoh.id',
+            'password' => Hash::make('password123'),
+        ]);
+
+        $this->actingAs($user);
+
+        // Akses halaman edit profil
+        $response = $this->get('/profil/edit');
+        $response->assertStatus(200);
+        $response->assertSee('Edit Profil');
+
+        // Update profil dan avatar (base64 string)
+        $avatarData = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+        $postResponse = $this->post('/profil/edit', [
+            'name' => 'Jamaah Pembelajar Sunnah',
+            'email' => $user->email,
+            'avatar_data' => $avatarData,
+        ]);
+
+        $postResponse->assertRedirect('/profil');
+
+        $user->refresh();
+        $this->assertEquals('Jamaah Pembelajar Sunnah', $user->name);
+        $this->assertEquals($avatarData, $user->avatar);
+
+        // Verifikasi avatar tampil di halaman profil
+        $profileResponse = $this->get('/profil');
+        $profileResponse->assertStatus(200);
+        $profileResponse->assertSee('Jamaah Pembelajar Sunnah');
+        $profileResponse->assertSee($avatarData);
+    }
 }

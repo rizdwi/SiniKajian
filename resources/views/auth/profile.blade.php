@@ -23,10 +23,14 @@
   <!-- 2. Profile Summary Card (Figma Screen 5: Soft Mint Background, Avatar, 3 Stats) -->
   <div class="rounded-3xl bg-[#EDF5F3] border border-[#D1ECE7] p-5 text-center shadow-2xs">
     
-    <!-- Circular Avatar with Deep Teal & Initials -->
-    <div class="w-14 h-14 rounded-full bg-[#1D4D4F] text-white flex items-center justify-center font-extrabold text-base mx-auto shadow-sm ring-4 ring-white/60">
-      {{ strtoupper(substr($user->name ?? 'Ahmad Fauzan', 0, 2)) }}
-    </div>
+    <!-- Circular Avatar with Deep Teal & Initials or Photo -->
+    @if(!empty($user->avatar))
+      <img src="{{ $user->avatar }}" alt="{{ $user->name }}" class="w-14 h-14 rounded-full object-cover mx-auto shadow-sm ring-4 ring-white/60">
+    @else
+      <div class="w-14 h-14 rounded-full bg-[#1D4D4F] text-white flex items-center justify-center font-extrabold text-base mx-auto shadow-sm ring-4 ring-white/60">
+        {{ strtoupper(substr($user->name ?? 'Ahmad Fauzan', 0, 2)) }}
+      </div>
+    @endif
 
     <!-- User Information -->
     <h2 class="text-base font-extrabold text-[#1C2224] mt-2.5">
@@ -46,62 +50,90 @@
 
     <hr class="border-[#D1ECE7] my-4">
 
-    <!-- 3-Column Metrics Row: Disimpan, Agenda saya, Majelis diikuti -->
+    <!-- 3-Column Metrics Row: Disimpan, Agenda saya, Majelis diikuti (Figma Screen 5 Dinamis) -->
     <div class="grid grid-cols-3 divide-x divide-[#D1ECE7] text-center">
       <div class="px-2">
-        <span class="text-lg font-black text-[#1D4D4F] block leading-tight">{{ count($savedKajians ?? []) }}</span>
+        <span class="text-lg font-black text-[#1D4D4F] block leading-tight">{{ $savedCount ?? 0 }}</span>
         <span class="text-[11px] font-medium text-[#607072] block mt-0.5">Disimpan</span>
       </div>
       <div class="px-2">
-        <span class="text-lg font-black text-[#1D4D4F] block leading-tight">{{ count($attendances ?? []) }}</span>
+        <span class="text-lg font-black text-[#1D4D4F] block leading-tight">{{ $agendaCount ?? 0 }}</span>
         <span class="text-[11px] font-medium text-[#607072] block mt-0.5">Agenda saya</span>
       </div>
       <div class="px-2">
-        <span class="text-lg font-black text-[#1D4D4F] block leading-tight">{{ count($submittedKajians ?? []) }}</span>
+        <span class="text-lg font-black text-[#1D4D4F] block leading-tight">{{ $majelisCount ?? 0 }}</span>
         <span class="text-[11px] font-medium text-[#607072] block mt-0.5">Majelis diikuti</span>
       </div>
     </div>
 
   </div>
 
-  <!-- 3. Agenda Terdekat Section (Figma Screen 5) -->
+  <!-- 3. Agenda Terdekat Section (Figma Screen 5 Dinamis) -->
   <div class="space-y-2">
     <div class="flex items-center justify-between px-1">
       <h3 class="text-sm font-bold text-[#1C2224]">Agenda terdekat</h3>
       <a href="{{ route('kajian.saved') }}" class="text-xs font-bold text-[#1D4D4F] hover:underline">
-        Lihat agenda
+        Lihat semua
       </a>
     </div>
 
-    <!-- Active Agenda Card - data asli atau empty state -->
-    @if(($savedKajians ?? collect())->isNotEmpty())
-    @php $next = ($savedKajians ?? collect())->first(); @endphp
-    <a href="{{ route('kajian.saved') }}" class="block p-3 rounded-2xl bg-white border border-[#E5ECEB] hover:border-[#1D4D4F]/40 shadow-2xs transition group">
-      <div class="flex items-center gap-3">
-        <div class="w-12 h-12 rounded-xl bg-[#EDF5F3] border border-[#D1ECE7] text-[#1D4D4F] flex flex-col items-center justify-center shrink-0">
-          <span class="text-base font-black leading-none">{{ \Carbon\Carbon::parse($next->event_date ?? $next->tanggal ?? now())->format('d') }}</span>
-          <span class="text-[9px] font-extrabold uppercase tracking-wider mt-0.5">{{ \Carbon\Carbon::parse($next->event_date ?? $next->tanggal ?? now())->locale('id')->format('M') }}</span>
+    @php
+      $allAgendaKajians = collect();
+      if(isset($attendances)) {
+        foreach($attendances as $att) {
+          if($att->kajian) $allAgendaKajians->push($att->kajian);
+        }
+      }
+      if(isset($savedKajians)) {
+        foreach($savedKajians as $sk) {
+          $allAgendaKajians->push($sk);
+        }
+      }
+      $allAgendaKajians = $allAgendaKajians->unique('id')->sortBy('event_datetime')->take(3);
+    @endphp
+
+    @forelse($allAgendaKajians as $agenda)
+      @php
+        $dt = $agenda->event_datetime ? \Carbon\Carbon::parse($agenda->event_datetime) : \Carbon\Carbon::now();
+        $dateNum = $dt->format('d');
+        $dateMonth = strtoupper($dt->translatedFormat('M'));
+      @endphp
+      <a href="{{ route('kajian.show', $agenda->id) }}" class="block p-3 rounded-2xl bg-white border border-[#E5ECEB] hover:border-[#1D4D4F]/40 shadow-2xs transition group">
+        <div class="flex items-center gap-3">
+          <!-- Vertical Date Block -->
+          <div class="w-12 h-12 rounded-xl bg-[#EDF5F3] border border-[#D1ECE7] text-[#1D4D4F] flex flex-col items-center justify-center shrink-0">
+            <span class="text-base font-black leading-none">{{ $dateNum }}</span>
+            <span class="text-[9px] font-extrabold uppercase tracking-wider mt-0.5">{{ $dateMonth }}</span>
+          </div>
+
+          <div class="flex-1 min-w-0">
+            <h4 class="text-xs sm:text-sm font-bold text-[#1C2224] truncate group-hover:text-[#1D4D4F] transition">
+              {{ $agenda->title }}
+            </h4>
+            <p class="text-[11px] text-[#607072] mt-0.5 truncate">
+              {{ $agenda->time }} • {{ $agenda->masjid }}
+            </p>
+            <div class="inline-flex items-center gap-1 text-[9px] font-bold text-[#1D4D4F] bg-[#E8F5F2] px-2 py-0.5 rounded-full mt-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#1D4D4F]"></span>
+              <span>Tersimpan di Agenda</span>
+            </div>
+          </div>
+
+          <div class="text-[#607072] group-hover:text-[#1D4D4F] transition pr-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </div>
         </div>
-        <div class="flex-1 min-w-0">
-          <h4 class="text-xs sm:text-sm font-bold text-[#1C2224] truncate group-hover:text-[#1D4D4F] transition">
-            {{ $next->title ?? $next->nama ?? 'Kajian' }}
-          </h4>
-          <p class="text-[11px] text-[#607072] mt-0.5 truncate">
-            {{ $next->waktu ?? '' }} • {{ $next->venue ?? $next->masjid ?? '' }}
-          </p>
-        </div>
-        <div class="text-[#607072] group-hover:text-[#1D4D4F] transition pr-1">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-          </svg>
-        </div>
+      </a>
+    @empty
+      <div id="emptyAgendaCard" class="p-4 rounded-2xl bg-white border border-[#E5ECEB] text-center space-y-2">
+        <p class="text-xs text-[#607072]">Belum ada agenda kajian yang tersimpan.</p>
+        <a href="{{ route('kajian.index') }}" class="inline-block px-4 py-2 rounded-xl bg-[#1D4D4F] text-white text-xs font-bold shadow-2xs hover:bg-[#153A3B] transition">
+          Jelajahi Kajian
+        </a>
       </div>
-    </a>
-    @else
-    <div class="p-4 rounded-2xl bg-white border border-dashed border-[#D1ECE7] text-center">
-      <p class="text-xs text-[#607072]">Belum ada kajian tersimpan.<br>Simpan kajian dari halaman utama untuk melihat agenda di sini.</p>
-    </div>
-    @endif
+    @endforelse
   </div>
 
   <!-- 4. Akun & Preferensi Grouped Card (Figma Screen 5) -->

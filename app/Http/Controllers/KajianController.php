@@ -19,6 +19,9 @@ class KajianController extends Controller
      */
     public function index(Request $request): View
     {
+        // Otomatis hapus kajian yang sudah lewat 3-6 jam dari jadwal
+        Kajian::purgeExpiredKajians(4);
+
         // Cache categories (berubah jarang)
         $categories = Cache::remember('kajian_categories', 3600, function () {
             return Kajian::where('verified', true)
@@ -28,9 +31,9 @@ class KajianController extends Controller
                 ->values();
         });
 
-        // Single query dengan select kolom yang dibutuhkan saja
+        // Query kajian terdekat & aktif
         $query = Kajian::where('verified', true)
-            ->select(['id', 'title', 'ustadz', 'day', 'time', 'masjid', 'address', 'lat', 'lon', 'category', 'audience', 'flyer_url', 'event_date', 'source', 'source_url']);
+            ->select(['id', 'title', 'ustadz', 'day', 'time', 'masjid', 'address', 'lat', 'lon', 'category', 'audience', 'poster_url', 'event_datetime', 'source', 'source_url']);
 
         if ($request->filled('kategori') && $request->kategori !== 'Semua') {
             $query->where('category', $request->kategori);
@@ -53,16 +56,15 @@ class KajianController extends Controller
             });
         }
 
-        // Pagination 20 per halaman (bukan load semua)
-        $kajians = $query->orderBy('event_date')->paginate(20)->withQueryString();
+        // Urutkan berdasarkan waktu kajian terdekat
+        $kajians = $query->orderBy('event_datetime', 'asc')->paginate(20)->withQueryString();
 
-        // JSON untuk peta & kartu: cache 5 menit
-        $mapJson = Cache::remember('kajian_map_json', 300, function () {
-            return Kajian::where('verified', true)
-                ->select(['id', 'title', 'ustadz', 'day', 'time', 'masjid', 'address', 'lat', 'lon', 'category', 'audience', 'poster_url', 'event_date', 'source', 'source_url', 'description'])
-                ->get()
-                ->toJson();
-        });
+        // JSON untuk peta & kartu feed client-side
+        $mapKajians = Kajian::where('verified', true)
+            ->select(['id', 'title', 'ustadz', 'day', 'time', 'masjid', 'address', 'lat', 'lon', 'category', 'audience', 'poster_url', 'event_datetime', 'source', 'source_url', 'description'])
+            ->orderBy('event_datetime', 'asc')
+            ->get();
+        $mapJson = $mapKajians->toJson();
 
         $userBookmarks = [];
         if (Auth::check()) {
@@ -105,7 +107,10 @@ class KajianController extends Controller
      */
     public function apiList(Request $request): JsonResponse
     {
-        $kajians = Kajian::where('verified', true)->get();
+        Kajian::purgeExpiredKajians(4);
+        $kajians = Kajian::where('verified', true)
+            ->orderBy('event_datetime', 'asc')
+            ->get();
         return response()->json([
             'status' => 'success',
             'data' => $kajians,
@@ -117,7 +122,10 @@ class KajianController extends Controller
      */
     public function map(): View
     {
-        $kajians = Kajian::where('verified', true)->get();
+        Kajian::purgeExpiredKajians(4);
+        $kajians = Kajian::where('verified', true)
+            ->orderBy('event_datetime', 'asc')
+            ->get();
 
         return view('kajian.map', [
             'events' => $kajians,
@@ -240,6 +248,11 @@ class KajianController extends Controller
                     'kajian_id' => $kajian->id,
                     'attendance_date' => $today,
                 ]);
+                // Otomatis tambahkan juga ke bookmarks agar tersimpan di agenda profil
+                Bookmark::firstOrCreate([
+                    'user_id' => Auth::id(),
+                    'kajian_id' => $kajian->id,
+                ]);
                 $attended = true;
             }
 
@@ -248,14 +261,14 @@ class KajianController extends Controller
             return response()->json([
                 'status' => 'success',
                 'attended' => $attended,
-                'total_attendance' => $count,
+                'count' => $count,
                 'kajian_id' => $kajian->id,
             ]);
         }
 
         return response()->json([
             'status' => 'auth_required',
-            'message' => 'Silakan masuk untuk mencatat kehadiran kajian.',
+            'message' => 'Silakan masuk untuk menyimpan agenda ke akun Anda.',
         ], 401);
     }
 }
