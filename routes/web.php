@@ -25,6 +25,9 @@ Route::get('/api/kajian', [KajianController::class, 'apiList'])->name('api.kajia
 Route::get('/api/kajians', [KajianController::class, 'apiList']);
 
 // Autentikasi Pengguna & Kredensial
+Route::redirect('/login', '/masuk');
+Route::redirect('/register', '/daftar');
+
 Route::middleware('guest')->group(function () {
     Route::get('/masuk', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/masuk', [AuthController::class, 'login'])->name('login.post');
