@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'SiniKajian | Jadwal Kajian Sunnah & Waktu Sholat')
+@section('title', 'Majelisku | Jadwal Kajian Sunnah & Arah Kiblat')
 
 @section('content')
 <div class="max-w-md mx-auto px-4 pt-4 pb-8 space-y-5">

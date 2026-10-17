@@ -16,7 +16,7 @@ class SiniKajianTest extends TestCase
     {
         $response = $this->get('/');
         $response->assertStatus(200);
-        $response->assertSee('SiniKajian');
+        $response->assertSee('Majelisku');
         $response->assertSee('Waktu Sholat');
     }
 

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#EDF5F3"/>
+    </linearGradient>
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#1D4D4F" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <!-- Squircle App Icon Container -->
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#bgGrad)" stroke="#D1ECE7" stroke-width="4" filter="url(#softShadow)"/>
+
+  <!-- Logo Pictogram centered in top 2/3 -->
+  <g transform="translate(136, 75) scale(2.4)">
+    <!-- Crescent / Radar sweep line art -->
+    <path d="M 50 14 C 26 14 12 30 12 52 C 12 74 28 88 52 88 C 68 88 80 80 85 70" stroke="#1D4D4F" stroke-width="4.5" stroke-linecap="round"/>
+
+    <!-- Mosque Dome in center-left -->
+    <path d="M 38 44 C 38 32 48 24 50 18 C 52 24 62 32 62 44 L 62 66 L 38 66 Z" fill="none" stroke="#1D4D4F" stroke-width="4.5" stroke-linejoin="round"/>
+    
+    <!-- Minaret on the left -->
+    <path d="M 32 40 L 32 66 M 30 40 L 34 40 M 32 40 L 32 34" stroke="#1D4D4F" stroke-width="4" stroke-linecap="round"/>
+
+    <!-- Mosque Doorway Arch -->
+    <path d="M 46 66 L 46 54 C 46 51 48 49 50 49 C 52 49 54 51 54 54 L 54 66" stroke="#1D4D4F" stroke-width="4"/>
+
+    <!-- Teardrop GPS Map Pin at upper right -->
+    <g transform="translate(68, 12)">
+      <path d="M 12 0 C 5.37 0 0 5.37 0 12 C 0 21 12 31 12 31 C 12 31 24 21 24 12 C 24 5.37 18.63 0 12 0 Z" fill="#1D4D4F"/>
+      <circle cx="12" cy="11" r="4.5" fill="#FFFFFF"/>
+    </g>
+  </g>
+
+  <!-- Typography: MAJELISKU -->
+  <text x="256" y="420" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="44" font-weight="900" letter-spacing="4" fill="#1D4D4F">
+    MAJELISKU
+  </text>
+</svg>

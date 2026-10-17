@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Arah Kiblat - SiniKajian')
+@section('title', 'Arah Kiblat - Majelisku')
 
 @section('content')
 <div class="max-w-md mx-auto space-y-3.5 pb-24 pt-1">

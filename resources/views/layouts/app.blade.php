@@ -3,13 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>@yield('title', 'SiniKajian | Temukan Majelis Ilmu Terdekat')</title>
+  <title>@yield('title', 'Majelisku | Temukan Majelis Ilmu Terdekat')</title>
   
   <meta name="description" content="Aplikasi pencari majelis ilmu kajian sunnah terdekat, jadwal sholat astronomis presisi, dan penunjuk arah kiblat.">
   <meta name="theme-color" content="#1D4D4F">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="SiniKajian">
+  <meta name="apple-mobile-web-app-title" content="Majelisku">
+  <link rel="icon" type="image/svg+xml" href="/images/logo-majelisku.svg">
+  <link rel="apple-touch-icon" href="/images/app-icon.svg">
   <link rel="manifest" href="{{ asset('manifest.json') }}">
   <meta name="csrf-token" content="{{ csrf_token() }}">
 
