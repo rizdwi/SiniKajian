@@ -1,7 +1,7 @@
 <?php
 
 // 1. Inisialisasi struktur direktori /tmp untuk Vercel Serverless
-$tmp = '/tmp';
+$tmp = sys_get_temp_dir();
 $storage = $tmp . '/storage';
 $dirs = [
     $storage . '/framework/views',
@@ -9,7 +9,6 @@ $dirs = [
     $storage . '/framework/sessions',
     $storage . '/logs',
     $storage . '/app/public',
-    $tmp . '/bootstrap/cache',
 ];
 
 foreach ($dirs as $dir) {
@@ -22,24 +21,32 @@ foreach ($dirs as $dir) {
 $sourceDb = __DIR__ . '/../database/database.sqlite';
 $targetDb = $tmp . '/database.sqlite';
 
-if (file_exists($sourceDb) && (!file_exists($targetDb) || filesize($targetDb) === 0 || (filemtime($sourceDb) > filemtime($targetDb)))) {
-    @copy($sourceDb, $targetDb);
+if (file_exists($sourceDb)) {
+    if (!file_exists($targetDb) || filesize($targetDb) === 0 || (filemtime($sourceDb) > filemtime($targetDb))) {
+        @copy($sourceDb, $targetDb);
+    }
+} elseif (!file_exists($targetDb)) {
+    @touch($targetDb);
 }
 
 // 3. Konfigurasi runtime environment overrides untuk Vercel Serverless
 putenv('VERCEL=1');
-putenv('VIEW_COMPILED_PATH=' . $storage . '/framework/views');
-putenv('APP_CONFIG_CACHE=' . $tmp . '/bootstrap/cache/config.php');
-putenv('APP_EVENTS_CACHE=' . $tmp . '/bootstrap/cache/events.php');
-putenv('APP_PACKAGES_CACHE=' . $tmp . '/bootstrap/cache/packages.php');
-putenv('APP_ROUTES_CACHE=' . $tmp . '/bootstrap/cache/routes.php');
-putenv('APP_SERVICES_CACHE=' . $tmp . '/bootstrap/cache/services.php');
-putenv('DB_CONNECTION=sqlite');
-if (file_exists($targetDb)) {
-    putenv('DB_DATABASE=' . $targetDb);
-    $_ENV['DB_DATABASE'] = $targetDb;
-    $_SERVER['DB_DATABASE'] = $targetDb;
+$_ENV['VERCEL'] = '1';
+$_SERVER['VERCEL'] = '1';
+
+if (!getenv('APP_KEY') && !isset($_ENV['APP_KEY'])) {
+    $fallbackKey = 'base64:eneFvNA7mfb/CrYt8SVrrRaHH+nRCD+cZ8pZDsnV72M=';
+    putenv('APP_KEY=' . $fallbackKey);
+    $_ENV['APP_KEY'] = $fallbackKey;
+    $_SERVER['APP_KEY'] = $fallbackKey;
 }
+
+putenv('VIEW_COMPILED_PATH=' . $storage . '/framework/views');
+putenv('DB_CONNECTION=sqlite');
+putenv('DB_DATABASE=' . $targetDb);
+$_ENV['DB_DATABASE'] = $targetDb;
+$_SERVER['DB_DATABASE'] = $targetDb;
+
 putenv('APP_NAME=SiniKajian');
 putenv('APP_URL=https://sinikajian.vercel.app');
 putenv('SESSION_DRIVER=cookie');
@@ -48,12 +55,12 @@ putenv('CACHE_STORE=array');
 
 $_ENV['APP_NAME'] = 'SiniKajian';
 $_ENV['APP_URL'] = 'https://sinikajian.vercel.app';
-$_ENV['VERCEL'] = '1';
 $_ENV['SESSION_DRIVER'] = 'cookie';
 $_ENV['SESSION_LIFETIME'] = '120';
 $_ENV['CACHE_STORE'] = 'array';
 
-$_SERVER['VERCEL'] = '1';
+$_SERVER['APP_NAME'] = 'SiniKajian';
+$_SERVER['APP_URL'] = 'https://sinikajian.vercel.app';
 $_SERVER['SESSION_DRIVER'] = 'cookie';
 $_SERVER['SESSION_LIFETIME'] = '120';
 $_SERVER['CACHE_STORE'] = 'array';
