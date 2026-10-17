@@ -1,6 +1,11 @@
 <?php
 
-// 1. Inisialisasi struktur direktori /tmp untuk Vercel Serverless
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+error_reporting(E_ALL);
+
+try {
+    // 1. Inisialisasi struktur direktori /tmp untuk Vercel Serverless
 $tmp = sys_get_temp_dir();
 $storage = $tmp . '/storage';
 $dirs = [
@@ -48,6 +53,7 @@ $_ENV['DB_DATABASE'] = $targetDb;
 $_SERVER['DB_DATABASE'] = $targetDb;
 
 putenv('APP_NAME=SiniKajian');
+putenv('APP_DEBUG=true');
 putenv('APP_URL=https://sinikajian.vercel.app');
 putenv('SESSION_DRIVER=cookie');
 putenv('SESSION_LIFETIME=120');
@@ -65,5 +71,10 @@ $_SERVER['SESSION_DRIVER'] = 'cookie';
 $_SERVER['SESSION_LIFETIME'] = '120';
 $_SERVER['CACHE_STORE'] = 'array';
 
-// 4. Delegasikan eksekusi request ke Front Controller Laravel 13
-require __DIR__ . '/../public/index.php';
+    // 4. Delegasikan eksekusi request ke Front Controller Laravel 13
+    require __DIR__ . '/../public/index.php';
+} catch (\Throwable $e) {
+    http_response_code(500);
+    echo "<h1>SiniKajian Error</h1>";
+    echo "<pre>" . htmlspecialchars($e->getMessage()) . "\n\n" . htmlspecialchars($e->getTraceAsString()) . "</pre>";
+}
