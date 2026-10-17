@@ -235,15 +235,16 @@ class AuthController extends Controller
 
         if ($supabaseUrl && $supabaseKey) {
             try {
-                $client = new \GuzzleHttp\Client(['timeout' => 10]);
-                $res = $client->get("{$supabaseUrl}/rest/v1/bookmarks", [
-                    'headers' => [
+                $res = \Illuminate\Support\Facades\Http::withHeaders([
                         'apikey' => $supabaseKey,
                         'Authorization' => 'Bearer ' . $supabaseKey,
-                    ],
-                    'query' => ['user_id' => "eq.{$userId}", 'select' => 'kajian_id'],
-                ]);
-                $rows = json_decode($res->getBody(), true);
+                    ])
+                    ->timeout(10)
+                    ->get("{$supabaseUrl}/rest/v1/bookmarks", [
+                        'user_id' => "eq.{$userId}",
+                        'select' => 'kajian_id',
+                    ]);
+                $rows = $res->json();
                 $ids = array_column($rows ?? [], 'kajian_id');
                 if (!empty($ids)) {
                     return \App\Models\Kajian::whereIn('id', $ids)->get();

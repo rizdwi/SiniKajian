@@ -173,15 +173,16 @@ class KajianController extends Controller
 
         if ($supabaseUrl && $supabaseKey) {
             try {
-                $client = new \GuzzleHttp\Client(['timeout' => 10]);
-                $res = $client->get("{$supabaseUrl}/rest/v1/bookmarks", [
-                    'headers' => [
+                $res = \Illuminate\Support\Facades\Http::withHeaders([
                         'apikey' => $supabaseKey,
                         'Authorization' => 'Bearer ' . $supabaseKey,
-                    ],
-                    'query' => ['user_id' => "eq.{$userId}", 'select' => 'kajian_id'],
-                ]);
-                $rows = json_decode($res->getBody(), true);
+                    ])
+                    ->timeout(10)
+                    ->get("{$supabaseUrl}/rest/v1/bookmarks", [
+                        'user_id' => "eq.{$userId}",
+                        'select' => 'kajian_id',
+                    ]);
+                $rows = $res->json();
                 $ids = array_column($rows ?? [], 'kajian_id');
                 if (!empty($ids)) {
                     return Kajian::whereIn('id', $ids)->get();
@@ -246,32 +247,37 @@ class KajianController extends Controller
         $supabaseKey = config('services.supabase.service_key');
 
         if ($supabaseUrl && $supabaseKey) {
-            $client = new \GuzzleHttp\Client(['timeout' => 10]);
             $headers = [
                 'apikey' => $supabaseKey,
                 'Authorization' => 'Bearer ' . $supabaseKey,
-                'Content-Type' => 'application/json',
             ];
 
             try {
                 // Cek existing
-                $res = $client->get("{$supabaseUrl}/rest/v1/bookmarks", [
-                    'headers' => $headers,
-                    'query' => ['user_id' => "eq.{$userId}", 'kajian_id' => "eq.{$kajianId}", 'select' => 'id'],
-                ]);
-                $existing = json_decode($res->getBody(), true);
+                $res = \Illuminate\Support\Facades\Http::withHeaders($headers)
+                    ->timeout(10)
+                    ->get("{$supabaseUrl}/rest/v1/bookmarks", [
+                        'user_id' => "eq.{$userId}",
+                        'kajian_id' => "eq.{$kajianId}",
+                        'select' => 'id',
+                    ]);
+                $existing = $res->json();
 
                 if (!empty($existing)) {
-                    $client->delete("{$supabaseUrl}/rest/v1/bookmarks", [
-                        'headers' => $headers,
-                        'query' => ['user_id' => "eq.{$userId}", 'kajian_id' => "eq.{$kajianId}"],
-                    ]);
+                    \Illuminate\Support\Facades\Http::withHeaders($headers)
+                        ->timeout(10)
+                        ->delete("{$supabaseUrl}/rest/v1/bookmarks", [
+                            'user_id' => "eq.{$userId}",
+                            'kajian_id' => "eq.{$kajianId}",
+                        ]);
                     $saved = false;
                 } else {
-                    $client->post("{$supabaseUrl}/rest/v1/bookmarks", [
-                        'headers' => array_merge($headers, ['Prefer' => 'return=minimal']),
-                        'json' => ['user_id' => $userId, 'kajian_id' => $kajianId],
-                    ]);
+                    \Illuminate\Support\Facades\Http::withHeaders(array_merge($headers, ['Prefer' => 'return=minimal', 'Content-Type' => 'application/json']))
+                        ->timeout(10)
+                        ->post("{$supabaseUrl}/rest/v1/bookmarks", [
+                            'user_id' => $userId,
+                            'kajian_id' => $kajianId,
+                        ]);
                     $saved = true;
                 }
 
@@ -313,43 +319,102 @@ class KajianController extends Controller
      */
     public function logAttendance(Request $request, Kajian $kajian): JsonResponse
     {
-        if (Auth::check()) {
-            $today = now()->toDateString();
-            $existing = Attendance::where('user_id', Auth::id())
-                ->where('kajian_id', $kajian->id)
-                ->where('attendance_date', $today)
-                ->first();
-
-            if ($existing) {
-                $existing->delete();
-                $attended = false;
-            } else {
-                Attendance::create([
-                    'user_id' => Auth::id(),
-                    'kajian_id' => $kajian->id,
-                    'attendance_date' => $today,
-                ]);
-                // Otomatis tambahkan juga ke bookmarks agar tersimpan di agenda profil
-                Bookmark::firstOrCreate([
-                    'user_id' => Auth::id(),
-                    'kajian_id' => $kajian->id,
-                ]);
-                $attended = true;
-            }
-
-            $count = Attendance::where('user_id', Auth::id())->count();
-
+        if (!Auth::check()) {
             return response()->json([
-                'status' => 'success',
-                'attended' => $attended,
-                'count' => $count,
-                'kajian_id' => $kajian->id,
+                'status' => 'auth_required',
+                'message' => 'Silakan masuk untuk menyimpan agenda ke akun Anda.',
+            ], 401);
+        }
+
+        $userId = Auth::id();
+        $kajianId = $kajian->id;
+        $today = now()->toDateString();
+
+        $supabaseUrl = config('services.supabase.url');
+        $supabaseKey = config('services.supabase.service_key');
+
+        // Gunakan Supabase untuk persistensi
+        if ($supabaseUrl && $supabaseKey) {
+            $headers = [
+                'apikey' => $supabaseKey,
+                'Authorization' => 'Bearer ' . $supabaseKey,
+            ];
+            try {
+                $res = \Illuminate\Support\Facades\Http::withHeaders($headers)
+                    ->timeout(10)
+                    ->get("{$supabaseUrl}/rest/v1/attendances", [
+                        'user_id' => "eq.{$userId}",
+                        'kajian_id' => "eq.{$kajianId}",
+                        'attendance_date' => "eq.{$today}",
+                        'select' => 'id',
+                    ]);
+
+                if (!empty($res->json())) {
+                    // Batalkan kehadiran
+                    \Illuminate\Support\Facades\Http::withHeaders($headers)
+                        ->timeout(10)
+                        ->delete("{$supabaseUrl}/rest/v1/attendances", [
+                            'user_id' => "eq.{$userId}",
+                            'kajian_id' => "eq.{$kajianId}",
+                            'attendance_date' => "eq.{$today}",
+                        ]);
+                    $attended = false;
+                } else {
+                    // Catat kehadiran
+                    \Illuminate\Support\Facades\Http::withHeaders(array_merge($headers, ['Prefer' => 'return=minimal', 'Content-Type' => 'application/json']))
+                        ->timeout(10)
+                        ->post("{$supabaseUrl}/rest/v1/attendances", [
+                            'user_id' => $userId,
+                            'kajian_id' => $kajianId,
+                            'attendance_date' => $today,
+                        ]);
+                    // Otomatis bookmark juga
+                    \Illuminate\Support\Facades\Http::withHeaders(array_merge($headers, ['Prefer' => 'resolution=ignore-duplicates', 'Content-Type' => 'application/json']))
+                        ->timeout(10)
+                        ->post("{$supabaseUrl}/rest/v1/bookmarks", [
+                            'user_id' => $userId,
+                            'kajian_id' => $kajianId,
+                        ]);
+                    $attended = true;
+                }
+
+                return response()->json([
+                    'status' => 'success',
+                    'attended' => $attended,
+                    'kajian_id' => $kajianId,
+                ]);
+            } catch (\Exception $e) {
+                \Log::warning('Supabase attendance gagal: ' . $e->getMessage());
+            }
+        }
+
+        // Fallback SQLite
+        $existing = Attendance::where('user_id', $userId)
+            ->where('kajian_id', $kajianId)
+            ->where('attendance_date', $today)
+            ->first();
+
+        if ($existing) {
+            $existing->delete();
+            $attended = false;
+        } else {
+            Attendance::create([
+                'user_id' => $userId,
+                'kajian_id' => $kajianId,
+                'attendance_date' => $today,
             ]);
+            Bookmark::firstOrCreate([
+                'user_id' => $userId,
+                'kajian_id' => $kajianId,
+            ]);
+            $attended = true;
         }
 
         return response()->json([
-            'status' => 'auth_required',
-            'message' => 'Silakan masuk untuk menyimpan agenda ke akun Anda.',
-        ], 401);
+            'status' => 'success',
+            'attended' => $attended,
+            'kajian_id' => $kajianId,
+        ]);
+    }
     }
 }
