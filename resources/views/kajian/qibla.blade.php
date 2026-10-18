@@ -56,7 +56,7 @@
   <div class="w-full bg-white rounded-3xl p-5 shadow-xs border border-[#E5ECEB] flex flex-col items-center relative overflow-hidden">
     
     <!-- Compass SVG Visualization with Auto-Gyro & Touch Rotation -->
-    <div id="compassTouchContainer" class="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center my-1 select-none cursor-grab active:cursor-grabbing">
+    <div id="compassTouchContainer" class="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center my-1 select-none cursor-grab active:cursor-grabbing" style="touch-action: pan-y;">
       <svg id="compassSvg" class="w-full h-full transition-transform duration-100 ease-out" viewBox="0 0 300 300">
         <defs>
           <!-- Mint green transparent gradient for the Qibla Wedge/Cone -->
