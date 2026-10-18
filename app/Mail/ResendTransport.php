@@ -39,6 +39,10 @@ class ResendTransport extends AbstractTransport
         ];
 
         if (empty($this->apiKey)) {
+            $this->apiKey = config('services.resend.key') ?: env('RESEND_API_KEY') ?: getenv('RESEND_API_KEY') ?: ($_SERVER['RESEND_API_KEY'] ?? '');
+        }
+
+        if (empty($this->apiKey)) {
             Log::warning('ResendTransport: RESEND_API_KEY belum disetel. Email dicatat di log.', $payload);
             return;
         }
@@ -46,6 +50,8 @@ class ResendTransport extends AbstractTransport
         $options = [];
         if (file_exists('C:/Users/Rizz/AppData/Local/Python/pythoncore-3.15-64/Lib/site-packages/certifi/cacert.pem')) {
             $options['verify'] = 'C:/Users/Rizz/AppData/Local/Python/pythoncore-3.15-64/Lib/site-packages/certifi/cacert.pem';
+        } elseif (PHP_OS_FAMILY === 'Windows') {
+            $options['verify'] = false;
         }
 
         $response = Http::withToken($this->apiKey)

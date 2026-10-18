@@ -99,32 +99,57 @@ if ($dbConnection === 'sqlite' || empty(getenv('DB_CONNECTION'))) {
 }
 
 $appDebug = getenv('APP_DEBUG') ?: ($_ENV['APP_DEBUG'] ?? 'false');
-putenv('APP_NAME=SiniKajian');
+$appName = getenv('APP_NAME') ?: ($_ENV['APP_NAME'] ?? 'Majelisku');
+$appUrl = getenv('APP_URL') ?: ($_ENV['APP_URL'] ?? 'https://majelisku.web.id');
+$mailMailer = getenv('MAIL_MAILER') ?: ($_ENV['MAIL_MAILER'] ?? 'resend');
+$mailFrom = getenv('MAIL_FROM_ADDRESS') ?: ($_ENV['MAIL_FROM_ADDRESS'] ?? 'noreply@majelisku.web.id');
+$mailFromName = getenv('MAIL_FROM_NAME') ?: ($_ENV['MAIL_FROM_NAME'] ?? 'Majelisku');
+$resendKey = getenv('RESEND_API_KEY') ?: ($_ENV['RESEND_API_KEY'] ?? ($_SERVER['RESEND_API_KEY'] ?? ''));
+
+putenv('APP_NAME=' . $appName);
 putenv('APP_DEBUG=' . $appDebug);
-putenv('APP_URL=https://sinikajian.vercel.app');
+putenv('APP_URL=' . $appUrl);
 putenv('SESSION_DRIVER=cookie');
 putenv('SESSION_LIFETIME=120');
 putenv('SESSION_SECURE_COOKIE=true');
 putenv('SESSION_SAME_SITE=lax');
-putenv('CACHE_STORE=array');
+putenv('CACHE_STORE=database');
+putenv('MAIL_MAILER=' . $mailMailer);
+putenv('MAIL_FROM_ADDRESS=' . $mailFrom);
+putenv('MAIL_FROM_NAME=' . $mailFromName);
+if (!empty($resendKey)) {
+    putenv('RESEND_API_KEY=' . $resendKey);
+}
 
-$_ENV['APP_NAME'] = 'SiniKajian';
+$_ENV['APP_NAME'] = $appName;
 $_ENV['APP_DEBUG'] = $appDebug;
-$_ENV['APP_URL'] = 'https://sinikajian.vercel.app';
+$_ENV['APP_URL'] = $appUrl;
 $_ENV['SESSION_DRIVER'] = 'cookie';
 $_ENV['SESSION_LIFETIME'] = '120';
 $_ENV['SESSION_SECURE_COOKIE'] = 'true';
 $_ENV['SESSION_SAME_SITE'] = 'lax';
-$_ENV['CACHE_STORE'] = 'array';
+$_ENV['CACHE_STORE'] = 'database';
+$_ENV['MAIL_MAILER'] = $mailMailer;
+$_ENV['MAIL_FROM_ADDRESS'] = $mailFrom;
+$_ENV['MAIL_FROM_NAME'] = $mailFromName;
+if (!empty($resendKey)) {
+    $_ENV['RESEND_API_KEY'] = $resendKey;
+}
 
-$_SERVER['APP_NAME'] = 'SiniKajian';
+$_SERVER['APP_NAME'] = $appName;
 $_SERVER['APP_DEBUG'] = $appDebug;
-$_SERVER['APP_URL'] = 'https://sinikajian.vercel.app';
+$_SERVER['APP_URL'] = $appUrl;
 $_SERVER['SESSION_DRIVER'] = 'cookie';
 $_SERVER['SESSION_LIFETIME'] = '120';
 $_SERVER['SESSION_SECURE_COOKIE'] = 'true';
 $_SERVER['SESSION_SAME_SITE'] = 'lax';
-$_SERVER['CACHE_STORE'] = 'array';
+$_SERVER['CACHE_STORE'] = 'database';
+$_SERVER['MAIL_MAILER'] = $mailMailer;
+$_SERVER['MAIL_FROM_ADDRESS'] = $mailFrom;
+$_SERVER['MAIL_FROM_NAME'] = $mailFromName;
+if (!empty($resendKey)) {
+    $_SERVER['RESEND_API_KEY'] = $resendKey;
+}
 $_SERVER['SCRIPT_NAME'] = '/index.php';
 $_SERVER['PHP_SELF'] = '/index.php';
 

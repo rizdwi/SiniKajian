@@ -75,51 +75,60 @@ class AuthController extends Controller
      */
     public function sendResetLink(Request $request): RedirectResponse
     {
-        // 1. Honeypot check
+        // 1. Honeypot check (bot trap)
         if ($request->filled('website_trap')) {
-            return back()->with('status', 'Jika alamat email terdaftar di sistem kami, tautan reset kata sandi telah dikirimkan.');
+            return back()->with('status', 'Tautan reset kata sandi telah diproses.');
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'email' => ['required', 'email'],
         ]);
 
+        $email = strtolower(trim((string) $validated['email']));
+
         // 2. Rate Limiting anti-email bombing
         $ipKey = 'forgot-pw-ip:' . $request->ip();
-        $emailKey = 'forgot-pw-email:' . \Illuminate\Support\Str::lower($request->email);
+        $emailKey = 'forgot-pw-email:' . $email;
 
-        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($ipKey, 3) || \Illuminate\Support\Facades\RateLimiter::tooManyAttempts($emailKey, 2)) {
-            return back()->with('status', 'Jika alamat email terdaftar di sistem kami, tautan reset kata sandi telah dikirimkan. Harap periksa email Anda.');
+        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($ipKey, 5) || \Illuminate\Support\Facades\RateLimiter::tooManyAttempts($emailKey, 5)) {
+            $seconds = max(
+                \Illuminate\Support\Facades\RateLimiter::availableIn($ipKey),
+                \Illuminate\Support\Facades\RateLimiter::availableIn($emailKey)
+            );
+            return back()->withErrors([
+                'email' => "Permintaan reset sandi terlalu sering. Demi keamanan, silakan tunggu {$seconds} detik sebelum mencoba kembali.",
+            ])->onlyInput('email');
         }
 
-        \Illuminate\Support\Facades\RateLimiter::hit($ipKey, 900); // 15 menit
+        \Illuminate\Support\Facades\RateLimiter::hit($ipKey, 600); // 10 menit
         \Illuminate\Support\Facades\RateLimiter::hit($emailKey, 120); // 2 menit
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::whereRaw('LOWER(email) = ?', [$email])->first();
         if (!$user) {
-            // Anti-enumeration: jangan biarkan attacker menebak apakah email ada atau tidak
-            return back()->with('status', 'Jika alamat email terdaftar di sistem kami, tautan reset kata sandi telah dikirimkan.');
+            return back()->withErrors([
+                'email' => 'Alamat email (' . $email . ') belum terdaftar di Majelisku. Silakan periksa kembali atau buat akun baru terlebih dahulu.',
+            ])->onlyInput('email');
         }
 
         $plainToken = \Illuminate\Support\Str::random(60);
         \Illuminate\Support\Facades\DB::table('password_reset_tokens')->updateOrInsert(
-            ['email' => $request->email],
+            ['email' => $email],
             [
                 'token' => \Illuminate\Support\Facades\Hash::make($plainToken),
                 'created_at' => now(),
             ]
         );
 
-        $resetUrl = route('password.reset', ['token' => $plainToken, 'email' => $request->email]);
-
         try {
             $user->sendPasswordResetNotification($plainToken);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::info("Password reset notification: " . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error("Gagal mengirim email reset sandi ke {$email}: " . $e->getMessage());
+            return back()->withErrors([
+                'email' => 'Gagal mengirimkan email reset kata sandi: ' . $e->getMessage() . '. Silakan coba lagi beberapa saat.',
+            ])->onlyInput('email');
         }
 
-        // Keamanan: jangan ekspos token/URL ke session pengguna publik
-        return back()->with('status', 'Jika alamat email terdaftar di sistem kami, tautan reset kata sandi telah dikirimkan.');
+        return back()->with('status', 'Tautan untuk mengatur ulang kata sandi telah berhasil dikirimkan ke kotak masuk email ' . $email . '. Silakan periksa kotak masuk atau folder spam Anda.');
     }
 
     /**
@@ -150,16 +159,18 @@ class AuthController extends Controller
             return back()->withErrors(['email' => "Terlalu banyak percobaan reset kata sandi. Silakan tunggu {$seconds} detik."]);
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'token' => ['required'],
             'email' => ['required', 'email'],
             'password' => ['required', 'string', 'confirmed', Password::min(6)],
         ]);
 
+        $email = strtolower(trim((string) $validated['email']));
+
         \Illuminate\Support\Facades\RateLimiter::hit($key, 900);
 
         $record = \Illuminate\Support\Facades\DB::table('password_reset_tokens')
-            ->where('email', $request->email)
+            ->whereRaw('LOWER(email) = ?', [$email])
             ->first();
 
         if (!$record || !\Illuminate\Support\Facades\Hash::check($request->token, $record->token)) {
@@ -168,21 +179,21 @@ class AuthController extends Controller
 
         $createdAt = \Carbon\Carbon::parse($record->created_at);
         if ($createdAt->addMinutes(60)->isPast()) {
-            \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+            \Illuminate\Support\Facades\DB::table('password_reset_tokens')->whereRaw('LOWER(email) = ?', [$email])->delete();
             return back()->withErrors(['email' => 'Token reset kata sandi telah kadaluarsa. Silakan ajukan ulang.']);
         }
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::whereRaw('LOWER(email) = ?', [$email])->first();
         if ($user) {
             $user->password = \Illuminate\Support\Facades\Hash::make($request->password);
             $user->save();
 
             // Sinkronisasi ke Supabase jika aktif
             $svc = new \App\Services\SupabaseUserService();
-            $svc->updatePassword($request->email, $request->password);
+            $svc->updatePassword($email, $request->password);
         }
 
-        \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+        \Illuminate\Support\Facades\DB::table('password_reset_tokens')->whereRaw('LOWER(email) = ?', [$email])->delete();
 
         return redirect()->route('login')->with('status', 'Kata sandi Anda berhasil diperbarui. Silakan masuk.');
     }

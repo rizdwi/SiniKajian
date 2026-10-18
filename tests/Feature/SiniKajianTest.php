@@ -731,4 +731,43 @@ class SiniKajianTest extends TestCase
         // Cleanup
         $kajian->delete();
     }
+
+    /**
+     * Uji alur pengiriman email reset kata sandi ke user terdaftar.
+     */
+    public function test_password_reset_email_dispatches_for_registered_user(): void
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+
+        $user = User::factory()->create([
+            'email' => 'reset_test_' . uniqid() . '@example.com',
+        ]);
+
+        $response = $this->post('/lupa-sandi', [
+            'email' => strtoupper($user->email), // Uji case-insensitivity
+        ]);
+
+        $response->assertStatus(302);
+        $response->assertSessionHas('status');
+
+        \Illuminate\Support\Facades\Notification::assertSentTo(
+            $user,
+            \Illuminate\Auth\Notifications\ResetPassword::class
+        );
+
+        $user->delete();
+    }
+
+    /**
+     * Uji bahwa email yang belum terdaftar memberikan pesan kesalahan informatif.
+     */
+    public function test_password_reset_for_unregistered_email_returns_clear_error(): void
+    {
+        $response = $this->post('/lupa-sandi', [
+            'email' => 'unregistered_' . uniqid() . '@tidakada.com',
+        ]);
+
+        $response->assertSessionHasErrors('email');
+        $this->assertStringContainsString('belum terdaftar', session('errors')->first('email'));
+    }
 }

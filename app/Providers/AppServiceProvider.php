@@ -32,21 +32,21 @@ class AppServiceProvider extends ServiceProvider
 
         // Daftarkan driver email custom Resend API (HTTP REST, optimal untuk serverless Vercel)
         Mail::extend('resend', function (array $config = []) {
-            $key = config('services.resend.key') ?: env('RESEND_API_KEY');
+            $key = config('services.resend.key') ?: env('RESEND_API_KEY') ?: getenv('RESEND_API_KEY') ?: ($_SERVER['RESEND_API_KEY'] ?? '');
             return new \App\Mail\ResendTransport($key);
         });
 
         // Kustomisasi pesan email verifikasi akun (bahasa Indonesia & ramah jamaah)
         VerifyEmail::toMailUsing(function ($notifiable, $url) {
             return (new MailMessage)
-                ->subject('Verifikasi Alamat Email Anda - SiniKajian')
-                ->greeting('Assalamu\'alaikum, ' . ($notifiable->name ?? 'Jamaah SiniKajian') . '!')
-                ->line('Terima kasih telah mendaftar di SiniKajian, direktori jadwal kajian & majelis ilmu sunnah.')
+                ->subject('Verifikasi Alamat Email Anda - Majelisku')
+                ->greeting('Assalamu\'alaikum, ' . ($notifiable->name ?? 'Jamaah Majelisku') . '!')
+                ->line('Terima kasih telah bergabung di Majelisku, direktori jadwal kajian & majelis ilmu sunnah.')
                 ->line('Klik tombol di bawah ini untuk memverifikasi dan mengaktifkan akun Anda:')
                 ->action('Verifikasi Email Saya', $url)
                 ->line('Tautan verifikasi ini aman dan akan kadaluarsa dalam 60 menit.')
-                ->line('Jika Anda tidak merasa mendaftarkan akun di SiniKajian, abaikan saja email ini.')
-                ->salutation('Wassalamu\'alaikum Warahmatullahi Wabarakatuh,' . "\n" . 'Tim SiniKajian');
+                ->line('Jika Anda tidak merasa mendaftarkan akun di Majelisku, abaikan saja email ini.')
+                ->salutation('Wassalamu\'alaikum Warahmatullahi Wabarakatuh,' . "\n" . 'Tim Majelisku');
         });
 
         // Kustomisasi pesan email reset kata sandi
@@ -57,13 +57,13 @@ class AppServiceProvider extends ServiceProvider
             ], false));
 
             return (new MailMessage)
-                ->subject('Permintaan Reset Kata Sandi - SiniKajian')
-                ->greeting('Assalamu\'alaikum, ' . ($notifiable->name ?? 'Jamaah SiniKajian') . '!')
-                ->line('Kami menerima permintaan untuk mengatur ulang kata sandi akun SiniKajian Anda.')
+                ->subject('Atur Ulang Kata Sandi Akun Majelisku')
+                ->greeting('Assalamu\'alaikum, ' . ($notifiable->name ?? 'Jamaah Majelisku') . '!')
+                ->line('Kami menerima permintaan untuk mengatur ulang kata sandi akun Majelisku Anda.')
                 ->action('Atur Ulang Kata Sandi', $url)
                 ->line('Tautan pengaturan ulang sandi ini akan kadaluarsa dalam 60 menit.')
                 ->line('Jika Anda tidak meminta perubahan kata sandi, abaikan email ini.')
-                ->salutation('Wassalamu\'alaikum Warahmatullahi Wabarakatuh,' . "\n" . 'Tim SiniKajian');
+                ->salutation('Wassalamu\'alaikum Warahmatullahi Wabarakatuh,' . "\n" . 'Tim Majelisku');
         });
     }
 }

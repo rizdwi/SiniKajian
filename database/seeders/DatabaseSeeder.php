@@ -22,6 +22,16 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        User::updateOrCreate(
+            ['email' => 'rizkidwisandy@gmail.com'],
+            [
+                'name' => 'Rizki Dwi Sandy',
+                'role' => 'admin',
+                'password' => Hash::make('AdminMajelisku2026!'),
+                'email_verified_at' => now(),
+            ]
+        );
+
         $this->call([
             KajianSeeder::class,
         ]);
