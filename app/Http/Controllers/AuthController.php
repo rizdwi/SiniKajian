@@ -162,7 +162,7 @@ class AuthController extends Controller
         $validated = $request->validate([
             'token' => ['required'],
             'email' => ['required', 'email'],
-            'password' => ['required', 'string', 'confirmed', Password::min(6)],
+            'password' => ['required', 'string', 'confirmed', Password::min(8)->numbers()->symbols()],
         ]);
 
         $email = strtolower(trim((string) $validated['email']));
@@ -228,7 +228,7 @@ class AuthController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'confirmed', Password::min(6)],
+            'password' => ['required', 'string', 'confirmed', Password::min(8)->numbers()->symbols()],
         ]);
 
         \Illuminate\Support\Facades\RateLimiter::hit($regKey, 600); // 10 menit decay
