@@ -91,7 +91,8 @@
     html, body {
       max-width: 100vw;
       overflow-x: hidden;
-      overscroll-behavior-y: none;
+      overscroll-behavior-y: auto;
+      -webkit-overflow-scrolling: touch;
       user-select: none;
       -webkit-user-select: none;
     }
