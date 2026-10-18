@@ -26,7 +26,7 @@ class ResendTransport extends AbstractTransport
         $from = $email->getFrom()[0] ?? null;
         $fromFormatted = $from 
             ? ($from->getName() ? "{$from->getName()} <{$from->getAddress()}>" : $from->getAddress()) 
-            : config('mail.from.address', 'onboarding@resend.dev');
+            : config('mail.from.address', 'noreply@majelisku.web.id');
         
         $to = array_map(fn($addr) => $addr->getAddress(), $email->getTo());
         
