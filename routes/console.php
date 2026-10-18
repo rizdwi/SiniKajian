@@ -9,4 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 // Sync kajian dari Supabase setiap jam
-Schedule::command('kajian:sync-supabase')->hourly();
+Schedule::command('kajian:sync-supabase')->everyThirtyMinutes();
