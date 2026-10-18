@@ -164,11 +164,10 @@ class KajianController extends Controller
         $attendances = collect();
 
         if ($user) {
-            $bookmarkedKajians = $user->bookmarkedKajians()
-                ->where('verified', true)
-                ->where('event_datetime', '>=', $cutoff)
-                ->orderBy('event_datetime', 'asc')
-                ->get();
+            $bookmarkedKajians = $this->getUserBookmarks($user->id)
+                ->filter(function ($k) use ($cutoff) {
+                    return $k->event_datetime >= $cutoff;
+                });
             $attendances = $user->attendances()->with('kajian')->latest()->get();
         }
 
@@ -177,6 +176,40 @@ class KajianController extends Controller
             'bookmarkedKajians' => $bookmarkedKajians,
             'attendances' => $attendances,
         ]);
+    }
+
+    /**
+     * Ambil bookmark user dari Supabase (persisten) dengan fallback lokal.
+     */
+    private function getUserBookmarks(int $userId)
+    {
+        $supabaseUrl = config('services.supabase.url');
+        $supabaseKey = config('services.supabase.service_key');
+
+        if ($supabaseUrl && $supabaseKey) {
+            try {
+                $res = \Illuminate\Support\Facades\Http::withHeaders([
+                        'apikey' => $supabaseKey,
+                        'Authorization' => 'Bearer ' . $supabaseKey,
+                    ])
+                    ->timeout(10)
+                    ->get("{$supabaseUrl}/rest/v1/bookmarks", [
+                        'user_id' => "eq.{$userId}",
+                        'select' => 'kajian_id',
+                    ]);
+                $rows = $res->json();
+                $ids = array_column($rows ?? [], 'kajian_id');
+                if (!empty($ids)) {
+                    return Kajian::whereIn('id', $ids)->get();
+                }
+                return collect();
+            } catch (\Exception $e) {
+                \Log::warning('Supabase get bookmarks gagal: ' . $e->getMessage());
+            }
+        }
+
+        $user = \App\Models\User::find($userId);
+        return $user ? $user->bookmarkedKajians()->get() : collect();
     }
 
     /**
@@ -214,46 +247,91 @@ class KajianController extends Controller
      */
     public function toggleBookmark(Request $request, Kajian $kajian): JsonResponse|\Illuminate\Http\RedirectResponse
     {
-        if (Auth::check()) {
-            $existing = Bookmark::where('user_id', Auth::id())
-                ->where('kajian_id', $kajian->id)
-                ->first();
-
-            if ($existing) {
-                $existing->delete();
-                $saved = false;
-                $msg = 'Kajian dihapus dari tersimpan.';
-            } else {
-                Bookmark::create([
-                    'user_id' => Auth::id(),
-                    'kajian_id' => $kajian->id,
-                ]);
-                $saved = true;
-                $msg = 'Kajian berhasil disimpan.';
-            }
-
+        if (!Auth::check()) {
             if (!$request->wantsJson() && !$request->ajax()) {
-                return back()->with('success', $msg);
+                return redirect()->route('login')->with('error', 'Silakan masuk untuk menyimpan bookmark.');
             }
-
             return response()->json([
-                'status' => 'success',
-                'saved' => $saved,
-                'kajian_id' => $kajian->id,
-                'message' => $msg,
-            ]);
+                'status' => 'auth_required',
+                'message' => 'Silakan masuk untuk menyimpan bookmark ke akun Anda.',
+            ], 401);
         }
 
+        $userId = Auth::id();
+        $kajianId = $kajian->id;
+        $saved = false;
+
+        // 1. Gunakan Supabase untuk persistensi jika dikonfigurasi (SQLite Vercel ephemeral)
+        $supabaseUrl = config('services.supabase.url');
+        $supabaseKey = config('services.supabase.service_key');
+
+        if ($supabaseUrl && $supabaseKey) {
+            $headers = [
+                'apikey' => $supabaseKey,
+                'Authorization' => 'Bearer ' . $supabaseKey,
+            ];
+
+            try {
+                // Cek existing di Supabase
+                $res = \Illuminate\Support\Facades\Http::withHeaders($headers)
+                    ->timeout(10)
+                    ->get("{$supabaseUrl}/rest/v1/bookmarks", [
+                        'user_id' => "eq.{$userId}",
+                        'kajian_id' => "eq.{$kajianId}",
+                        'select' => 'id',
+                    ]);
+                $existing = $res->json();
+
+                if (!empty($existing)) {
+                    \Illuminate\Support\Facades\Http::withHeaders($headers)
+                        ->timeout(10)
+                        ->delete("{$supabaseUrl}/rest/v1/bookmarks", [
+                            'user_id' => "eq.{$userId}",
+                            'kajian_id' => "eq.{$kajianId}",
+                        ]);
+                    $saved = false;
+                } else {
+                    \Illuminate\Support\Facades\Http::withHeaders(array_merge($headers, ['Prefer' => 'return=minimal', 'Content-Type' => 'application/json']))
+                        ->timeout(10)
+                        ->post("{$supabaseUrl}/rest/v1/bookmarks", [
+                            'user_id' => $userId,
+                            'kajian_id' => $kajianId,
+                        ]);
+                    $saved = true;
+                }
+            } catch (\Exception $e) {
+                \Log::warning('Supabase bookmark gagal, fallback ke lokal: ' . $e->getMessage());
+            }
+        }
+
+        // 2. Simpan juga di SQLite lokal (selalu tersinkron)
+        $existingLocal = Bookmark::where('user_id', $userId)
+            ->where('kajian_id', $kajianId)
+            ->first();
+
+        if ($existingLocal) {
+            $existingLocal->delete();
+            $saved = false;
+        } else {
+            Bookmark::create([
+                'user_id' => $userId,
+                'kajian_id' => $kajianId,
+            ]);
+            $saved = true;
+        }
+
+        $msg = $saved ? 'Kajian berhasil disimpan.' : 'Kajian dihapus dari tersimpan.';
+
         if (!$request->wantsJson() && !$request->ajax()) {
-            return redirect()->route('login')->with('error', 'Silakan masuk untuk menyimpan bookmark.');
+            return back()->with('success', $msg);
         }
 
         return response()->json([
-            'status' => 'guest',
-            'saved' => null,
-            'message' => 'Tersimpan lokal di perangkat ini. Masuk akun untuk sinkronisasi cloud.',
-            'kajian_id' => $kajian->id,
-        ], 200);
+            'status' => 'success',
+            'saved' => $saved,
+            'kajian_id' => $kajianId,
+            'message' => $msg,
+        ]);
     }
 
     /**
@@ -261,43 +339,101 @@ class KajianController extends Controller
      */
     public function logAttendance(Request $request, Kajian $kajian): JsonResponse
     {
-        if (Auth::check()) {
-            $today = now()->toDateString();
-            $existing = Attendance::where('user_id', Auth::id())
-                ->where('kajian_id', $kajian->id)
-                ->where('attendance_date', $today)
-                ->first();
-
-            if ($existing) {
-                $existing->delete();
-                $attended = false;
-            } else {
-                Attendance::create([
-                    'user_id' => Auth::id(),
-                    'kajian_id' => $kajian->id,
-                    'attendance_date' => $today,
-                ]);
-                // Otomatis tambahkan juga ke bookmarks agar tersimpan di agenda profil
-                Bookmark::firstOrCreate([
-                    'user_id' => Auth::id(),
-                    'kajian_id' => $kajian->id,
-                ]);
-                $attended = true;
-            }
-
-            $count = Attendance::where('user_id', Auth::id())->count();
-
+        if (!Auth::check()) {
             return response()->json([
-                'status' => 'success',
-                'attended' => $attended,
-                'count' => $count,
-                'kajian_id' => $kajian->id,
+                'status' => 'auth_required',
+                'message' => 'Silakan masuk untuk menyimpan agenda ke akun Anda.',
+            ], 401);
+        }
+
+        $userId = Auth::id();
+        $kajianId = $kajian->id;
+        $today = now()->toDateString();
+
+        $supabaseUrl = config('services.supabase.url');
+        $supabaseKey = config('services.supabase.service_key');
+
+        // Gunakan Supabase untuk persistensi
+        if ($supabaseUrl && $supabaseKey) {
+            $headers = [
+                'apikey' => $supabaseKey,
+                'Authorization' => 'Bearer ' . $supabaseKey,
+            ];
+            try {
+                $res = \Illuminate\Support\Facades\Http::withHeaders($headers)
+                    ->timeout(10)
+                    ->get("{$supabaseUrl}/rest/v1/attendances", [
+                        'user_id' => "eq.{$userId}",
+                        'kajian_id' => "eq.{$kajianId}",
+                        'attendance_date' => "eq.{$today}",
+                        'select' => 'id',
+                    ]);
+
+                if (!empty($res->json())) {
+                    // Batalkan kehadiran
+                    \Illuminate\Support\Facades\Http::withHeaders($headers)
+                        ->timeout(10)
+                        ->delete("{$supabaseUrl}/rest/v1/attendances", [
+                            'user_id' => "eq.{$userId}",
+                            'kajian_id' => "eq.{$kajianId}",
+                            'attendance_date' => "eq.{$today}",
+                        ]);
+                    $attended = false;
+                } else {
+                    // Catat kehadiran
+                    \Illuminate\Support\Facades\Http::withHeaders(array_merge($headers, ['Prefer' => 'return=minimal', 'Content-Type' => 'application/json']))
+                        ->timeout(10)
+                        ->post("{$supabaseUrl}/rest/v1/attendances", [
+                            'user_id' => $userId,
+                            'kajian_id' => $kajianId,
+                            'attendance_date' => $today,
+                        ]);
+                    // Otomatis bookmark juga
+                    \Illuminate\Support\Facades\Http::withHeaders(array_merge($headers, ['Prefer' => 'resolution=ignore-duplicates', 'Content-Type' => 'application/json']))
+                        ->timeout(10)
+                        ->post("{$supabaseUrl}/rest/v1/bookmarks", [
+                            'user_id' => $userId,
+                            'kajian_id' => $kajianId,
+                        ]);
+                    $attended = true;
+                }
+
+                return response()->json([
+                    'status' => 'success',
+                    'attended' => $attended,
+                    'kajian_id' => $kajianId,
+                ]);
+            } catch (\Exception $e) {
+                \Log::warning('Supabase attendance gagal: ' . $e->getMessage());
+            }
+        }
+
+        // Fallback SQLite
+        $existing = Attendance::where('user_id', $userId)
+            ->where('kajian_id', $kajianId)
+            ->where('attendance_date', $today)
+            ->first();
+
+        if ($existing) {
+            $existing->delete();
+            $attended = false;
+        } else {
+            Attendance::create([
+                'user_id' => $userId,
+                'kajian_id' => $kajianId,
+                'attendance_date' => $today,
             ]);
+            Bookmark::firstOrCreate([
+                'user_id' => $userId,
+                'kajian_id' => $kajianId,
+            ]);
+            $attended = true;
         }
 
         return response()->json([
-            'status' => 'auth_required',
-            'message' => 'Silakan masuk untuk menyimpan agenda ke akun Anda.',
-        ], 401);
+            'status' => 'success',
+            'attended' => $attended,
+            'kajian_id' => $kajianId,
+        ]);
     }
 }

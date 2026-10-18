@@ -90,18 +90,34 @@ class AuthController extends Controller
         $user = Auth::user();
 
         if ($user) {
-            $cutoff = \Carbon\Carbon::now('Asia/Jakarta')->subHours(3);
-            $bookmarkedKajians = $user->bookmarkedKajians()
-                ->where('verified', true)
-                ->where('event_datetime', '>=', $cutoff)
-                ->orderBy('event_datetime', 'asc')
-                ->get();
+            // Override dengan data terbaru dari session (jika baru update) atau Supabase
+            if (session()->has('profile_name')) {
+                $user->name = session('profile_name');
+                $user->email = session('profile_email', $user->email);
+            } else {
+                try {
+                    $svc = new \App\Services\SupabaseUserService();
+                    if ($svc->enabled()) {
+                        $sbUser = $svc->findOrCreate(['name' => $user->name, 'email' => $user->email]);
+                        if ($sbUser) {
+                            $user->name = $sbUser['name'] ?? $user->name;
+                            $user->email = $sbUser['email'] ?? $user->email;
+                        }
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning('Ambil profil Supabase gagal: ' . $e->getMessage());
+                }
+            }
 
-            $attendances = $user->attendances()
-                ->with('kajian')
-                ->latest()
-                ->take(10)
-                ->get();
+            $cutoff = \Carbon\Carbon::now('Asia/Jakarta')->subHours(3)->toDateTimeString();
+            // Ambil kajian tersimpan dari Supabase / SQLite dengan filter cutoff aktif
+            $bookmarkedKajians = $this->getUserBookmarks($user->id)
+                ->filter(function ($k) use ($cutoff) {
+                    return $k->event_datetime >= $cutoff;
+                });
+
+            // Ambil kehadiran dari Supabase (persisten)
+            $attendances = $this->getUserAttendances($user->id);
 
             $submittedKajians = $user->submittedKajians()->latest()->get();
 
@@ -173,6 +189,33 @@ class AuthController extends Controller
 
         $user->save();
 
+        // Sync ke Supabase agar persisten (SQLite Vercel ephemeral)
+        try {
+            $svc = new \App\Services\SupabaseUserService();
+            if ($svc->enabled()) {
+                // Cari user di Supabase by email lama, update atau buat baru
+                $svc->findOrCreate([
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'provider' => $user->provider,
+                    'provider_id' => $user->provider_id,
+                ]);
+                // Update data terbaru
+                $sbUser = $svc->findOrCreate(['name' => $user->name, 'email' => $user->email]);
+                if ($sbUser && isset($sbUser['id'])) {
+                    $svc->update($sbUser['id'], [
+                        'name' => $request->name,
+                        'email' => $request->email,
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Sync profil ke Supabase gagal: ' . $e->getMessage());
+        }
+
+        // Simpan juga di session agar langsung terlihat
+        session(['profile_name' => $request->name, 'profile_email' => $request->email]);
+
         return redirect()->route('profile')->with('success', 'Profil dan foto berhasil diperbarui!');
     }
 
@@ -185,5 +228,80 @@ class AuthController extends Controller
         $request->session()->flush();
 
         return redirect()->route('kajian.index');
+    }
+
+    /**
+     * Ambil bookmark user dari Supabase (persisten) dengan fallback lokal.
+     */
+    private function getUserBookmarks(int $userId)
+    {
+        $supabaseUrl = config('services.supabase.url');
+        $supabaseKey = config('services.supabase.service_key');
+
+        if ($supabaseUrl && $supabaseKey) {
+            try {
+                $res = \Illuminate\Support\Facades\Http::withHeaders([
+                        'apikey' => $supabaseKey,
+                        'Authorization' => 'Bearer ' . $supabaseKey,
+                    ])
+                    ->timeout(10)
+                    ->get("{$supabaseUrl}/rest/v1/bookmarks", [
+                        'user_id' => "eq.{$userId}",
+                        'select' => 'kajian_id',
+                    ]);
+                $rows = $res->json();
+                $ids = array_column($rows ?? [], 'kajian_id');
+                if (!empty($ids)) {
+                    return \App\Models\Kajian::whereIn('id', $ids)->get();
+                }
+                return collect();
+            } catch (\Exception $e) {
+                \Log::warning('Supabase get bookmarks gagal: ' . $e->getMessage());
+            }
+        }
+
+        $user = User::find($userId);
+        return $user ? $user->bookmarkedKajians()->get() : collect();
+    }
+
+    /**
+     * Ambil attendance user dari Supabase (persisten) dengan fallback lokal.
+     */
+    private function getUserAttendances(int $userId)
+    {
+        $supabaseUrl = config('services.supabase.url');
+        $supabaseKey = config('services.supabase.service_key');
+
+        if ($supabaseUrl && $supabaseKey) {
+            try {
+                $res = \Illuminate\Support\Facades\Http::withHeaders([
+                        'apikey' => $supabaseKey,
+                        'Authorization' => 'Bearer ' . $supabaseKey,
+                    ])
+                    ->timeout(10)
+                    ->get("{$supabaseUrl}/rest/v1/attendances", [
+                        'user_id' => "eq.{$userId}",
+                        'select' => 'kajian_id,attendance_date',
+                        'order' => 'attendance_date.desc',
+                    ]);
+                $rows = $res->json();
+                $ids = array_column($rows ?? [], 'kajian_id');
+                if (!empty($ids)) {
+                    $kajians = \App\Models\Kajian::whereIn('id', $ids)->get()->keyBy('id');
+                    // Kembalikan sebagai collection dengan info tanggal
+                    return collect($rows)->map(function ($r) use ($kajians) {
+                        $k = $kajians[$r['kajian_id']] ?? null;
+                        if ($k) $k->attendance_date = $r['attendance_date'];
+                        return $k;
+                    })->filter();
+                }
+                return collect();
+            } catch (\Exception $e) {
+                \Log::warning('Supabase get attendances gagal: ' . $e->getMessage());
+            }
+        }
+
+        $user = User::find($userId);
+        return $user ? $user->attendances()->with('kajian')->latest()->take(10)->get() : collect();
     }
 }
