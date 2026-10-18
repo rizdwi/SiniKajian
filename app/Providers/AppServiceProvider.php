@@ -28,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
 
         if (config('app.env') === 'production' || isset($_SERVER['VERCEL']) || isset($_ENV['VERCEL']) || env('VERCEL') || app()->environment('production')) {
             URL::forceScheme('https');
+            URL::forceRootUrl('https://majelisku.web.id');
         }
 
         // Daftarkan driver email custom Resend API (HTTP REST, optimal untuk serverless Vercel)
@@ -38,6 +39,10 @@ class AppServiceProvider extends ServiceProvider
 
         // Kustomisasi pesan email verifikasi akun (bahasa Indonesia & ramah jamaah)
         VerifyEmail::toMailUsing(function ($notifiable, $url) {
+            if (str_contains($url, 'localhost') || str_contains($url, '127.0.0.1')) {
+                $url = str_replace(['http://localhost:8000', 'http://localhost', 'http://127.0.0.1:8000'], 'https://majelisku.web.id', $url);
+            }
+
             return (new MailMessage)
                 ->subject('Verifikasi Alamat Email Anda - Majelisku')
                 ->greeting('Assalamu\'alaikum, ' . ($notifiable->name ?? 'Jamaah Majelisku') . '!')
@@ -51,10 +56,11 @@ class AppServiceProvider extends ServiceProvider
 
         // Kustomisasi pesan email reset kata sandi
         ResetPassword::toMailUsing(function ($notifiable, $token) {
-            $url = url(route('password.reset', [
-                'token' => $token,
-                'email' => $notifiable->getEmailForPasswordReset(),
-            ], false));
+            $domain = (app()->environment('production') || env('VERCEL') || isset($_SERVER['VERCEL']))
+                ? 'https://majelisku.web.id'
+                : (config('app.url') && !str_contains(config('app.url'), 'localhost') ? config('app.url') : 'https://majelisku.web.id');
+
+            $url = rtrim($domain, '/') . '/reset-sandi/' . $token . '?email=' . urlencode($notifiable->getEmailForPasswordReset());
 
             return (new MailMessage)
                 ->subject('Atur Ulang Kata Sandi Akun Majelisku')
