@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- App Icon Squircle Background -->
+  <rect width="100" height="100" rx="24" fill="#1D4D4F" />
+  
+  <!-- Crescent moon sweep in Soft Mint -->
+  <path d="M 50 12 C 28 12 14 28 14 52 C 14 72 29 86 52 86 C 67 86 78 79 84 68 C 65 74 45 66 38 48 C 32 35 37 20 50 12 Z" fill="#E6F4F1" />
+
+  <!-- Mosque Dome in Pure White -->
+  <path d="M 41 43 C 41 33 48 27 50 21 C 52 27 59 33 59 43 L 59 63 L 41 63 Z" fill="#FFFFFF" />
+  
+  <!-- Minaret on the left -->
+  <rect x="34" y="37" width="5" height="26" rx="1" fill="#FFFFFF" />
+  <path d="M 34 37 L 36.5 31 L 39 37 Z" fill="#FFFFFF" />
+
+  <!-- Dome Arch Doorway -->
+  <path d="M 47 63 L 47 53 C 47 50 49 49 50 49 C 51 49 53 50 53 53 L 53 63 Z" fill="#1D4D4F" />
+
+  <!-- Location Map Pin at upper right in Emerald Teal -->
+  <g transform="translate(60, 16)">
+    <path d="M 12 0 C 5.37 0 0 5.37 0 12 C 0 20.5 10.5 28.5 12 30 C 13.5 28.5 24 20.5 24 12 C 24 5.37 18.63 0 12 0 Z" fill="#388E86" />
+    <circle cx="12" cy="11" r="4.5" fill="#FFFFFF" />
+  </g>
+</svg>

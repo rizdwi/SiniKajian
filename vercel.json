@@ -19,6 +19,13 @@
       "continue": true
     },
     {
+      "src": "/(favicon\\.(ico|svg)|favicon-.*\\.png|apple-touch-icon.*\\.png|android-chrome-.*\\.png)",
+      "dest": "/public/$1",
+      "headers": {
+        "Cache-Control": "public, max-age=604800, immutable"
+      }
+    },
+    {
       "src": "/sw.js",
       "dest": "/public/sw.js",
       "headers": {
@@ -54,8 +61,8 @@
     }
   ],
   "env": {
-    "APP_NAME": "SiniKajian",
-    "APP_URL": "https://sinikajian.vercel.app",
+    "APP_NAME": "Majelisku",
+    "APP_URL": "https://majelisku.web.id",
     "APP_ENV": "production",
     "APP_DEBUG": "false",
     "CACHE_STORE": "array",

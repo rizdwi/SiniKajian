@@ -18,6 +18,8 @@ yarn-error.log
 .DS_Store
 Thumbs.db
 *.png
+!public/*.png
+!public/**/*.png
 rendered_dom.html
 dump_*.html
 test_*.html

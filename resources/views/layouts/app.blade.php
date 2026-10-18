@@ -25,8 +25,13 @@
   <meta name="twitter:title" content="@yield('og_title', 'Majelisku | Temukan Majelis Ilmu Terdekat')">
   <meta name="twitter:description" content="@yield('og_description', 'Temukan jadwal majelis ilmu sunnah, waktu sholat akurat, dan kompas kiblat.')">
   <meta name="twitter:image" content="@yield('og_image', asset('images/app-icon.svg'))">
-  <link rel="icon" type="image/svg+xml" href="/images/logo-majelisku.svg">
-  <link rel="apple-touch-icon" href="/images/app-icon.svg">
+
+  <!-- Favicon & App Icons -->
+  <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
+  <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
   <link rel="manifest" href="{{ asset('manifest.json') }}">
   <meta name="csrf-token" content="{{ csrf_token() }}">
 

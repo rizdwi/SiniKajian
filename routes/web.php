@@ -131,3 +131,15 @@ Route::post('/email/verification-notification', function (\Illuminate\Http\Reque
         return back()->with('error', 'Gagal mengirim email: periksa pengaturan mailer (SMTP/Resend) di server.');
     }
 })->middleware(['auth', 'throttle:6,1'])->name('verification.send');
+
+// Favicon fallback handler
+Route::get('/favicon.ico', function () {
+    $path = public_path('favicon.ico');
+    if (!file_exists($path)) {
+        $path = base_path('favicon.ico');
+    }
+    return response()->file($path, [
+        'Content-Type' => 'image/x-icon',
+        'Cache-Control' => 'public, max-age=604800, immutable',
+    ]);
+});
