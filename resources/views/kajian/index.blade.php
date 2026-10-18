@@ -623,6 +623,24 @@
     return `${day} ${month} ${parts[0]}`;
   }
 
+  // Helper: validasi URL aman (cegah javascript: dll)
+  function safeUrl(url) {
+    if (!url) return '#';
+    try {
+      const u = new URL(url, window.location.origin);
+      if (['http:', 'https:'].includes(u.protocol)) return url;
+    } catch (e) {}
+    return '#';
+  }
+
+  // Helper: escape HTML untuk cegah XSS
+  function escapeHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
   // 1. Rumus Haversine Presisi
   function calculateHaversine(lat1, lon1, lat2, lon2) {
     const R = 6371; // Jari-jari bumi km
@@ -857,21 +875,21 @@
             </div>
             
             <h3 class="text-xs sm:text-sm font-bold text-[#1C2224] leading-snug line-clamp-2 hover:text-[#1D4D4F]">
-              ${ev.title}
+              ${escapeHtml(ev.title)}
             </h3>
             
             <p class="text-[11px] text-[#607072] mt-0.5 truncate">
-              ${ev.ustadz} • ${ev.masjid}
+              ${escapeHtml(ev.ustadz)} • ${escapeHtml(ev.masjid)}
             </p>
             
             <div class="flex items-center gap-1.5 mt-2 flex-wrap" onclick="event.stopPropagation();">
               <span class="text-[9px] font-medium text-[#607072] bg-[#F8FAF9] border border-[#E5ECEB] px-2 py-0.5 rounded-md">
-                ${ev.category || 'Umum'}
+                ${escapeHtml(ev.category || 'Umum')}
               </span>
               ${hasSource ? `
-                <a href="${ev.source_url}" target="_blank" rel="noopener noreferrer" title="Buka sumber asli di ${srcMeta.label}" class="inline-flex items-center gap-1 text-[9px] font-bold text-white px-2 py-0.5 rounded-full shadow-xs no-underline transition hover:opacity-90 cursor-pointer" style="${srcMeta.style}">
+                <a href="${safeUrl(ev.source_url)}" target="_blank" rel="noopener noreferrer" title="Buka sumber asli di ${escapeHtml(srcMeta.label)}" class="inline-flex items-center gap-1 text-[9px] font-bold text-white px-2 py-0.5 rounded-full shadow-xs no-underline transition hover:opacity-90 cursor-pointer" style="${srcMeta.style}">
                   <span class="font-extrabold text-[9px]">${srcMeta.glyph}</span>
-                  <span>${srcMeta.label} ↗</span>
+                  <span>${escapeHtml(srcMeta.label)} ↗</span>
                 </a>
               ` : ''}
               ${ev.status === 'batal' ? '<span class="px-2 py-0.5 rounded text-[9px] font-bold bg-rose-50 text-rose-700">Dibatalkan</span>' : ''}
