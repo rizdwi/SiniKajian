@@ -263,36 +263,117 @@
     updateCompassDisplay(currentHeading);
   }
 
+  // === SENSOR COMPASS LOGIC (robust untuk Android & iOS) ===
+  let hasReceivedSensorData = false;
+  let sensorActive = false;
+
   function autoStartCompass() {
-    // Coba auto-start (iOS dengan permission tersimpan / desktop)
-    // Android Chrome butuh user gesture, jadi tampilkan tombol aktivasi
-    if (typeof DeviceOrientationEvent !== 'undefined') {
-      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-        // iOS: tampilkan tombol untuk request permission
+    // Reset status
+    hasReceivedSensorData = false;
+    sensorActive = false;
+
+    // Coba semua metode yang tersedia
+    tryStartDeviceOrientation();
+    tryStartGenericSensor();
+
+    // Jika setelah 3 detik tidak ada data, tampilkan tombol aktivasi manual
+    setTimeout(() => {
+      if (!hasReceivedSensorData) {
         showActivateButton();
-      } else {
-        // Android/Desktop: coba langsung, tapi juga sediakan tombol fallback
-        window.addEventListener('deviceorientationabsolute', handleOrientation, true);
-        window.addEventListener('deviceorientation', handleOrientation, true);
-        // Jika setelah 2 detik tidak ada data, tampilkan tombol aktivasi
-        setTimeout(() => {
-          if (!hasReceivedSensorData) {
-            showActivateButton();
-          }
-        }, 2000);
+        updateSensorStatus('menunggu', 'Ketuk tombol di atas untuk aktifkan kompas');
       }
-    } else {
-      showSensorError('Perangkat tidak mendukung sensor kompas');
+    }, 3000);
+  }
+
+  function tryStartDeviceOrientation() {
+    if (typeof DeviceOrientationEvent === 'undefined') return;
+
+    // iOS 13+: butuh requestPermission via user gesture
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+      showActivateButton();
+      return;
+    }
+
+    // Android/Desktop: langsung pasang listener
+    // deviceorientationabsolute = kompas absolut (prioritas)
+    window.addEventListener('deviceorientationabsolute', onSensorData, true);
+    // deviceorientation = fallback
+    window.addEventListener('deviceorientation', onSensorData, true);
+  }
+
+  function tryStartGenericSensor() {
+    // Generic Sensor API (Chrome Android 67+) - lebih reliable
+    try {
+      if (typeof AbsoluteOrientationSensor !== 'undefined') {
+        const sensor = new AbsoluteOrientationSensor({ frequency: 10 });
+        sensor.addEventListener('reading', () => {
+          // Quaternion ke heading
+          const q = sensor.quaternion;
+          if (q) {
+            // Hitung yaw dari quaternion
+            const yaw = Math.atan2(
+              2 * (q[3] * q[2] + q[0] * q[1]),
+              1 - 2 * (q[1] * q[1] + q[2] * q[2])
+            );
+            let heading = (-yaw * 180 / Math.PI + 360) % 360;
+            onCompassHeading(heading);
+          }
+        });
+        sensor.addEventListener('error', () => {});
+        sensor.start();
+      }
+    } catch (e) {
+      // Generic Sensor tidak tersedia, abaikan
     }
   }
 
-  let hasReceivedSensorData = false;
-  const originalHandleOrientation = handleOrientation;
-  handleOrientation = function(event) {
+  function onSensorData(event) {
+    let compass = null;
+
+    // iOS Safari
+    if (event.webkitCompassHeading !== undefined && event.webkitCompassHeading !== null) {
+      compass = event.webkitCompassHeading;
+    }
+    // Android: absolute orientation, alpha = heading langsung
+    else if (event.absolute === true && event.alpha !== null && event.alpha !== undefined) {
+      compass = event.alpha;
+    }
+    // Non-absolute: tidak reliable, skip kecuali belum ada data sama sekali
+    else if (!hasReceivedSensorData && event.alpha !== null && event.alpha !== undefined) {
+      // Jangan pakai, terlalu tidak akurat
+      return;
+    }
+
+    if (compass === null || compass === undefined || isNaN(compass)) return;
+    onCompassHeading(compass);
+  }
+
+  function onCompassHeading(heading) {
     hasReceivedSensorData = true;
+    sensorActive = true;
     hideActivateButton();
-    return originalHandleOrientation(event);
-  };
+
+    // Normalisasi 0-360
+    heading = ((heading % 360) + 360) % 360;
+    currentHeading = Math.round(heading);
+    updateCompassDisplay(currentHeading);
+    updateSensorStatus('aktif', 'Kompas aktif & mengikuti arah');
+  }
+
+  function updateSensorStatus(state, msg) {
+    const wrap = document.getElementById('statusIconWrap');
+    const title = document.getElementById('statusTitle');
+    if (wrap && title) {
+      if (state === 'aktif') {
+        wrap.textContent = '✓';
+        wrap.className = 'w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs';
+      } else if (state === 'menunggu') {
+        wrap.textContent = '!';
+        wrap.className = 'w-7 h-7 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs';
+      }
+      title.textContent = msg;
+    }
+  }
 
   function showActivateButton() {
     const pill = document.getElementById('sensorGuidancePill');
@@ -312,27 +393,37 @@
   }
 
   function activateCompassManually() {
+    // Dipanggil dari user tap - gesture sudah ada, sensor boleh jalan
+    hideActivateButton();
+    updateSensorStatus('menunggu', 'Mengaktifkan sensor...');
+
     if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
       DeviceOrientationEvent.requestPermission()
         .then(response => {
           if (response === 'granted') {
-            window.addEventListener('deviceorientation', handleOrientation, true);
-            showSensorReadyStatus('Kompas Aktif');
-            hideActivateButton();
+            window.addEventListener('deviceorientation', onSensorData, true);
+            tryStartGenericSensor();
+          } else {
+            updateSensorStatus('menunggu', 'Izin sensor ditolak');
           }
         })
         .catch(() => {
-          window.addEventListener('deviceorientationabsolute', handleOrientation, true);
-          window.addEventListener('deviceorientation', handleOrientation, true);
-          hideActivateButton();
+          window.addEventListener('deviceorientationabsolute', onSensorData, true);
+          window.addEventListener('deviceorientation', onSensorData, true);
+          tryStartGenericSensor();
         });
     } else {
-      // Android: user gesture sudah ada (tap), langsung aktifkan listener
-      window.addEventListener('deviceorientationabsolute', handleOrientation, true);
-      window.addEventListener('deviceorientation', handleOrientation, true);
-      showSensorReadyStatus('Kompas Aktif - gerakkan HP Anda');
-      hideActivateButton();
+      window.addEventListener('deviceorientationabsolute', onSensorData, true);
+      window.addEventListener('deviceorientation', onSensorData, true);
+      tryStartGenericSensor();
     }
+
+    // Cek lagi setelah 3 detik
+    setTimeout(() => {
+      if (!hasReceivedSensorData) {
+        updateSensorStatus('menunggu', 'Sensor tidak merespons. Coba: 1) Aktifkan "Motion sensors" di pengaturan Chrome > Site settings, 2) Pastikan HP punya kompas');
+      }
+    }, 3000);
   }
 
   function showSensorError(msg) {
@@ -341,26 +432,10 @@
   }
 
   function calibrateSensor() {
-    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-      DeviceOrientationEvent.requestPermission()
-        .then(response => {
-          if (response === 'granted') {
-            window.addEventListener('deviceorientation', handleOrientation, true);
-            showSensorReadyStatus('Sensor iOS Terkalibrasi & Aktif');
-          } else {
-            alert('Izin sensor gerak kompas diperlukan di iOS untuk navigasi real-time.');
-          }
-        })
-        .catch(err => {
-          window.addEventListener('deviceorientation', handleOrientation, true);
-          showSensorReadyStatus('Sensor Kompas Aktif');
-        });
-    } else {
-      window.addEventListener('deviceorientationabsolute', handleOrientation, true);
-      window.addEventListener('deviceorientation', handleOrientation, true);
-      showSensorReadyStatus('Sensor Kompas Terkalibrasi');
-      alert('Putar perlahan ponsel Anda membentuk pola angka 8 di udara untuk mengkalibrasi magnetometer.');
-    }
+    // Reset dan coba aktifkan ulang semua sensor
+    hasReceivedSensorData = false;
+    sensorActive = false;
+    activateCompassManually();
   }
 
   function showSensorReadyStatus(msg) {
@@ -373,36 +448,10 @@
     }
   }
 
+  // Legacy: dipertahankan untuk kompatibilitas, delegasi ke onSensorData
   function handleOrientation(event) {
-    let compass = null;
-
-    // iOS Safari: webkitCompassHeading langsung = arah kompas (0 = utara)
-    if (typeof event.webkitCompassHeading !== 'undefined' && event.webkitCompassHeading !== null) {
-      compass = event.webkitCompassHeading;
-    }
-    // Android Chrome: deviceorientationabsolute dengan absolute=true,
-    // event.alpha SUDAH = arah kompas (0 = utara). JANGAN di-invert!
-    else if (event.absolute === true && event.alpha !== null) {
-      compass = event.alpha;
-    }
-    // Fallback: deviceorientation biasa (alpha relatif, tidak akurat untuk kompas)
-    // Hanya pakai jika tidak ada data absolute sama sekali
-    else if (event.alpha !== null && !hasAbsoluteSensor) {
-      compass = (360 - event.alpha) % 360;
-    }
-
-    if (compass === null || isNaN(compass)) return;
-
-    // Normalisasi ke 0-360
-    compass = ((compass % 360) + 360) % 360;
-
-    currentHeading = Math.round(compass);
-    updateCompassDisplay(currentHeading);
+    onSensorData(event);
   }
-
-  // Tandai apakah sensor absolute tersedia
-  let hasAbsoluteSensor = false;
-  window.addEventListener('deviceorientationabsolute', () => { hasAbsoluteSensor = true; }, { once: true, capture: true });
 
   function updateCompassDisplay(heading) {
     const dial = document.getElementById('rotatingDialGroup');
