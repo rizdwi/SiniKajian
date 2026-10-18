@@ -97,8 +97,7 @@ return [
 
     'cipher' => 'AES-256-CBC',
 
-    // Hardcoded valid key (env APP_KEY di Vercel invalid, belum bisa diupdate via API)
-    'key' => 'base64:8dltvkKpI0Y1MStJ5V2hzjXmqUu8slWynCGKodKshc0=',
+    'key' => env('APP_KEY'),
 
     'previous_keys' => [
         ...array_filter(

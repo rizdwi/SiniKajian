@@ -577,7 +577,7 @@
 <script>
   // Seluruh database kajian dari controller Laravel 13
   const rawKajians = {!! $allKajiansJson !!};
-  const userBookmarkIds = new Set({!! json_encode($userBookmarks) !!});
+  const userBookmarkIds = new Set(@json($userBookmarks));
   // Sinkronkan bookmark dari localStorage
   try {
     const localSaved = JSON.parse(localStorage.getItem('sinikajian_bookmarks') || '[]');
