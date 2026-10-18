@@ -264,15 +264,80 @@
   }
 
   function autoStartCompass() {
+    // Coba auto-start (iOS dengan permission tersimpan / desktop)
+    // Android Chrome butuh user gesture, jadi tampilkan tombol aktivasi
     if (typeof DeviceOrientationEvent !== 'undefined') {
       if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-        // iOS Safari membutuhkan izin interaksi pertama kali jika belum tersimpan
+        // iOS: tampilkan tombol untuk request permission
+        showActivateButton();
       } else {
-        // Android Chrome / Standard Browsers: langsung pasang listener seketika
+        // Android/Desktop: coba langsung, tapi juga sediakan tombol fallback
         window.addEventListener('deviceorientationabsolute', handleOrientation, true);
         window.addEventListener('deviceorientation', handleOrientation, true);
+        // Jika setelah 2 detik tidak ada data, tampilkan tombol aktivasi
+        setTimeout(() => {
+          if (!hasReceivedSensorData) {
+            showActivateButton();
+          }
+        }, 2000);
       }
+    } else {
+      showSensorError('Perangkat tidak mendukung sensor kompas');
     }
+  }
+
+  let hasReceivedSensorData = false;
+  const originalHandleOrientation = handleOrientation;
+  handleOrientation = function(event) {
+    hasReceivedSensorData = true;
+    hideActivateButton();
+    return originalHandleOrientation(event);
+  };
+
+  function showActivateButton() {
+    const pill = document.getElementById('sensorGuidancePill');
+    if (pill && !document.getElementById('btnActivateCompass')) {
+      const btn = document.createElement('button');
+      btn.id = 'btnActivateCompass';
+      btn.className = 'mt-2 px-6 py-2.5 rounded-full bg-[#1D4D4F] text-white text-xs font-bold shadow-md active:scale-95 transition';
+      btn.textContent = '📱 Ketuk untuk Aktifkan Kompas';
+      btn.onclick = activateCompassManually;
+      pill.parentElement.appendChild(btn);
+    }
+  }
+
+  function hideActivateButton() {
+    const btn = document.getElementById('btnActivateCompass');
+    if (btn) btn.remove();
+  }
+
+  function activateCompassManually() {
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      DeviceOrientationEvent.requestPermission()
+        .then(response => {
+          if (response === 'granted') {
+            window.addEventListener('deviceorientation', handleOrientation, true);
+            showSensorReadyStatus('Kompas Aktif');
+            hideActivateButton();
+          }
+        })
+        .catch(() => {
+          window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+          window.addEventListener('deviceorientation', handleOrientation, true);
+          hideActivateButton();
+        });
+    } else {
+      // Android: user gesture sudah ada (tap), langsung aktifkan listener
+      window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+      window.addEventListener('deviceorientation', handleOrientation, true);
+      showSensorReadyStatus('Kompas Aktif - gerakkan HP Anda');
+      hideActivateButton();
+    }
+  }
+
+  function showSensorError(msg) {
+    const statusTitle = document.getElementById('statusTitle');
+    if (statusTitle) statusTitle.textContent = msg;
   }
 
   function calibrateSensor() {
