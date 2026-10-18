@@ -9,7 +9,7 @@
   <header class="flex items-center justify-between pt-2">
     <div>
       <p class="text-xs text-[#607072] font-medium">Assalamu'alaikum, {{ Auth::check() ? Auth::user()->name : 'Tamu' }}</p>
-      <h1 class="text-xl font-extrabold text-[#1D4D4F] tracking-tight mt-0.5">Yuk, dekatkan hati.</h1>
+      <h1 class="text-xl font-extrabold text-[#1D4D4F] tracking-tight mt-0.5">Yuk, kita ngaji.</h1>
       <button type="button" onclick="openLocationModal()" class="inline-flex items-center gap-1 text-[11px] font-semibold text-[#1D4D4F] bg-[#E6F4F1] hover:bg-[#D1EAE5] px-2.5 py-0.5 rounded-full mt-1.5 transition">
         <svg class="w-3 h-3 text-[#1D4D4F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
         <span id="currentLocationName">Mendeteksi Lokasi...</span>
