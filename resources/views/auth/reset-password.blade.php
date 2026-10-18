@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Buat Kata Sandi Baru - SiniKajian')
+@section('title', 'Buat Kata Sandi Baru - Majelisku')
 
 @section('content')
 <div class="max-w-md mx-auto space-y-4 pb-20 pt-2">
