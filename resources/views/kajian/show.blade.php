@@ -202,10 +202,6 @@
       </a>
     </div>
     @endif
-
-    <p class="text-[10px] text-[#607072] italic pt-1">
-      *) Konten ilustrasi. Nama, tempat, dan jadwal bukan informasi resmi.
-    </p>
   </div>
 
   <!-- 8. Sticky Bottom Action Bar (Kajian Tersimpan & Majelis Diikuti) -->
