@@ -238,5 +238,40 @@
   <script src="{{ asset('js/geo-engine.js') }}"></script>
 
   @yield('scripts')
+
+  <!-- PWA Install Prompt -->
+  <div id="pwaInstallBanner" style="display:none; position:fixed; bottom:20px; left:16px; right:16px; z-index:9999; background:#1D4D4F; color:#fff; border-radius:16px; padding:16px; box-shadow:0 8px 24px rgba(0,0,0,.25); align-items:center; gap:12px;">
+    <div style="flex:1;">
+      <div style="font-weight:700; font-size:15px;">Install Majelisku</div>
+      <div style="font-size:13px; opacity:.85;">Akses lebih cepat langsung dari layar utama HP kamu.</div>
+    </div>
+    <button id="pwaInstallBtn" style="background:#F4A300; color:#1D4D4F; border:none; border-radius:10px; padding:10px 18px; font-weight:700; cursor:pointer;">Install</button>
+    <button id="pwaDismissBtn" style="background:transparent; color:#fff; border:none; font-size:20px; cursor:pointer; padding:4px 8px;">×</button>
+  </div>
+  <script>
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (!localStorage.getItem('pwaDismissed')) {
+        const banner = document.getElementById('pwaInstallBanner');
+        if (banner) banner.style.display = 'flex';
+      }
+    });
+    document.getElementById('pwaInstallBtn')?.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      document.getElementById('pwaInstallBanner').style.display = 'none';
+    });
+    document.getElementById('pwaDismissBtn')?.addEventListener('click', () => {
+      document.getElementById('pwaInstallBanner').style.display = 'none';
+      localStorage.setItem('pwaDismissed', '1');
+    });
+    window.addEventListener('appinstalled', () => {
+      document.getElementById('pwaInstallBanner').style.display = 'none';
+    });
+  </script>
 </body>
 </html>
