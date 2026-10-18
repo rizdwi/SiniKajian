@@ -462,31 +462,39 @@
 
 <!-- Modal: Formulir Ajukan Jadwal Kajian Baru -->
 <div id="submitModal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
-  <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-2xl p-5 space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar">
-    <div class="flex items-center justify-between border-b border-slate-100 pb-2">
-      <h3 class="text-sm font-bold text-slate-900">Ajukan Info Kajian Baru</h3>
-      <button onclick="closeSubmitModal()" class="text-slate-400 hover:text-slate-600 p-1" aria-label="Tutup Pengajuan">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-6 space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar border border-[#E5ECEB] shadow-xl">
+    <div class="flex items-center justify-between border-b border-[#E5ECEB] pb-3">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-full bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-[#1C2224]">Ajukan Info Kajian Baru</h3>
+          <p class="text-[11px] text-[#607072]">Bantu sebarkan majelis ilmu sunnah di sekitar Anda.</p>
+        </div>
+      </div>
+      <button onclick="closeSubmitModal()" class="w-8 h-8 rounded-full bg-[#F8FAF9] text-[#607072] hover:text-[#1C2224] flex items-center justify-center transition" aria-label="Tutup Pengajuan">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
         </svg>
       </button>
     </div>
 
-    <form method="POST" action="{{ route('kajian.store') }}" class="space-y-3 text-xs">
+    <form method="POST" action="{{ route('kajian.store') }}" class="space-y-3.5 text-xs">
       @csrf
       <div>
-        <label class="block font-bold text-slate-700 mb-1">Judul / Tema Kajian *</label>
-        <input type="text" name="title" required placeholder="Contoh: Kajian Kitab Riyadhus Shalihin" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-emerald-700">
+        <label class="block font-bold text-[#1C2224] mb-1">Judul / Tema Kajian *</label>
+        <input type="text" name="title" required placeholder="Contoh: Kajian Kitab Riyadhus Shalihin" class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
       </div>
 
-      <div class="grid grid-cols-2 gap-2">
+      <div class="grid grid-cols-2 gap-2.5">
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Nama Pemateri / Ustadz *</label>
-          <input type="text" name="ustadz" required placeholder="Ustadz..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-emerald-700">
+          <label class="block font-bold text-[#1C2224] mb-1">Nama Pemateri / Ustadz *</label>
+          <input type="text" name="ustadz" required placeholder="Ustadz..." class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
         </div>
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Kategori *</label>
-          <select name="category" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-emerald-700">
+          <label class="block font-bold text-[#1C2224] mb-1">Kategori *</label>
+          <select name="category" required class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
             <option value="Tazkiyatun Nufus">Tazkiyatun Nufus</option>
             <option value="Fiqih">Fiqih</option>
             <option value="Aqidah">Aqidah</option>
@@ -497,14 +505,14 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-2 gap-2">
+      <div class="grid grid-cols-2 gap-2.5">
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Nama Masjid *</label>
-          <input type="text" name="masjid" required placeholder="Masjid..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-emerald-700">
+          <label class="block font-bold text-[#1C2224] mb-1">Nama Masjid *</label>
+          <input type="text" name="masjid" required placeholder="Masjid..." class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
         </div>
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Peserta Jamaah *</label>
-          <select name="audience" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-emerald-700">
+          <label class="block font-bold text-[#1C2224] mb-1">Peserta Jamaah *</label>
+          <select name="audience" required class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
             <option value="Umum">Umum (Ikhwan & Akhwat)</option>
             <option value="Ikhwan">Khusus Ikhwan</option>
             <option value="Akhwat">Khusus Akhwat</option>
@@ -513,14 +521,14 @@
       </div>
 
       <div>
-        <label class="block font-bold text-slate-700 mb-1">Alamat Lengkap Masjid *</label>
-        <textarea name="address" required rows="2" placeholder="Jl. Raya..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-emerald-700"></textarea>
+        <label class="block font-bold text-[#1C2224] mb-1">Alamat Lengkap Masjid *</label>
+        <textarea name="address" required rows="2" placeholder="Jl. Raya..." class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]"></textarea>
       </div>
 
-      <div class="grid grid-cols-2 gap-2">
+      <div class="grid grid-cols-2 gap-2.5">
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Hari Rutin *</label>
-          <select name="day" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-emerald-700">
+          <label class="block font-bold text-[#1C2224] mb-1">Hari Rutin *</label>
+          <select name="day" required class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
             <option value="Ahad">Ahad</option>
             <option value="Senin">Senin</option>
             <option value="Selasa">Selasa</option>
@@ -531,28 +539,28 @@
           </select>
         </div>
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Waktu / Jam *</label>
-          <input type="text" name="time" required placeholder="09:00 WIB / Ba'da Maghrib" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-emerald-700">
+          <label class="block font-bold text-[#1C2224] mb-1">Waktu / Jam *</label>
+          <input type="text" name="time" required placeholder="09:00 WIB / Ba'da Maghrib" class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
         </div>
       </div>
 
-      <div class="grid grid-cols-2 gap-2">
+      <div class="grid grid-cols-2 gap-2.5">
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Latitude</label>
-          <input type="number" step="any" name="lat" id="submitLat" value="-6.2615" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-emerald-700">
+          <label class="block font-bold text-[#1C2224] mb-1">Latitude</label>
+          <input type="number" step="any" name="lat" id="submitLat" value="-6.2615" required class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
         </div>
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Longitude</label>
-          <input type="number" step="any" name="lon" id="submitLon" value="106.8106" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-emerald-700">
+          <label class="block font-bold text-[#1C2224] mb-1">Longitude</label>
+          <input type="number" step="any" name="lon" id="submitLon" value="106.8106" required class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
         </div>
       </div>
 
       <div>
-        <label class="block font-bold text-slate-700 mb-1">Deskripsi & Keterangan Tambahan</label>
-        <textarea name="description" rows="2" placeholder="Catatan adab, parkir, streaming YouTube..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-emerald-700"></textarea>
+        <label class="block font-bold text-[#1C2224] mb-1">Deskripsi & Keterangan Tambahan</label>
+        <textarea name="description" rows="2" placeholder="Catatan adab, parkir, streaming YouTube..." class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]"></textarea>
       </div>
 
-      <button type="submit" class="w-full py-3 bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold rounded-xl shadow-md touch-btn">
+      <button type="submit" class="w-full py-3 bg-[#1D4D4F] hover:bg-[#143839] text-white text-xs font-bold rounded-full shadow-sm active:scale-98 transition touch-btn">
         Ajukan Jadwal Kajian
       </button>
     </form>

@@ -463,4 +463,143 @@ class SiniKajianTest extends TestCase
         $kajian2->delete();
         $user->delete();
     }
+
+    /**
+     * Uji alur permohonan reset kata sandi (lupa kata sandi).
+     */
+    public function test_user_can_request_and_reset_password(): void
+    {
+        $email = 'reset_' . uniqid() . '@example.com';
+        $user = User::create([
+            'name' => 'User Reset Test',
+            'email' => $email,
+            'password' => Hash::make('oldpassword123'),
+        ]);
+
+        // 1. Kunjungi halaman lupa kata sandi
+        $response = $this->get('/lupa-sandi');
+        $response->assertStatus(200);
+        $response->assertSee('Atur Ulang Kata Sandi');
+
+        // 2. Kirim permintaan reset link
+        $postRes = $this->post('/lupa-sandi', [
+            'email' => $email,
+        ]);
+        $postRes->assertStatus(302);
+        $this->assertDatabaseHas('password_reset_tokens', [
+            'email' => $email,
+        ]);
+
+        // Ambil token dari database
+        $record = \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', $email)->first();
+        $this->assertNotNull($record);
+
+        // Buat plain token baru untuk pengujian reset
+        $plainToken = 'test-token-12345';
+        \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', $email)->update([
+            'token' => Hash::make($plainToken),
+            'created_at' => now(),
+        ]);
+
+        // 3. Kunjungi halaman formulir ubah kata sandi
+        $formRes = $this->get('/reset-sandi/' . $plainToken . '?email=' . urlencode($email));
+        $formRes->assertStatus(200);
+        $formRes->assertSee('Buat Kata Sandi Baru');
+
+        // 4. Submit kata sandi baru
+        $updateRes = $this->post('/reset-sandi', [
+            'token' => $plainToken,
+            'email' => $email,
+            'password' => 'newpassword456',
+            'password_confirmation' => 'newpassword456',
+        ]);
+        $updateRes->assertRedirect(route('login'));
+
+        // Pastikan password baru terpasang di database
+        $user->refresh();
+        $this->assertTrue(Hash::check('newpassword456', $user->password));
+
+        // Pastikan token terhapus
+        $this->assertDatabaseMissing('password_reset_tokens', ['email' => $email]);
+
+        // Cleanup
+        $user->delete();
+    }
+
+    /**
+     * Uji proteksi hak akses dan fungsi panel moderasi admin.
+     */
+    public function test_admin_moderation_access_and_actions(): void
+    {
+        // 1. User biasa dilarang mengakses
+        $regularUser = User::create([
+            'name' => 'Regular User',
+            'email' => 'regular_' . uniqid() . '@example.com',
+            'password' => Hash::make('secret123'),
+            'role' => 'user',
+        ]);
+
+        $this->actingAs($regularUser);
+        $forbiddenRes = $this->get('/admin/kajian');
+        $forbiddenRes->assertStatus(403);
+
+        // 2. Admin dapat mengakses
+        $adminUser = User::create([
+            'name' => 'Admin User',
+            'email' => 'admin_' . uniqid() . '@example.com',
+            'password' => Hash::make('secret123'),
+            'role' => 'admin',
+        ]);
+
+        $this->actingAs($adminUser);
+        $adminRes = $this->get('/admin/kajian');
+        $adminRes->assertStatus(200);
+        $adminRes->assertSee('Moderasi Majelis & Kajian', false);
+
+        // 3. Admin dapat menyetujui (verify) kajian
+        $pendingKajian = Kajian::create([
+            'title' => 'Kajian Komunitas Pengajuan',
+            'ustadz' => 'Ustadz Tamu',
+            'masjid' => 'Masjid Al-Barakah',
+            'address' => 'Jl. Moderasi No. 1',
+            'lat' => -6.2,
+            'lon' => 106.8,
+            'category' => 'Tematik',
+            'day' => 'Ahad',
+            'time' => '10:00 WIB',
+            'verified' => false,
+            'is_rutin' => false,
+        ]);
+
+        $verifyRes = $this->post("/admin/kajian/{$pendingKajian->id}/verify");
+        $verifyRes->assertStatus(302);
+
+        $pendingKajian->refresh();
+        $this->assertTrue((bool)$pendingKajian->verified);
+
+        // 4. Admin dapat menghapus kajian
+        $deleteRes = $this->delete("/admin/kajian/{$pendingKajian->id}");
+        $deleteRes->assertStatus(302);
+        $this->assertDatabaseMissing('kajians', ['id' => $pendingKajian->id]);
+
+        // Cleanup
+        $regularUser->delete();
+        $adminUser->delete();
+    }
+
+    /**
+     * Uji bahwa halaman detail menyajikan OpenGraph meta tag untuk WhatsApp/Social Share.
+     */
+    public function test_detail_page_renders_opengraph_meta_tags(): void
+    {
+        $kajian = Kajian::first();
+        if ($kajian) {
+            $response = $this->get('/kajian/' . $kajian->id);
+            $response->assertStatus(200);
+            $response->assertSee('<meta property="og:type" content="article">', false);
+            $response->assertSee('<meta property="og:title"', false);
+            $response->assertSee('<meta property="og:description"', false);
+            $response->assertSee('<meta name="twitter:card"', false);
+        }
+    }
 }

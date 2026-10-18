@@ -12,13 +12,18 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 
-#[Fillable(['name', 'email', 'password', 'provider', 'provider_id', 'avatar'])]
+#[Fillable(['name', 'email', 'password', 'provider', 'provider_id', 'avatar', 'role'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
-    protected $fillable = ['name', 'email', 'password', 'provider', 'provider_id', 'avatar'];
+    protected $fillable = ['name', 'email', 'password', 'provider', 'provider_id', 'avatar', 'role'];
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    public function isAdmin(): bool
+    {
+        return ($this->role ?? '') === 'admin' || strtolower($this->email ?? '') === 'rizkidwisandy@gmail.com';
+    }
 
     /**
      * Get the attributes that should be cast.

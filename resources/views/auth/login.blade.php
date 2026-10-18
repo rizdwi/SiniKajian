@@ -15,6 +15,13 @@
       <p class="text-xs text-[#607072] mt-1">Sinkronisasi jadwal kajian favorit dan data kehadiran Anda.</p>
     </div>
 
+    <!-- Status Alert -->
+    @if(session('status'))
+      <div class="mb-5 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
+        {{ session('status') }}
+      </div>
+    @endif
+
     <!-- Error Validation Alert -->
     @if($errors->any())
       <div class="mb-5 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
@@ -52,6 +59,9 @@
           <input type="checkbox" name="remember" class="w-4 h-4 rounded text-[#1D4D4F] focus:ring-[#1D4D4F] border-[#E5ECEB]">
           <span class="text-xs text-[#607072] font-medium">Ingat perangkat ini</span>
         </label>
+        <a href="{{ route('password.request') }}" class="text-xs font-bold text-[#1D4D4F] hover:underline">
+          Lupa kata sandi?
+        </a>
       </div>
 
       <button type="submit" class="w-full py-3 rounded-full bg-[#1D4D4F] text-white text-xs font-bold hover:bg-[#143839] active:scale-98 transition-all shadow-sm touch-btn">

@@ -1,6 +1,11 @@
 @extends('layouts.app')
 
-@section('title', $kajian->title . ' - Detail Kajian Majelisku')
+@section('title', $kajian->title . ' - ' . $kajian->ustadz . ' | Majelisku')
+@section('meta_description', 'Kajian ' . $kajian->title . ' bersama ' . $kajian->ustadz . ' di ' . $kajian->masjid . '. Hari ' . $kajian->day . ', ' . $kajian->time . '.')
+@section('og_type', 'article')
+@section('og_title', $kajian->title . ' - ' . $kajian->ustadz)
+@section('og_description', 'Kajian di ' . $kajian->masjid . ' (' . $kajian->day . ', ' . $kajian->time . '). ' . \Illuminate\Support\Str::limit(strip_tags($kajian->description ?: 'Mari hadiri majelis ilmu syar\'i terdekat bersama keluarga dan sahabat.'), 140))
+@section('og_image', $kajian->poster_url ?: asset('images/app-icon.svg'))
 
 @section('content')
 <div class="max-w-md mx-auto space-y-4 pb-28 pt-2 px-1">

@@ -5,11 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>@yield('title', 'Majelisku | Temukan Majelis Ilmu Terdekat')</title>
   
-  <meta name="description" content="Aplikasi pencari majelis ilmu kajian sunnah terdekat, jadwal sholat astronomis presisi, dan penunjuk arah kiblat.">
+  <meta name="description" content="@yield('meta_description', 'Aplikasi pencari majelis ilmu kajian sunnah terdekat, jadwal sholat astronomis presisi, dan penunjuk arah kiblat.')">
   <meta name="theme-color" content="#1D4D4F">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Majelisku">
+
+  <!-- OpenGraph / WhatsApp / Telegram Card -->
+  <meta property="og:type" content="@yield('og_type', 'website')">
+  <meta property="og:url" content="{{ url()->current() }}">
+  <meta property="og:title" content="@yield('og_title', 'Majelisku | Temukan Majelis Ilmu Terdekat')">
+  <meta property="og:description" content="@yield('og_description', 'Temukan jadwal majelis ilmu sunnah, waktu sholat akurat, dan kompas kiblat.')">
+  <meta property="og:image" content="@yield('og_image', asset('images/app-icon.svg'))">
+  <meta property="og:locale" content="id_ID">
+  <meta property="og:site_name" content="Majelisku">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="@yield('og_title', 'Majelisku | Temukan Majelis Ilmu Terdekat')">
+  <meta name="twitter:description" content="@yield('og_description', 'Temukan jadwal majelis ilmu sunnah, waktu sholat akurat, dan kompas kiblat.')">
+  <meta name="twitter:image" content="@yield('og_image', asset('images/app-icon.svg'))">
   <link rel="icon" type="image/svg+xml" href="/images/logo-majelisku.svg">
   <link rel="apple-touch-icon" href="/images/app-icon.svg">
   <link rel="manifest" href="{{ asset('manifest.json') }}">

@@ -106,6 +106,28 @@ class SupabaseUserService
     }
 
     /**
+     * Update password user by email di Supabase.
+     */
+    public function updatePassword(string $email, string $newPassword): bool
+    {
+        if (!$this->enabled()) return false;
+
+        try {
+            $res = Http::withHeaders($this->headers())
+                ->timeout(10)
+                ->patch("{$this->url}/rest/v1/app_users?email=eq." . urlencode($email), [
+                    'password' => \Illuminate\Support\Facades\Hash::make($newPassword),
+                    'updated_at' => now()->toIso8601String(),
+                ]);
+
+            return $res->successful();
+        } catch (\Exception $e) {
+            Log::warning('Supabase user updatePassword gagal: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Ambil user by ID.
      */
     public function find(int $id): ?array

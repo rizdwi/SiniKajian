@@ -37,16 +37,110 @@ class AuthController extends Controller
             $request->session()->regenerate();
 
             return redirect()->intended(route('profile'))
-                ->with('success', 'Selamat datang kembali di SiniKajian.');
+                ->with('success', 'Selamat datang kembali, ' . Auth::user()->name . '!');
         }
 
-        throw ValidationException::withMessages([
-            'email' => 'Alamat email atau kata sandi yang Anda masukkan tidak sesuai.',
+        return back()->withErrors([
+            'email' => 'Kombinasi email dan kata sandi tidak cocok.',
+        ])->onlyInput('email');
+    }
+
+    /**
+     * Tampilkan formulir permintaan reset kata sandi.
+     */
+    public function showForgotPassword(): View
+    {
+        return view('auth.forgot-password');
+    }
+
+    /**
+     * Buat dan kirim token/tautan reset kata sandi.
+     */
+    public function sendResetLink(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'email' => ['required', 'email'],
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+        if (!$user) {
+            return back()->with('status', 'Jika alamat email terdaftar di sistem, tautan reset kata sandi telah dikirimkan.');
+        }
+
+        $plainToken = \Illuminate\Support\Str::random(60);
+        \Illuminate\Support\Facades\DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => $request->email],
+            [
+                'token' => \Illuminate\Support\Facades\Hash::make($plainToken),
+                'created_at' => now(),
+            ]
+        );
+
+        $resetUrl = route('password.reset', ['token' => $plainToken, 'email' => $request->email]);
+
+        try {
+            $user->sendPasswordResetNotification($plainToken);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::info("Password reset link for {$request->email}: {$resetUrl}");
+        }
+
+        return back()->with('status', 'Tautan untuk mengatur ulang kata sandi telah berhasil disiapkan.')
+            ->with('reset_url', $resetUrl);
+    }
+
+    /**
+     * Tampilkan formulir pembaruan kata sandi baru.
+     */
+    public function showResetPassword(Request $request, string $token): View
+    {
+        return view('auth.reset-password', [
+            'token' => $token,
+            'email' => $request->query('email', ''),
         ]);
     }
 
     /**
-     * Tampilkan formulir pendaftaran akun baru.
+     * Proses pembaruan kata sandi baru.
+     */
+    public function resetPassword(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'token' => ['required'],
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string', 'confirmed', Password::min(6)],
+        ]);
+
+        $record = \Illuminate\Support\Facades\DB::table('password_reset_tokens')
+            ->where('email', $request->email)
+            ->first();
+
+        if (!$record || !\Illuminate\Support\Facades\Hash::check($request->token, $record->token)) {
+            return back()->withErrors(['email' => 'Token reset kata sandi tidak valid atau telah kadaluarsa.']);
+        }
+
+        $createdAt = \Carbon\Carbon::parse($record->created_at);
+        if ($createdAt->addMinutes(60)->isPast()) {
+            \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+            return back()->withErrors(['email' => 'Token reset kata sandi telah kadaluarsa. Silakan ajukan ulang.']);
+        }
+
+        $user = User::where('email', $request->email)->first();
+        if ($user) {
+            $user->password = \Illuminate\Support\Facades\Hash::make($request->password);
+            $user->save();
+
+            // Sinkronisasi ke Supabase jika aktif
+            $svc = new \App\Services\SupabaseUserService();
+            $svc->updatePassword($request->email, $request->password);
+        }
+
+        \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+
+        return redirect()->route('login')->with('status', 'Kata sandi Anda berhasil diperbarui. Silakan masuk.');
+    }
+
+    /**
+     * Tampilkan formulir pendaftaran akun jamaah baru.
      */
     public function showRegister(): View
     {

@@ -252,7 +252,40 @@ class KajianController extends Controller
         $validated['source'] = 'user_submission';
         $validated['user_id'] = Auth::id();
 
-        Kajian::create($validated);
+        $kajian = Kajian::create($validated);
+
+        // Dual-sync to Supabase if configured
+        $supabaseUrl = config('services.supabase.url');
+        $supabaseKey = config('services.supabase.service_role_key') ?: config('services.supabase.key');
+        if ($supabaseUrl && $supabaseKey) {
+            try {
+                Http::withHeaders([
+                    'apikey' => $supabaseKey,
+                    'Authorization' => "Bearer {$supabaseKey}",
+                    'Content-Type' => 'application/json',
+                    'Prefer' => 'resolution=merge-duplicates',
+                ])->timeout(5)->post("{$supabaseUrl}/rest/v1/kajian", [
+                    'id' => $kajian->id,
+                    'title' => $kajian->title,
+                    'ustadz' => $kajian->ustadz,
+                    'category' => $kajian->category,
+                    'audience' => $kajian->audience,
+                    'masjid' => $kajian->masjid,
+                    'address' => $kajian->address,
+                    'lat' => $kajian->lat,
+                    'lon' => $kajian->lon,
+                    'day' => $kajian->day,
+                    'time' => $kajian->time,
+                    'description' => $kajian->description,
+                    'source_url' => $kajian->source_url,
+                    'verified' => false,
+                    'status' => 'aktif',
+                    'source' => 'user_submission',
+                ]);
+            } catch (\Throwable $e) {
+                \Log::warning('Supabase sync user submission failed: ' . $e->getMessage());
+            }
+        }
 
         return back()->with('success', 'Jadwal kajian berhasil diajukan dan sedang dalam antrean verifikasi tim moderasi.');
     }

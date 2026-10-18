@@ -37,6 +37,10 @@ Route::middleware('guest')->group(function () {
     Route::post('/masuk', [AuthController::class, 'login'])->name('login.post');
     Route::get('/daftar', [AuthController::class, 'showRegister'])->name('register');
     Route::post('/daftar', [AuthController::class, 'register'])->name('register.post');
+    Route::get('/lupa-sandi', [AuthController::class, 'showForgotPassword'])->name('password.request');
+    Route::post('/lupa-sandi', [AuthController::class, 'sendResetLink'])->name('password.email');
+    Route::get('/reset-sandi/{token}', [AuthController::class, 'showResetPassword'])->name('password.reset');
+    Route::post('/reset-sandi', [AuthController::class, 'resetPassword'])->name('password.update');
 });
 
 // Profil Jamaah (Screen 5)
@@ -47,6 +51,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/profil/edit', [AuthController::class, 'updateProfile'])->name('profile.update');
     Route::put('/profil', [AuthController::class, 'updateProfile']);
     Route::post('/keluar', [AuthController::class, 'logout'])->name('logout');
+
+    // Admin Moderasi Kajian
+    Route::prefix('admin')->group(function () {
+        Route::get('/kajian', [\App\Http\Controllers\AdminController::class, 'index'])->name('admin.kajian.index');
+        Route::post('/kajian/{kajian}/verify', [\App\Http\Controllers\AdminController::class, 'verify'])->name('admin.kajian.verify');
+        Route::delete('/kajian/{kajian}', [\App\Http\Controllers\AdminController::class, 'destroy'])->name('admin.kajian.destroy');
+    });
 });
 
 // Sitemap XML

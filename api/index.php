@@ -90,13 +90,17 @@ putenv('VIEW_COMPILED_PATH=' . $viewCompiledPath);
 $_ENV['VIEW_COMPILED_PATH'] = $viewCompiledPath;
 $_SERVER['VIEW_COMPILED_PATH'] = $viewCompiledPath;
 
-putenv('DB_CONNECTION=sqlite');
-putenv('DB_DATABASE=' . $targetDb);
-$_ENV['DB_DATABASE'] = $targetDb;
-$_SERVER['DB_DATABASE'] = $targetDb;
+$dbConnection = getenv('DB_CONNECTION') ?: ($_ENV['DB_CONNECTION'] ?? 'sqlite');
+if ($dbConnection === 'sqlite' || empty(getenv('DB_CONNECTION'))) {
+    putenv('DB_CONNECTION=sqlite');
+    putenv('DB_DATABASE=' . $targetDb);
+    $_ENV['DB_DATABASE'] = $targetDb;
+    $_SERVER['DB_DATABASE'] = $targetDb;
+}
 
+$appDebug = getenv('APP_DEBUG') ?: ($_ENV['APP_DEBUG'] ?? 'false');
 putenv('APP_NAME=SiniKajian');
-putenv('APP_DEBUG=true');
+putenv('APP_DEBUG=' . $appDebug);
 putenv('APP_URL=https://sinikajian.vercel.app');
 putenv('SESSION_DRIVER=cookie');
 putenv('SESSION_LIFETIME=120');
@@ -105,7 +109,7 @@ putenv('SESSION_SAME_SITE=lax');
 putenv('CACHE_STORE=array');
 
 $_ENV['APP_NAME'] = 'SiniKajian';
-$_ENV['APP_DEBUG'] = 'true';
+$_ENV['APP_DEBUG'] = $appDebug;
 $_ENV['APP_URL'] = 'https://sinikajian.vercel.app';
 $_ENV['SESSION_DRIVER'] = 'cookie';
 $_ENV['SESSION_LIFETIME'] = '120';
@@ -114,7 +118,7 @@ $_ENV['SESSION_SAME_SITE'] = 'lax';
 $_ENV['CACHE_STORE'] = 'array';
 
 $_SERVER['APP_NAME'] = 'SiniKajian';
-$_SERVER['APP_DEBUG'] = 'true';
+$_SERVER['APP_DEBUG'] = $appDebug;
 $_SERVER['APP_URL'] = 'https://sinikajian.vercel.app';
 $_SERVER['SESSION_DRIVER'] = 'cookie';
 $_SERVER['SESSION_LIFETIME'] = '120';
@@ -124,8 +128,15 @@ $_SERVER['CACHE_STORE'] = 'array';
 $_SERVER['SCRIPT_NAME'] = '/index.php';
 $_SERVER['PHP_SELF'] = '/index.php';
 
-// Diagnostic log viewer
+// Diagnostic log viewer - dilindungi token keamanan khusus admin
 if (str_contains($_SERVER['REQUEST_URI'] ?? '', 'view-log')) {
+    $adminLogKey = getenv('ADMIN_LOG_KEY') ?: ($_ENV['ADMIN_LOG_KEY'] ?? '');
+    $providedToken = $_GET['key'] ?? ($_GET['token'] ?? '');
+    if (empty($adminLogKey) || !hash_equals($adminLogKey, $providedToken)) {
+        http_response_code(404);
+        echo '404 Not Found';
+        exit;
+    }
     header('Content-Type: text/plain');
     $logFile = $storage . '/logs/laravel.log';
     if (file_exists($logFile)) {
