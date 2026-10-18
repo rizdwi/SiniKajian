@@ -143,3 +143,13 @@ Route::get('/favicon.ico', function () {
         'Cache-Control' => 'public, max-age=604800, immutable',
     ]);
 });
+
+// Webhook: trigger sync Supabase -> SQLite (dipanggil cron setelah insert)
+Route::post('/webhook/sync-kajian', function (\Illuminate\Http\Request $request) {
+    $secret = env('SYNC_WEBHOOK_SECRET');
+    if (!$secret || $request->header('X-Sync-Secret') !== $secret) {
+        abort(403, 'Unauthorized');
+    }
+    \Illuminate\Support\Facades\Artisan::call('kajian:sync-supabase');
+    return response()->json(['ok' => true, 'output' => \Illuminate\Support\Facades\Artisan::output()]);
+});
