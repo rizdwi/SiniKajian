@@ -232,6 +232,20 @@ class KajianController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        // 1. Honeypot check (bot trap)
+        if ($request->filled('website_trap')) {
+            return back()->with('success', 'Usulan jadwal kajian berhasil diajukan dan akan ditinjau oleh admin.');
+        }
+
+        // 2. Rate Limiting pengajuan
+        $key = 'kajian-store-ip:' . $request->ip();
+        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($key, 5)) {
+            $seconds = \Illuminate\Support\Facades\RateLimiter::availableIn($key);
+            return back()->withErrors([
+                'title' => "Terlalu banyak pengajuan jadwal dalam waktu singkat. Silakan tunggu {$seconds} detik.",
+            ])->withInput();
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'ustadz' => 'required|string|max:255',
@@ -246,6 +260,15 @@ class KajianController extends Controller
             'description' => 'nullable|string',
             'source_url' => 'nullable|url',
         ]);
+
+        \Illuminate\Support\Facades\RateLimiter::hit($key, 900); // 15 menit
+
+        // 3. Sanitasi input dari potensi XSS
+        foreach (['title', 'ustadz', 'masjid', 'address', 'category', 'time', 'description'] as $field) {
+            if (isset($validated[$field])) {
+                $validated[$field] = strip_tags(trim($validated[$field]));
+            }
+        }
 
         $validated['verified'] = false;
         $validated['status'] = 'aktif';

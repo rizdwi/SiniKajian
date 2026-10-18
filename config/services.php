@@ -50,4 +50,8 @@ return [
         'client_secret' => env('FACEBOOK_CLIENT_SECRET'),
     ],
 
+    'mapbox' => [
+        'token' => env('MAPBOX_ACCESS_TOKEN'),
+    ],
+
 ];

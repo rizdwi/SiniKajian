@@ -14,7 +14,9 @@
         "X-Content-Type-Options": "nosniff",
         "X-Frame-Options": "SAMEORIGIN",
         "X-XSS-Protection": "1; mode=block",
-        "Referrer-Policy": "strict-origin-when-cross-origin"
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
+        "Permissions-Policy": "geolocation=(self), camera=(), microphone=(), payment=()"
       },
       "continue": true
     },
@@ -65,9 +67,12 @@
     "APP_URL": "https://majelisku.web.id",
     "APP_ENV": "production",
     "APP_DEBUG": "false",
-    "CACHE_STORE": "array",
+    "CACHE_STORE": "database",
     "SESSION_DRIVER": "cookie",
     "SESSION_LIFETIME": "120",
+    "SESSION_SECURE_COOKIE": "true",
+    "SESSION_HTTP_ONLY": "true",
+    "SESSION_SAME_SITE": "lax",
     "DB_CONNECTION": "sqlite",
     "DB_DATABASE": "/tmp/database.sqlite",
     "LOG_CHANNEL": "stderr"

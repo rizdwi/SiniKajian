@@ -40,9 +40,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  
-  <!-- Google Maps JS API -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDTqyoEtgTz9LCk5kQYGA486DR-NAgw-lA&loading=async" async defer></script>
+  @stack('styles')
 
   <script>
     tailwind.config = {
@@ -304,5 +302,6 @@
       document.getElementById('pwaInstallBanner').style.display = 'none';
     });
   </script>
+  @stack('scripts')
 </body>
 </html>

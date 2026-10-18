@@ -30,6 +30,11 @@
     <form action="{{ route('register.post') }}" method="POST" class="space-y-4">
       @csrf
 
+      <!-- Anti-Bot Honeypot Trap (Invisible) -->
+      <div style="display:none !important; opacity:0; position:absolute; left:-9999px;" aria-hidden="true">
+        <input type="text" name="website_trap" tabindex="-1" autocomplete="off" value="">
+      </div>
+
       <div>
         <label for="name" class="block text-xs font-bold text-[#1C2224] mb-1.5">Nama Lengkap</label>
         <input type="text" name="name" id="name" required value="{{ old('name') }}" placeholder="Contoh: Abdullah" class="w-full px-3.5 py-2.5 rounded-2xl border border-[#E5ECEB] text-xs text-[#1C2224] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F] focus:border-transparent transition-all">

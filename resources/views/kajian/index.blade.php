@@ -482,6 +482,11 @@
 
     <form method="POST" action="{{ route('kajian.store') }}" class="space-y-3.5 text-xs">
       @csrf
+
+      <!-- Anti-Bot Honeypot Trap (Invisible) -->
+      <div style="display:none !important; opacity:0; position:absolute; left:-9999px;" aria-hidden="true">
+        <input type="text" name="website_trap" tabindex="-1" autocomplete="off" value="">
+      </div>
       <div>
         <label class="block font-bold text-[#1C2224] mb-1">Judul / Tema Kajian *</label>
         <input type="text" name="title" required placeholder="Contoh: Kajian Kitab Riyadhus Shalihin" class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">

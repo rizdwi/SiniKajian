@@ -2,6 +2,22 @@
 
 @section('title', 'Majelis Terdekat - Majelisku')
 
+@push('styles')
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.10.0/mapbox-gl.css" rel="stylesheet">
+<style>
+  .mapboxgl-ctrl-bottom-right, .mapboxgl-ctrl-bottom-left {
+    z-index: 10 !important;
+  }
+  .custom-pin-marker {
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .custom-pin-marker:hover {
+    transform: scale(1.15) translateY(-4px);
+  }
+</style>
+@endpush
+
 @section('content')
 <div class="space-y-3 pb-20">
   <!-- Top Header Area (Figma Screen 3: Majelis Terdekat) -->
@@ -45,13 +61,13 @@
     <div id="fullMap" class="w-full h-full z-0"></div>
 
     <!-- Radius Pill Indicator on Map -->
-    <div class="absolute top-3 left-3 z-[1000] bg-white/90 backdrop-blur-md px-3 py-1 rounded-full border border-[#E5ECEB] shadow-xs text-[11px] font-bold text-[#1D4D4F] flex items-center gap-1.5">
+    <div class="absolute top-3 left-3 z-[10] bg-white/95 backdrop-blur-md px-3 py-1 rounded-full border border-[#E5ECEB] shadow-xs text-[11px] font-bold text-[#1D4D4F] flex items-center gap-1.5">
       <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-      <span id="radiusLabel">Radius: 15 km</span>
+      <span id="radiusLabel">Peta Majelisku</span>
     </div>
 
     <!-- Floating Bottom Drawer on Map (Selected Venue) -->
-    <div id="mapDrawer" class="hidden absolute bottom-3 inset-x-3 z-[1000] bg-white rounded-2xl shadow-xl border border-[#E5ECEB] p-3.5 transition-all animate-slideUp">
+    <div id="mapDrawer" class="hidden absolute bottom-3 inset-x-3 z-[20] bg-white rounded-2xl shadow-xl border border-[#E5ECEB] p-3.5 transition-all animate-slideUp">
       <div class="flex items-start gap-3">
         <div id="drawerFlyerThumb" class="hidden w-14 h-14 rounded-2xl overflow-hidden shrink-0 bg-slate-100 border border-[#E5ECEB]">
           <img id="drawerFlyerImg" src="" alt="Flyer" class="w-full h-full object-cover">
@@ -92,16 +108,19 @@
     <div id="nearMosqueCards" class="space-y-2.5"></div>
   </div>
 </div>
+@endsection
 
+@push('scripts')
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.10.0/mapbox-gl.js"></script>
 <script>
   let mapInstance = null;
   let userMarker = null;
-  let mapMarkers = [];
+  let activeMarkers = [];
   const rawEvents = @json($events);
   let currentActiveView = 'map';
 
   document.addEventListener('DOMContentLoaded', () => {
-    initMap();
+    initMapbox();
     renderListView(rawEvents);
     document.getElementById('mapSearchInput').addEventListener('input', (e) => {
       const q = e.target.value.toLowerCase();
@@ -122,7 +141,9 @@
       listWrapper.classList.add('hidden');
       btnMap.className = 'px-3 py-1.5 rounded-xl bg-[#1D4D4F] text-white shadow-xs transition';
       btnList.className = 'px-3 py-1.5 rounded-xl text-[#1D4D4F] hover:bg-white/60 transition';
-      if (mapInstance) mapInstance.invalidateSize();
+      if (mapInstance) {
+        setTimeout(() => mapInstance.resize(), 100);
+      }
     } else {
       mapWrapper.classList.add('hidden');
       listWrapper.classList.remove('hidden');
@@ -131,11 +152,8 @@
     }
   }
 
-  function initMap() {
-    if (!window.google || !window.google.maps) {
-      setTimeout(initMap, 500);
-      return;
-    }
+  function initMapbox() {
+    mapboxgl.accessToken = '{{ config('services.mapbox.token') }}';
 
     let centerLat = -6.8851;
     let centerLon = 107.6136;
@@ -145,26 +163,28 @@
       centerLat = coords.lat;
       centerLon = coords.lon;
     } else {
-      const savedLoc = JSON.parse(localStorage.getItem('sk_user_coords') || localStorage.getItem('sk_user_loc') || 'null');
-      if (savedLoc) {
+      const savedLoc = JSON.parse(localStorage.getItem('sinikajian_coords') || localStorage.getItem('sk_user_loc') || 'null');
+      if (savedLoc && savedLoc.lat && savedLoc.lon) {
         centerLat = savedLoc.lat;
         centerLon = savedLoc.lon;
       }
     }
 
-    mapInstance = new google.maps.Map(document.getElementById('fullMap'), {
-      center: { lat: centerLat, lng: centerLon },
+    mapInstance = new mapboxgl.Map({
+      container: 'fullMap',
+      style: 'mapbox://styles/mapbox/streets-v12',
+      center: [parseFloat(centerLon), parseFloat(centerLat)],
       zoom: 12,
-      zoomControl: true,
-      mapTypeControl: true,
-      streetViewControl: false,
-      fullscreenControl: false
+      attributionControl: false
     });
 
-    mapMarkers = [];
+    mapInstance.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
+    mapInstance.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
 
-    setUserLocationMarker(centerLat, centerLon);
-    renderMapMarkers(rawEvents);
+    mapInstance.on('load', () => {
+      setUserLocationMarker(centerLat, centerLon);
+      renderMapMarkers(rawEvents);
+    });
   }
 
   // Dengarkan pembaruan GPS otomatis dari background
@@ -176,28 +196,53 @@
   });
 
   function renderMapMarkers(events) {
-    mapMarkers.forEach(m => m.setMap(null));
-    mapMarkers = [];
+    activeMarkers.forEach(m => m.remove());
+    activeMarkers = [];
 
-    const pinIcon = {
-      url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="#1D4D4F" stroke="#fff" stroke-width="2"/><text x="16" y="21" text-anchor="middle" font-size="14">🕌</text></svg>'),
-      scaledSize: new google.maps.Size(32, 32)
-    };
+    const bounds = new mapboxgl.LngLatBounds();
+    let hasCoords = false;
 
     events.forEach(item => {
       if (!item.lat || !item.lon) return;
 
-      const marker = new google.maps.Marker({
-        position: { lat: parseFloat(item.lat), lng: parseFloat(item.lon) },
-        map: mapInstance,
-        icon: pinIcon,
-        title: item.title
-      });
-      marker.addListener('click', () => {
+      const lat = parseFloat(item.lat);
+      const lon = parseFloat(item.lon);
+      if (isNaN(lat) || isNaN(lon)) return;
+
+      hasCoords = true;
+      bounds.extend([lon, lat]);
+
+      const el = document.createElement('div');
+      el.className = 'custom-pin-marker';
+      el.innerHTML = `
+        <div class="relative flex flex-col items-center">
+          <div class="w-8 h-8 rounded-full bg-[#1D4D4F] border-2 border-white shadow-lg flex items-center justify-center text-white text-xs ring-2 ring-[#1D4D4F]/20">
+            🕌
+          </div>
+          <div class="w-1.5 h-1.5 bg-[#1D4D4F] rotate-45 -mt-1 border-r border-b border-white"></div>
+        </div>
+      `;
+
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
         showMapDrawer(item);
+        mapInstance.flyTo({
+          center: [lon, lat],
+          zoom: 14,
+          speed: 1.2
+        });
       });
-      mapMarkers.push(marker);
+
+      const marker = new mapboxgl.Marker({ element: el, anchor: 'bottom' })
+        .setLngLat([lon, lat])
+        .addTo(mapInstance);
+
+      activeMarkers.push(marker);
     });
+
+    if (hasCoords && events.length > 1) {
+      mapInstance.fitBounds(bounds, { padding: 50, maxZoom: 15 });
+    }
   }
 
   function renderListView(events) {
@@ -326,7 +371,7 @@
     document.getElementById('drawerGmapsBtn').href = gmapsUrl;
 
     drawer.classList.remove('hidden');
-    mapInstance.panTo([item.lat, item.lon]);
+    mapInstance.panTo([parseFloat(item.lon), parseFloat(item.lat)]);
   }
 
   function closeMapDrawer() {
@@ -334,25 +379,21 @@
   }
 
   function setUserLocationMarker(lat, lon) {
-    const pos = { lat: parseFloat(lat), lng: parseFloat(lon) };
+    const lngLat = [parseFloat(lon), parseFloat(lat)];
     if (userMarker) {
-      userMarker.setPosition(pos);
+      userMarker.setLngLat(lngLat);
     } else {
-      userMarker = new google.maps.Marker({
-        position: pos,
-        map: mapInstance,
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 8,
-          fillColor: '#1D4D4F',
-          fillOpacity: 1,
-          strokeColor: '#ffffff',
-          strokeWeight: 2
-        },
-        title: 'Lokasi Saya'
-      });
+      const el = document.createElement('div');
+      el.innerHTML = `
+        <div class="relative flex items-center justify-center">
+          <span class="animate-ping absolute inline-flex h-8 w-8 rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-4 w-4 bg-[#1D4D4F] border-2 border-white shadow-lg"></span>
+        </div>
+      `;
+      userMarker = new mapboxgl.Marker({ element: el })
+        .setLngLat(lngLat)
+        .addTo(mapInstance);
     }
-    mapInstance.setCenter(pos);
   }
 
   function recenterMap() {
@@ -360,13 +401,17 @@
       window.SiniKajianGeo.requestLiveGps();
       const coords = window.SiniKajianGeo.getCoords();
       setUserLocationMarker(coords.lat, coords.lon);
-      mapInstance.flyTo([coords.lat, coords.lon], 14);
+      if (mapInstance) {
+        mapInstance.flyTo({ center: [parseFloat(coords.lon), parseFloat(coords.lat)], zoom: 14, speed: 1.4 });
+      }
     } else if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition((pos) => {
         const lat = pos.coords.latitude;
         const lon = pos.coords.longitude;
         setUserLocationMarker(lat, lon);
-        mapInstance.flyTo([lat, lon], 14);
+        if (mapInstance) {
+          mapInstance.flyTo({ center: [lon, lat], zoom: 14, speed: 1.4 });
+        }
       }, (err) => {
         alert('Gagal mendeteksi lokasi GPS: ' + err.message);
       }, { enableHighAccuracy: true });
@@ -384,4 +429,4 @@
     return R * c;
   }
 </script>
-@endsection
+@endpush

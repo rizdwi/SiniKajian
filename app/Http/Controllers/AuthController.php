@@ -26,6 +26,20 @@ class AuthController extends Controller
      */
     public function login(Request $request): RedirectResponse
     {
+        // 1. Honeypot check (silent drop bagi bot)
+        if ($request->filled('website_trap')) {
+            return back()->withErrors(['email' => 'Percobaan masuk tidak valid.'])->onlyInput('email');
+        }
+
+        // 2. Proteksi Brute Force & Credential Stuffing
+        $throttleKey = \Illuminate\Support\Str::transliterate(\Illuminate\Support\Str::lower((string) $request->input('email')) . '|' . $request->ip());
+        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = \Illuminate\Support\Facades\RateLimiter::availableIn($throttleKey);
+            return back()->withErrors([
+                'email' => "Terlalu banyak percobaan masuk yang salah. Demi keamanan, akun terkunci sementara. Silakan coba lagi dalam {$seconds} detik.",
+            ])->onlyInput('email');
+        }
+
         $credentials = $request->validate([
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
@@ -34,11 +48,14 @@ class AuthController extends Controller
         $remember = $request->boolean('remember');
 
         if (Auth::attempt($credentials, $remember)) {
+            \Illuminate\Support\Facades\RateLimiter::clear($throttleKey);
             $request->session()->regenerate();
 
             return redirect()->intended(route('profile'))
                 ->with('success', 'Selamat datang kembali, ' . Auth::user()->name . '!');
         }
+
+        \Illuminate\Support\Facades\RateLimiter::hit($throttleKey, 60);
 
         return back()->withErrors([
             'email' => 'Kombinasi email dan kata sandi tidak cocok.',
@@ -58,13 +75,30 @@ class AuthController extends Controller
      */
     public function sendResetLink(Request $request): RedirectResponse
     {
+        // 1. Honeypot check
+        if ($request->filled('website_trap')) {
+            return back()->with('status', 'Jika alamat email terdaftar di sistem kami, tautan reset kata sandi telah dikirimkan.');
+        }
+
         $request->validate([
             'email' => ['required', 'email'],
         ]);
 
+        // 2. Rate Limiting anti-email bombing
+        $ipKey = 'forgot-pw-ip:' . $request->ip();
+        $emailKey = 'forgot-pw-email:' . \Illuminate\Support\Str::lower($request->email);
+
+        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($ipKey, 3) || \Illuminate\Support\Facades\RateLimiter::tooManyAttempts($emailKey, 2)) {
+            return back()->with('status', 'Jika alamat email terdaftar di sistem kami, tautan reset kata sandi telah dikirimkan. Harap periksa email Anda.');
+        }
+
+        \Illuminate\Support\Facades\RateLimiter::hit($ipKey, 900); // 15 menit
+        \Illuminate\Support\Facades\RateLimiter::hit($emailKey, 120); // 2 menit
+
         $user = User::where('email', $request->email)->first();
         if (!$user) {
-            return back()->with('status', 'Jika alamat email terdaftar di sistem, tautan reset kata sandi telah dikirimkan.');
+            // Anti-enumeration: jangan biarkan attacker menebak apakah email ada atau tidak
+            return back()->with('status', 'Jika alamat email terdaftar di sistem kami, tautan reset kata sandi telah dikirimkan.');
         }
 
         $plainToken = \Illuminate\Support\Str::random(60);
@@ -81,11 +115,11 @@ class AuthController extends Controller
         try {
             $user->sendPasswordResetNotification($plainToken);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::info("Password reset link for {$request->email}: {$resetUrl}");
+            \Illuminate\Support\Facades\Log::info("Password reset notification: " . $e->getMessage());
         }
 
-        return back()->with('status', 'Tautan untuk mengatur ulang kata sandi telah berhasil disiapkan.')
-            ->with('reset_url', $resetUrl);
+        // Keamanan: jangan ekspos token/URL ke session pengguna publik
+        return back()->with('status', 'Jika alamat email terdaftar di sistem kami, tautan reset kata sandi telah dikirimkan.');
     }
 
     /**
@@ -104,11 +138,25 @@ class AuthController extends Controller
      */
     public function resetPassword(Request $request): RedirectResponse
     {
+        // 1. Honeypot check
+        if ($request->filled('website_trap')) {
+            return redirect()->route('login');
+        }
+
+        // 2. Rate limiting reset attempt
+        $key = 'reset-pw-ip:' . $request->ip();
+        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($key, 5)) {
+            $seconds = \Illuminate\Support\Facades\RateLimiter::availableIn($key);
+            return back()->withErrors(['email' => "Terlalu banyak percobaan reset kata sandi. Silakan tunggu {$seconds} detik."]);
+        }
+
         $request->validate([
             'token' => ['required'],
             'email' => ['required', 'email'],
             'password' => ['required', 'string', 'confirmed', Password::min(6)],
         ]);
+
+        \Illuminate\Support\Facades\RateLimiter::hit($key, 900);
 
         $record = \Illuminate\Support\Facades\DB::table('password_reset_tokens')
             ->where('email', $request->email)
@@ -152,15 +200,31 @@ class AuthController extends Controller
      */
     public function register(Request $request): RedirectResponse
     {
+        // 1. Honeypot check
+        if ($request->filled('website_trap')) {
+            return redirect()->route('login');
+        }
+
+        // 2. Rate limiting pendaftaran per IP
+        $regKey = 'reg-ip:' . $request->ip();
+        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($regKey, 3)) {
+            $seconds = \Illuminate\Support\Facades\RateLimiter::availableIn($regKey);
+            return back()->withErrors([
+                'email' => "Terlalu banyak pendaftaran dari perangkat Anda. Silakan coba lagi dalam {$seconds} detik.",
+            ])->withInput();
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'confirmed', Password::min(6)],
         ]);
 
+        \Illuminate\Support\Facades\RateLimiter::hit($regKey, 600); // 10 menit decay
+
         $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
+            'name' => strip_tags(trim($validated['name'])),
+            'email' => strtolower(trim($validated['email'])),
             'password' => Hash::make($validated['password']),
         ]);
 

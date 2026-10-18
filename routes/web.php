@@ -18,15 +18,15 @@ Route::get('/kiblat', [KajianController::class, 'qibla'])->name('kajian.qibla');
 Route::get('/tersimpan', [KajianController::class, 'saved'])->name('kajian.saved');
 
 // Interaksi Kajian
-Route::post('/kajian', [KajianController::class, 'store'])->name('kajian.store');
-Route::post('/kajian/{kajian}/bookmark', [KajianController::class, 'toggleBookmark'])->name('kajian.bookmark');
-Route::post('/api/bookmarks/sync', [KajianController::class, 'syncBookmarks'])->name('api.bookmarks.sync');
-Route::post('/kajian/{kajian}/kehadiran', [KajianController::class, 'logAttendance'])->name('kajian.attendance');
-Route::post('/majelis/follow', [KajianController::class, 'toggleFollowMajelis'])->name('majelis.follow');
-Route::get('/api/kajian', [KajianController::class, 'apiList'])->name('api.kajian');
-Route::get('/api/kajians', [KajianController::class, 'apiList']);
-Route::get('/kajians', [KajianController::class, 'apiList']);
-Route::get('/kajian', [KajianController::class, 'apiList']);
+Route::post('/kajian', [KajianController::class, 'store'])->middleware('throttle:5,15')->name('kajian.store');
+Route::post('/kajian/{kajian}/bookmark', [KajianController::class, 'toggleBookmark'])->middleware('throttle:30,1')->name('kajian.bookmark');
+Route::post('/api/bookmarks/sync', [KajianController::class, 'syncBookmarks'])->middleware('throttle:30,1')->name('api.bookmarks.sync');
+Route::post('/kajian/{kajian}/kehadiran', [KajianController::class, 'logAttendance'])->middleware('throttle:20,1')->name('kajian.attendance');
+Route::post('/majelis/follow', [KajianController::class, 'toggleFollowMajelis'])->middleware('throttle:30,1')->name('majelis.follow');
+Route::get('/api/kajian', [KajianController::class, 'apiList'])->middleware('throttle:60,1')->name('api.kajian');
+Route::get('/api/kajians', [KajianController::class, 'apiList'])->middleware('throttle:60,1');
+Route::get('/kajians', [KajianController::class, 'apiList'])->middleware('throttle:60,1');
+Route::get('/kajian', [KajianController::class, 'apiList'])->middleware('throttle:60,1');
 
 // Autentikasi Pengguna & Kredensial
 Route::redirect('/login', '/masuk');
@@ -34,13 +34,13 @@ Route::redirect('/register', '/daftar');
 
 Route::middleware('guest')->group(function () {
     Route::get('/masuk', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/masuk', [AuthController::class, 'login'])->name('login.post');
+    Route::post('/masuk', [AuthController::class, 'login'])->middleware('throttle:5,1')->name('login.post');
     Route::get('/daftar', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/daftar', [AuthController::class, 'register'])->name('register.post');
+    Route::post('/daftar', [AuthController::class, 'register'])->middleware('throttle:3,10')->name('register.post');
     Route::get('/lupa-sandi', [AuthController::class, 'showForgotPassword'])->name('password.request');
-    Route::post('/lupa-sandi', [AuthController::class, 'sendResetLink'])->name('password.email');
+    Route::post('/lupa-sandi', [AuthController::class, 'sendResetLink'])->middleware('throttle:3,15')->name('password.email');
     Route::get('/reset-sandi/{token}', [AuthController::class, 'showResetPassword'])->name('password.reset');
-    Route::post('/reset-sandi', [AuthController::class, 'resetPassword'])->name('password.update');
+    Route::post('/reset-sandi', [AuthController::class, 'resetPassword'])->middleware('throttle:5,15')->name('password.update');
 });
 
 // Profil Jamaah (Screen 5)
@@ -130,7 +130,7 @@ Route::post('/email/verification-notification', function (\Illuminate\Http\Reque
         \Illuminate\Support\Facades\Log::error('Kirim ulang email verifikasi gagal: ' . $e->getMessage());
         return back()->with('error', 'Gagal mengirim email: periksa pengaturan mailer (SMTP/Resend) di server.');
     }
-})->middleware(['auth', 'throttle:6,1'])->name('verification.send');
+})->middleware(['auth', 'throttle:3,10'])->name('verification.send');
 
 // Favicon fallback handler
 Route::get('/favicon.ico', function () {

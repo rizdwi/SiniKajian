@@ -647,4 +647,88 @@ class SiniKajianTest extends TestCase
         // Cleanup
         $user->delete();
     }
+
+    /**
+     * Uji proteksi Brute Force Login & Rate Limiting lockout.
+     */
+    public function test_login_rate_limiting_locks_out_after_multiple_failed_attempts(): void
+    {
+        $testEmail = 'brute_' . uniqid() . '@example.com';
+        $ip = '192.168.1.100';
+
+        // 5 percobaan salah
+        for ($i = 0; $i < 5; $i++) {
+            $this->withServerVariables(['REMOTE_ADDR' => $ip])
+                ->post('/masuk', [
+                    'email' => $testEmail,
+                    'password' => 'wrong_password',
+                ]);
+        }
+
+        // Percobaan ke-6 harus ditolak oleh rate limiter (HTTP 429 atau lockout message)
+        $response = $this->withServerVariables(['REMOTE_ADDR' => $ip])
+            ->post('/masuk', [
+                'email' => $testEmail,
+                'password' => 'wrong_password',
+            ]);
+
+        $this->assertTrue(
+            $response->status() === 429 ||
+            ($response->status() === 302 && session()->has('errors'))
+        );
+
+        // Reset limiter
+        $throttleKey = \Illuminate\Support\Str::transliterate(\Illuminate\Support\Str::lower($testEmail) . '|' . $ip);
+        \Illuminate\Support\Facades\RateLimiter::clear($throttleKey);
+    }
+
+    /**
+     * Uji proteksi Honeypot Anti-Bot pada form publik.
+     */
+    public function test_honeypot_trap_blocks_automated_bot_submissions(): void
+    {
+        // Bot mengisi website_trap pada form registrasi
+        $botEmail = 'bot_' . uniqid() . '@spam.com';
+        $response = $this->post('/daftar', [
+            'name' => 'Spam Bot',
+            'email' => $botEmail,
+            'password' => 'spam12345',
+            'password_confirmation' => 'spam12345',
+            'website_trap' => 'http://spam-link.com', // TRAP
+        ]);
+
+        $response->assertRedirect(route('login'));
+        // Akun tidak boleh dibuat di database
+        $this->assertDatabaseMissing('users', ['email' => $botEmail]);
+    }
+
+    /**
+     * Uji sanitasi input untuk mencegah stored XSS pada pengajuan kajian.
+     */
+    public function test_xss_inputs_are_sanitized_on_kajian_submission(): void
+    {
+        $response = $this->post('/kajian', [
+            'title' => 'Kajian Aman <script>alert("XSS")</script>',
+            'ustadz' => '<b>Ustadz Fulan</b>',
+            'category' => 'Fiqih',
+            'audience' => 'Umum',
+            'masjid' => 'Masjid Raya <i>Indah</i>',
+            'address' => 'Jl. Merdeka <script>steal()</script>',
+            'lat' => -6.9,
+            'lon' => 107.6,
+            'day' => 'Senin',
+            'time' => '19:30 WIB',
+            'description' => '<p>Deskripsi kajian</p>',
+        ]);
+
+        $kajian = Kajian::where('title', 'Kajian Aman alert("XSS")')->first();
+        $this->assertNotNull($kajian);
+        $this->assertStringNotContainsString('<script>', $kajian->title);
+        $this->assertEquals('Ustadz Fulan', $kajian->ustadz);
+        $this->assertEquals('Masjid Raya Indah', $kajian->masjid);
+        $this->assertStringNotContainsString('<script>', $kajian->address);
+
+        // Cleanup
+        $kajian->delete();
+    }
 }

@@ -33,6 +33,11 @@
       @csrf
       <input type="hidden" name="token" value="{{ $token }}">
 
+      <!-- Anti-Bot Honeypot Trap (Invisible) -->
+      <div style="display:none !important; opacity:0; position:absolute; left:-9999px;" aria-hidden="true">
+        <input type="text" name="website_trap" tabindex="-1" autocomplete="off" value="">
+      </div>
+
       <div>
         <label for="email" class="block text-xs font-bold text-[#1C2224] mb-1.5">Alamat Email</label>
         <div class="relative">

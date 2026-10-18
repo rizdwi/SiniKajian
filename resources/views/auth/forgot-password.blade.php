@@ -21,13 +21,6 @@
     @if(session('status'))
       <div class="mb-5 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
         <p>{{ session('status') }}</p>
-        @if(session('reset_url'))
-          <div class="mt-2.5 pt-2 border-t border-emerald-200">
-            <a href="{{ session('reset_url') }}" class="inline-flex items-center gap-1.5 font-bold text-[#1D4D4F] underline hover:text-[#143839]">
-              Lanjutkan ke Halaman Ganti Sandi &rarr;
-            </a>
-          </div>
-        @endif
       </div>
     @endif
 
@@ -45,6 +38,11 @@
     <!-- Form -->
     <form action="{{ route('password.email') }}" method="POST" class="space-y-4">
       @csrf
+
+      <!-- Anti-Bot Honeypot Trap (Invisible) -->
+      <div style="display:none !important; opacity:0; position:absolute; left:-9999px;" aria-hidden="true">
+        <input type="text" name="website_trap" tabindex="-1" autocomplete="off" value="">
+      </div>
 
       <div>
         <label for="email" class="block text-xs font-bold text-[#1C2224] mb-1.5">Alamat Email Terdaftar</label>
