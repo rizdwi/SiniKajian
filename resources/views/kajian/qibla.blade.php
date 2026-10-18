@@ -310,25 +310,34 @@
 
   function handleOrientation(event) {
     let compass = null;
-    
-    // iOS Safari
-    if (typeof event.webkitCompassHeading !== 'undefined') {
+
+    // iOS Safari: webkitCompassHeading langsung = arah kompas (0 = utara)
+    if (typeof event.webkitCompassHeading !== 'undefined' && event.webkitCompassHeading !== null) {
       compass = event.webkitCompassHeading;
-    } 
-    // Android Chrome absolute orientation
+    }
+    // Android Chrome: deviceorientationabsolute dengan absolute=true,
+    // event.alpha SUDAH = arah kompas (0 = utara). JANGAN di-invert!
     else if (event.absolute === true && event.alpha !== null) {
-      compass = (360 - event.alpha) % 360;
-    } 
-    // Generic fallback
-    else if (event.alpha !== null) {
+      compass = event.alpha;
+    }
+    // Fallback: deviceorientation biasa (alpha relatif, tidak akurat untuk kompas)
+    // Hanya pakai jika tidak ada data absolute sama sekali
+    else if (event.alpha !== null && !hasAbsoluteSensor) {
       compass = (360 - event.alpha) % 360;
     }
 
     if (compass === null || isNaN(compass)) return;
 
+    // Normalisasi ke 0-360
+    compass = ((compass % 360) + 360) % 360;
+
     currentHeading = Math.round(compass);
     updateCompassDisplay(currentHeading);
   }
+
+  // Tandai apakah sensor absolute tersedia
+  let hasAbsoluteSensor = false;
+  window.addEventListener('deviceorientationabsolute', () => { hasAbsoluteSensor = true; }, { once: true, capture: true });
 
   function updateCompassDisplay(heading) {
     const dial = document.getElementById('rotatingDialGroup');
