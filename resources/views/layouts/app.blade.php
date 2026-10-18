@@ -125,10 +125,13 @@
     .safe-bottom {
       padding-bottom: env(safe-area-inset-bottom, 16px);
     }
+    .safe-top {
+      padding-top: env(safe-area-inset-top, 0px);
+    }
   </style>
   @yield('styles')
 </head>
-<body class="bg-[#F8FAF9] text-[#1C2224] font-sans antialiased min-h-screen flex flex-col justify-between selection:bg-[#E6F4F1]">
+<body class="bg-[#F8FAF9] text-[#1C2224] font-sans antialiased min-h-screen flex flex-col justify-between selection:bg-[#E6F4F1] safe-top">
 
   <!-- Status Bar Offline Notice -->
   <div id="offlineNotice" class="hidden bg-amber-600 text-white text-xs font-semibold py-1.5 px-4 text-center sticky top-0 z-50">
