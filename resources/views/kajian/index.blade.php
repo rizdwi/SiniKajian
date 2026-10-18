@@ -3,10 +3,10 @@
 @section('title', 'SiniKajian | Jadwal Kajian Sunnah & Waktu Sholat')
 
 @section('content')
-<div class="max-w-md mx-auto px-4 pt-4 pb-8 space-y-5">
+<div class="max-w-md mx-auto px-4 pb-8 space-y-5" style="padding-top: max(1.5rem, env(safe-area-inset-top));">
   
   <!-- Header Area Sesuai Desain Figma (Assalamu'alaikum & Lokasi) -->
-  <header class="flex items-center justify-between pt-1">
+  <header class="flex items-center justify-between pt-2">
     <div>
       <p class="text-xs text-[#607072] font-medium">Assalamu'alaikum, {{ Auth::check() ? Auth::user()->name : 'Tamu' }}</p>
       <h1 class="text-xl font-extrabold text-[#1D4D4F] tracking-tight mt-0.5">Yuk, dekatkan hati.</h1>
