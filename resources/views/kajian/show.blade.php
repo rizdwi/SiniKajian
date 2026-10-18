@@ -191,17 +191,28 @@
     </p>
   </div>
 
-  <!-- 8. Sticky Bottom Action Bar (Figma Screen 2) -->
+  <!-- 8. Sticky Bottom Action Bar (Kajian Tersimpan & Majelis Diikuti) -->
   <div class="fixed bottom-16 left-0 right-0 z-30 p-3 bg-white/95 backdrop-blur-md border-t border-[#E5ECEB]">
-    <div class="max-w-md mx-auto space-y-1">
-      <button onclick="rsvpAttendance({{ $kajian->id }})" id="btnRsvpDetail" class="w-full py-3 rounded-2xl bg-[#1D4D4F] hover:bg-[#153A3B] active:scale-98 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md transition touch-btn">
-        <span>Saya ingin hadir</span>
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-        </svg>
-      </button>
+    <div class="max-w-md mx-auto space-y-1.5">
+      <div class="grid grid-cols-2 gap-2">
+        <!-- Tombol 1: Simpan Kajian -->
+        <button onclick="toggleBookmarkDetailPage({{ $kajian->id }})" id="btnSaveDetail" class="w-full py-3 px-2 rounded-2xl border-2 border-[#1D4D4F] text-[#1D4D4F] bg-[#E6F4F1] hover:bg-[#D1EAE5] text-xs font-bold shadow-2xs touch-btn flex items-center justify-center gap-1.5 transition">
+          <svg id="iconSaveDetail" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+          </svg>
+          <span id="labelSaveDetail" class="truncate">Simpan Kajian</span>
+        </button>
+
+        <!-- Tombol 2: Ikuti Majelis -->
+        <button onclick="toggleFollowDetailPage('{{ addslashes($kajian->masjid) }}')" id="btnFollowDetail" class="w-full py-3 px-2 rounded-2xl bg-[#1D4D4F] hover:bg-[#153A3B] text-white text-xs font-bold shadow-sm touch-btn flex items-center justify-center gap-1.5 transition">
+          <svg id="iconFollowDetail" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+          </svg>
+          <span id="labelFollowDetail" class="truncate">Ikuti Majelis</span>
+        </button>
+      </div>
       <p class="text-center text-[10px] text-[#607072]">
-        Simpan ke agenda dan aktifkan pengingat kajian.
+        Kajian tersimpan di agenda pribadi dan majelis tercatat diikuti di profil.
       </p>
     </div>
   </div>
@@ -258,28 +269,58 @@
   document.addEventListener('DOMContentLoaded', () => {
     try {
       const savedList = JSON.parse(localStorage.getItem('sinikajian_bookmarks') || '[]');
-      const rsvpList = JSON.parse(localStorage.getItem('sinikajian_attendances') || '[]');
+      const followedList = JSON.parse(localStorage.getItem('sinikajian_followed_majelis') || '[]');
       const currentId = {{ $kajian->id }};
+      const currentMasjid = "{{ addslashes($kajian->masjid) }}";
       
-      if (savedList.includes(currentId)) {
-        const icon = document.getElementById('bookmarkDetailIcon');
-        if (icon) {
-          icon.classList.add('text-amber-300');
-          icon.setAttribute('fill', 'currentColor');
-        }
-      }
-
-      if (rsvpList.includes(currentId)) {
-        const btn = document.getElementById('btnRsvpDetail');
-        if (btn) {
-          btn.innerHTML = `<span>✓ Tersimpan di Agenda Saya</span>`;
-          btn.className = "w-full py-3.5 rounded-full bg-emerald-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition touch-btn";
-        }
-      }
+      updateSaveDetailState(savedList.includes(currentId));
+      updateFollowDetailState(followedList.includes(currentMasjid));
     } catch(e) {}
   });
 
-  function toggleBookmarkDetailPage(id, btn) {
+  function updateSaveDetailState(isSaved) {
+    const icon = document.getElementById('bookmarkDetailIcon');
+    if (icon) {
+      if (isSaved) {
+        icon.classList.add('text-amber-300');
+        icon.setAttribute('fill', 'currentColor');
+      } else {
+        icon.classList.remove('text-amber-300');
+        icon.setAttribute('fill', 'none');
+      }
+    }
+
+    const btn = document.getElementById('btnSaveDetail');
+    const lbl = document.getElementById('labelSaveDetail');
+    const btnIcon = document.getElementById('iconSaveDetail');
+    if (btn) {
+      if (isSaved) {
+        btn.className = "w-full py-3 px-2 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-sm touch-btn flex items-center justify-center gap-1.5 transition";
+        if (lbl) lbl.innerText = "✓ Tersimpan";
+        if (btnIcon) btnIcon.setAttribute('fill', 'currentColor');
+      } else {
+        btn.className = "w-full py-3 px-2 rounded-2xl border-2 border-[#1D4D4F] text-[#1D4D4F] bg-[#E6F4F1] hover:bg-[#D1EAE5] text-xs font-bold shadow-2xs touch-btn flex items-center justify-center gap-1.5 transition";
+        if (lbl) lbl.innerText = "Simpan Kajian";
+        if (btnIcon) btnIcon.setAttribute('fill', 'none');
+      }
+    }
+  }
+
+  function updateFollowDetailState(isFollowed) {
+    const btn = document.getElementById('btnFollowDetail');
+    const lbl = document.getElementById('labelFollowDetail');
+    if (btn) {
+      if (isFollowed) {
+        btn.className = "w-full py-3 px-2 rounded-2xl bg-[#1D4D4F] hover:bg-[#153A3B] text-emerald-300 text-xs font-bold shadow-sm touch-btn flex items-center justify-center gap-1.5 transition";
+        if (lbl) lbl.innerText = "✓ Majelis Diikuti";
+      } else {
+        btn.className = "w-full py-3 px-2 rounded-2xl bg-[#1D4D4F] hover:bg-[#153A3B] text-white text-xs font-bold shadow-sm touch-btn flex items-center justify-center gap-1.5 transition";
+        if (lbl) lbl.innerText = "Ikuti Majelis";
+      }
+    }
+  }
+
+  function toggleBookmarkDetailPage(id) {
     const numericId = Number(id);
     let savedList = [];
     try {
@@ -299,17 +340,7 @@
       localStorage.setItem('sinikajian_bookmarks', JSON.stringify(savedList));
     } catch(e) {}
 
-    const icon = document.getElementById('bookmarkDetailIcon');
-    if (icon) {
-      if (newSaved) {
-        icon.classList.add('text-amber-300');
-        icon.setAttribute('fill', 'currentColor');
-      } else {
-        icon.classList.remove('text-amber-300');
-        icon.setAttribute('fill', 'none');
-      }
-    }
-
+    updateSaveDetailState(newSaved);
     showToastNotification(newSaved ? 'Kajian berhasil disimpan!' : 'Kajian dihapus dari tersimpan.');
 
     const isLoggedIn = {{ Auth::check() ? 'true' : 'false' }};
@@ -327,52 +358,43 @@
     }
   }
 
-  function rsvpAttendance(id) {
-    let rsvpList = [];
-    let savedList = [];
+  function toggleFollowDetailPage(masjid) {
+    let list = [];
     try {
-      rsvpList = JSON.parse(localStorage.getItem('sinikajian_attendances') || '[]');
-      savedList = JSON.parse(localStorage.getItem('sinikajian_bookmarks') || '[]');
+      list = JSON.parse(localStorage.getItem('sinikajian_followed_majelis') || '[]');
     } catch(e) {}
 
-    const btn = document.getElementById('btnRsvpDetail');
+    const wasFollowed = list.includes(masjid);
+    const newFollowed = !wasFollowed;
 
-    fetch(`/kajian/${id}/kehadiran`, {
+    if (newFollowed) {
+      if (!list.includes(masjid)) list.push(masjid);
+    } else {
+      list = list.filter(m => m !== masjid);
+    }
+
+    try {
+      localStorage.setItem('sinikajian_followed_majelis', JSON.stringify(list));
+    } catch(e) {}
+
+    updateFollowDetailState(newFollowed);
+    showToastNotification(newFollowed ? `Mengikuti ${masjid}` : `Berhenti mengikuti ${masjid}`);
+
+    fetch('{{ route("majelis.follow") }}', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': CSRF_TOKEN
-      }
+        'X-CSRF-TOKEN': CSRF_TOKEN,
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ masjid: masjid })
     })
-    .then(r => r.json())
-    .then(res => {
-      if (res.attended) {
-        if (!rsvpList.includes(id)) rsvpList.push(id);
-        if (!savedList.includes(id)) savedList.push(id);
-        btn.innerHTML = `<span>✓ Tersimpan di Agenda Saya</span>`;
-        btn.className = "w-full py-3.5 rounded-full bg-emerald-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition touch-btn";
-      } else {
-        rsvpList = rsvpList.filter(x => x !== id);
-        btn.innerHTML = `<span>Saya ingin hadir</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`;
-        btn.className = "w-full py-3.5 rounded-full bg-[#1D4D4F] hover:bg-[#153A3B] active:scale-98 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition touch-btn";
-      }
-      localStorage.setItem('sinikajian_attendances', JSON.stringify(rsvpList));
-      localStorage.setItem('sinikajian_bookmarks', JSON.stringify(savedList));
-    })
-    .catch(() => {
-      if (rsvpList.includes(id)) {
-        rsvpList = rsvpList.filter(x => x !== id);
-        btn.innerHTML = `<span>Saya ingin hadir</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>`;
-        btn.className = "w-full py-3.5 rounded-full bg-[#1D4D4F] hover:bg-[#153A3B] active:scale-98 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition touch-btn";
-      } else {
-        rsvpList.push(id);
-        if (!savedList.includes(id)) savedList.push(id);
-        btn.innerHTML = `<span>✓ Tersimpan di Agenda Saya</span>`;
-        btn.className = "w-full py-3.5 rounded-full bg-emerald-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition touch-btn";
-      }
-      localStorage.setItem('sinikajian_attendances', JSON.stringify(rsvpList));
-      localStorage.setItem('sinikajian_bookmarks', JSON.stringify(savedList));
-    });
+    .catch(err => console.warn('Gagal follow majelis ke server:', err));
+  }
+
+  // Alias backwards compatibility
+  function rsvpAttendance(id) {
+    toggleBookmarkDetailPage(id);
   }
 </script>
 @endsection

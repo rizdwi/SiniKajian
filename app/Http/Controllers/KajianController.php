@@ -436,4 +436,88 @@ class KajianController extends Controller
             'kajian_id' => $kajianId,
         ]);
     }
+
+    /**
+     * Ikuti atau berhenti mengikuti majelis taklim / masjid.
+     */
+    public function toggleFollowMajelis(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $masjid = trim($request->input('masjid', ''));
+        if (empty($masjid)) {
+            return response()->json(['error' => 'Nama majelis/masjid diperlukan.'], 422);
+        }
+
+        $userId = Auth::id();
+        $sessionToken = $request->session()->getId();
+        $followed = false;
+
+        // Cek tabel majelis_follows
+        if (\Illuminate\Support\Facades\Schema::hasTable('majelis_follows')) {
+            $query = \App\Models\MajelisFollow::where('masjid', $masjid);
+            if ($userId) {
+                $query->where('user_id', $userId);
+            } else {
+                $query->where('session_token', $sessionToken);
+            }
+            $existing = $query->first();
+
+            if ($existing) {
+                $existing->delete();
+                $followed = false;
+            } else {
+                \App\Models\MajelisFollow::create([
+                    'user_id' => $userId,
+                    'session_token' => $sessionToken,
+                    'masjid' => $masjid,
+                ]);
+                $followed = true;
+            }
+        }
+
+        // Simpan juga ke Session untuk Vercel serverless fallback
+        $sessionFollows = session()->get('followed_majelis', []);
+        if ($followed) {
+            if (!in_array($masjid, $sessionFollows)) {
+                $sessionFollows[] = $masjid;
+            }
+        } else {
+            $sessionFollows = array_values(array_diff($sessionFollows, [$masjid]));
+        }
+        session()->put('followed_majelis', $sessionFollows);
+
+        // Sinkronisasi Supabase jika aktif
+        $supabaseUrl = config('services.supabase.url');
+        $supabaseKey = config('services.supabase.service_key');
+        if ($supabaseUrl && $supabaseKey && $userId) {
+            $headers = [
+                'apikey' => $supabaseKey,
+                'Authorization' => 'Bearer ' . $supabaseKey,
+            ];
+            try {
+                if ($followed) {
+                    \Illuminate\Support\Facades\Http::withHeaders(array_merge($headers, ['Prefer' => 'resolution=ignore-duplicates', 'Content-Type' => 'application/json']))
+                        ->timeout(6)
+                        ->post("{$supabaseUrl}/rest/v1/majelis_follows", [
+                            'user_id' => $userId,
+                            'masjid' => $masjid,
+                        ]);
+                } else {
+                    \Illuminate\Support\Facades\Http::withHeaders($headers)
+                        ->timeout(6)
+                        ->delete("{$supabaseUrl}/rest/v1/majelis_follows", [
+                            'user_id' => "eq.{$userId}",
+                            'masjid' => "eq.{$masjid}",
+                        ]);
+                }
+            } catch (\Exception $e) {
+                \Log::warning('Supabase follow majelis gagal: ' . $e->getMessage());
+            }
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'followed' => $followed,
+            'masjid' => $masjid,
+        ]);
+    }
 }

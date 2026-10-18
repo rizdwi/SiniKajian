@@ -109,7 +109,8 @@ class SiniKajianTest extends TestCase
             $response = $this->get('/kajian/' . $kajian->id);
             $response->assertStatus(200);
             $response->assertSee('Detail Kajian');
-            $response->assertSee('Saya ingin hadir');
+            $response->assertSee('Simpan Kajian');
+            $response->assertSee('Ikuti Majelis');
         }
     }
 
@@ -350,5 +351,43 @@ class SiniKajianTest extends TestCase
         $this->assertDatabaseMissing('kajians', ['id' => $expiredKajian->id]);
         // Kajian lewat 1 jam tetap ada
         $this->assertDatabaseHas('kajians', ['id' => $activeKajian->id]);
+    }
+
+    /**
+     * Uji fitur ikuti dan berhenti mengikuti majelis taklim.
+     */
+    public function test_user_can_follow_and_unfollow_majelis(): void
+    {
+        $user = User::first() ?? User::factory()->create();
+
+        // 1. Follow majelis sebagai user login
+        $response = $this->actingAs($user)->postJson('/majelis/follow', [
+            'masjid' => 'Masjid Salman ITB',
+        ]);
+        $response->assertStatus(200);
+        $response->assertJson([
+            'status' => 'success',
+            'followed' => true,
+            'masjid' => 'Masjid Salman ITB',
+        ]);
+        $this->assertDatabaseHas('majelis_follows', [
+            'user_id' => $user->id,
+            'masjid' => 'Masjid Salman ITB',
+        ]);
+
+        // 2. Unfollow majelis
+        $unfollowRes = $this->actingAs($user)->postJson('/majelis/follow', [
+            'masjid' => 'Masjid Salman ITB',
+        ]);
+        $unfollowRes->assertStatus(200);
+        $unfollowRes->assertJson([
+            'status' => 'success',
+            'followed' => false,
+            'masjid' => 'Masjid Salman ITB',
+        ]);
+        $this->assertDatabaseMissing('majelis_follows', [
+            'user_id' => $user->id,
+            'masjid' => 'Masjid Salman ITB',
+        ]);
     }
 }

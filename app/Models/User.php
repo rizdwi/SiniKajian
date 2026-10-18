@@ -52,4 +52,9 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(Kajian::class, 'user_id');
     }
+
+    public function majelisFollows(): HasMany
+    {
+        return $this->hasMany(MajelisFollow::class);
+    }
 }

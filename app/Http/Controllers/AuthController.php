@@ -128,7 +128,11 @@ class AuthController extends Controller
 
             $savedCount = $bookmarkedKajians->count();
             $agendaCount = $attendances->count();
-            $majelisCount = $user->bookmarkedKajians()->distinct('masjid')->count('masjid');
+
+            $dbFollowCount = \App\Models\MajelisFollow::where('user_id', $user->id)->count();
+            $sessionFollows = session()->get('followed_majelis', []);
+            $bmMajelisCount = $user->bookmarkedKajians()->distinct('masjid')->count('masjid');
+            $majelisCount = max($dbFollowCount, count($sessionFollows), $bmMajelisCount);
         } else {
             $bookmarkedKajians = collect();
             $attendances = collect();

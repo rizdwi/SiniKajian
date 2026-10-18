@@ -349,13 +349,28 @@
       <span id="modalSourceLabel">Buka Sumber Asli di Facebook ↗</span>
     </a>
 
-    <!-- Sticky Bottom CTA Action (Figma Screen 2: Saya Ingin Hadir) -->
-    <div class="pt-2 space-y-1.5">
-      <button id="modalAttendBtn" onclick="submitModalAttendance()" class="w-full py-3 rounded-full bg-[#1D4D4F] hover:bg-[#153A3B] text-white text-xs font-extrabold shadow-sm touch-btn flex items-center justify-center gap-2 transition">
-        <svg class="w-4 h-4 text-[#FCD34D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-        <span id="modalAttendLabel">Saya Ingin Hadir</span>
-      </button>
-      <p class="text-[10px] text-center text-[#607072]">Tempat terbatas dan ada konfirmasi pencatatan kehadiran majelis.</p>
+    <!-- Sticky Bottom CTA Action (Kajian Tersimpan & Majelis Diikuti) -->
+    <div class="pt-2 space-y-2">
+      <div class="grid grid-cols-2 gap-2">
+        <!-- Tombol 1: Simpan Kajian (Kajian Tersimpan) -->
+        <button id="modalSaveBtn" onclick="toggleModalSaveAction()" class="w-full py-3 px-2 rounded-2xl border-2 border-[#1D4D4F] text-[#1D4D4F] bg-[#E6F4F1] hover:bg-[#D1EAE5] text-xs font-extrabold shadow-2xs touch-btn flex items-center justify-center gap-1.5 transition">
+          <svg id="modalSaveIcon" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+          </svg>
+          <span id="modalSaveLabel" class="truncate">Simpan Kajian</span>
+        </button>
+
+        <!-- Tombol 2: Ikuti Majelis (Majelis Diikuti) -->
+        <button id="modalFollowBtn" onclick="toggleModalFollowAction()" class="w-full py-3 px-2 rounded-2xl bg-[#1D4D4F] hover:bg-[#153A3B] text-white text-xs font-extrabold shadow-sm touch-btn flex items-center justify-center gap-1.5 transition">
+          <svg id="modalFollowIcon" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+          </svg>
+          <span id="modalFollowLabel" class="truncate">Ikuti Majelis</span>
+        </button>
+      </div>
+      <p class="text-[10px] text-center text-[#607072]">
+        Kajian tersimpan di agenda pribadi dan majelis tercatat diikuti di profil.
+      </p>
     </div>
   </div>
 </div>
@@ -896,65 +911,84 @@
       sourceBtn.classList.add('hidden');
     }
 
-    // Reset tombol kehadiran
-    const attendBtn = document.getElementById('modalAttendBtn');
-    const attendLabel = document.getElementById('modalAttendLabel');
-    attendBtn.disabled = false;
-    attendBtn.className = 'w-full py-3 rounded-full bg-[#1D4D4F] hover:bg-[#153A3B] text-white text-xs font-extrabold shadow-sm touch-btn flex items-center justify-center gap-2 transition';
-    attendLabel.innerText = 'Saya Ingin Hadir';
+    // Status tombol Simpan Kajian & Ikuti Majelis
+    const isSaved = userBookmarkIds.has(Number(ev.id));
+    syncAllBookmarkButtons(Number(ev.id), isSaved);
 
-    // Status tombol bookmark modal
-    const modalBmBtn = document.getElementById('modalBookmarkBtn');
-    if (modalBmBtn) {
-      updateBookmarkBtn(modalBmBtn, userBookmarkIds.has(Number(ev.id)));
-    }
+    const isFollowed = getFollowedMajelisList().includes(ev.masjid);
+    updateModalFollowButtonState(isFollowed);
 
     document.getElementById('modalRouteBtn').onclick = () => openGoogleMapsRoute(ev.lat, ev.lon);
     document.getElementById('detailModal').classList.remove('hidden');
   }
 
-  function toggleModalBookmark() {
+  function getFollowedMajelisList() {
+    try {
+      return JSON.parse(localStorage.getItem('sinikajian_followed_majelis') || '[]');
+    } catch(e) {
+      return [];
+    }
+  }
+
+  function setFollowedMajelisList(list) {
+    try {
+      localStorage.setItem('sinikajian_followed_majelis', JSON.stringify(list));
+    } catch(e) {}
+  }
+
+  function updateModalFollowButtonState(isFollowed) {
+    const btn = document.getElementById('modalFollowBtn');
+    const lbl = document.getElementById('modalFollowLabel');
+    if (!btn) return;
+    if (isFollowed) {
+      btn.className = 'w-full py-3 px-2 rounded-2xl bg-[#1D4D4F] hover:bg-[#153A3B] text-emerald-300 text-xs font-extrabold shadow-sm touch-btn flex items-center justify-center gap-1.5 transition';
+      if (lbl) lbl.innerText = '✓ Majelis Diikuti';
+    } else {
+      btn.className = 'w-full py-3 px-2 rounded-2xl bg-[#1D4D4F] hover:bg-[#153A3B] text-white text-xs font-extrabold shadow-sm touch-btn flex items-center justify-center gap-1.5 transition';
+      if (lbl) lbl.innerText = 'Ikuti Majelis';
+    }
+  }
+
+  function toggleModalSaveAction() {
     if (!currentDetailEvent) return;
     toggleBookmarkAction(currentDetailEvent.id, document.getElementById('modalBookmarkBtn'));
   }
 
-  function submitModalAttendance() {
-    if (!currentDetailEvent) return;
-    const btn = document.getElementById('modalAttendBtn');
-    const lbl = document.getElementById('modalAttendLabel');
-    btn.disabled = true;
-    lbl.innerText = 'Mencatat Kehadiran...';
+  function toggleModalBookmark() {
+    toggleModalSaveAction();
+  }
 
-    fetch(`/kajian/${currentDetailEvent.id}/kehadiran`, {
+  function toggleModalFollowAction() {
+    if (!currentDetailEvent || !currentDetailEvent.masjid) return;
+    const masjid = currentDetailEvent.masjid;
+    let list = getFollowedMajelisList();
+    const wasFollowed = list.includes(masjid);
+    const newFollowed = !wasFollowed;
+
+    if (newFollowed) {
+      if (!list.includes(masjid)) list.push(masjid);
+    } else {
+      list = list.filter(m => m !== masjid);
+    }
+    setFollowedMajelisList(list);
+    updateModalFollowButtonState(newFollowed);
+    showBookmarkToast(newFollowed ? `Mengikuti ${masjid}` : `Berhenti mengikuti ${masjid}`);
+
+    fetch('{{ route("majelis.follow") }}', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': CSRF_TOKEN
-      }
+        'X-CSRF-TOKEN': CSRF_TOKEN,
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ masjid: masjid })
     })
-    .then(res => {
-      if (res.status === 401) {
-        window.location.href = '{{ route("login") }}';
-        return;
-      }
-      return res.json();
-    })
-    .then(data => {
-      btn.disabled = false;
-      if (!data) return;
-      if (data.attended) {
-        lbl.innerText = 'Sudah Terdaftar Hadir ✓';
-        btn.className = 'w-full py-3 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-sm touch-btn flex items-center justify-center gap-2 transition';
-      } else {
-        lbl.innerText = 'Saya Ingin Hadir';
-        btn.className = 'w-full py-3 rounded-full bg-[#1D4D4F] hover:bg-[#153A3B] text-white text-xs font-extrabold shadow-sm touch-btn flex items-center justify-center gap-2 transition';
-      }
-    })
-    .catch(err => {
-      btn.disabled = false;
-      lbl.innerText = 'Saya Ingin Hadir';
-      console.warn('Gagal mencatat kehadiran:', err);
-    });
+    .catch(err => console.warn('Gagal follow majelis ke server:', err));
+  }
+
+  // Alias backwards compatibility
+  function submitModalAttendance() {
+    toggleModalSaveAction();
   }
 
   function closeDetailModal() {
@@ -1210,6 +1244,21 @@
     if (currentDetailEvent && Number(currentDetailEvent.id) === numericId) {
       const modalBtn = document.getElementById('modalBookmarkBtn');
       if (modalBtn) updateBookmarkBtn(modalBtn, saved);
+
+      const modalSaveBtn = document.getElementById('modalSaveBtn');
+      const modalSaveLabel = document.getElementById('modalSaveLabel');
+      const modalSaveIcon = document.getElementById('modalSaveIcon');
+      if (modalSaveBtn) {
+        if (saved) {
+          modalSaveBtn.className = 'w-full py-3 px-2 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold shadow-sm touch-btn flex items-center justify-center gap-1.5 transition';
+          if (modalSaveLabel) modalSaveLabel.innerText = '✓ Tersimpan';
+          if (modalSaveIcon) modalSaveIcon.setAttribute('fill', 'currentColor');
+        } else {
+          modalSaveBtn.className = 'w-full py-3 px-2 rounded-2xl border-2 border-[#1D4D4F] text-[#1D4D4F] bg-[#E6F4F1] hover:bg-[#D1EAE5] text-xs font-extrabold shadow-2xs touch-btn flex items-center justify-center gap-1.5 transition';
+          if (modalSaveLabel) modalSaveLabel.innerText = 'Simpan Kajian';
+          if (modalSaveIcon) modalSaveIcon.setAttribute('fill', 'none');
+        }
+      }
     }
   }
 

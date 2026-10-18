@@ -52,15 +52,15 @@
     <!-- 3-Column Metrics Row: Disimpan, Agenda saya, Majelis diikuti (Figma Screen 5 Dinamis) -->
     <div class="grid grid-cols-3 divide-x divide-[#D1ECE7] text-center">
       <div class="px-2">
-        <span class="text-lg font-black text-[#1D4D4F] block leading-tight">{{ $savedCount ?? 0 }}</span>
+        <span id="profileSavedCount" class="text-lg font-black text-[#1D4D4F] block leading-tight">{{ $savedCount ?? 0 }}</span>
         <span class="text-[11px] font-medium text-[#607072] block mt-0.5">Disimpan</span>
       </div>
       <div class="px-2">
-        <span class="text-lg font-black text-[#1D4D4F] block leading-tight">{{ $agendaCount ?? 0 }}</span>
+        <span id="profileAgendaCount" class="text-lg font-black text-[#1D4D4F] block leading-tight">{{ $agendaCount ?? 0 }}</span>
         <span class="text-[11px] font-medium text-[#607072] block mt-0.5">Agenda saya</span>
       </div>
       <div class="px-2">
-        <span class="text-lg font-black text-[#1D4D4F] block leading-tight">{{ $majelisCount ?? 0 }}</span>
+        <span id="profileFollowedCount" class="text-lg font-black text-[#1D4D4F] block leading-tight">{{ $majelisCount ?? 0 }}</span>
         <span class="text-[11px] font-medium text-[#607072] block mt-0.5">Majelis diikuti</span>
       </div>
     </div>
@@ -536,6 +536,20 @@
       const cached = JSON.parse(localStorage.getItem('sk_geo_state') || 'null');
       if (cached && (cached.name || cached.city)) {
         updateProfileLocationDisplay(cached);
+      }
+    } catch(e) {}
+
+    // 3. Sinkronisasi hitungan metrik dari localStorage
+    try {
+      const localBookmarks = JSON.parse(localStorage.getItem('sinikajian_bookmarks') || '[]');
+      const localFollows = JSON.parse(localStorage.getItem('sinikajian_followed_majelis') || '[]');
+      const savedEl = document.getElementById('profileSavedCount');
+      const followedEl = document.getElementById('profileFollowedCount');
+      if (savedEl && localBookmarks.length > Number(savedEl.innerText || 0)) {
+        savedEl.innerText = localBookmarks.length;
+      }
+      if (followedEl && localFollows.length > Number(followedEl.innerText || 0)) {
+        followedEl.innerText = localFollows.length;
       }
     } catch(e) {}
   });
