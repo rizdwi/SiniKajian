@@ -4,6 +4,23 @@
 
 @section('content')
 <div class="max-w-md mx-auto space-y-4 pb-28 pt-2 px-1">
+
+@if(!$user)
+  <!-- Guest state: belum login -->
+  <div class="rounded-3xl bg-[#EDF5F3] border border-[#D1ECE7] p-8 text-center">
+    <div class="w-16 h-16 mx-auto rounded-full bg-[#1D4D4F] text-white flex items-center justify-center mb-4">
+      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+      </svg>
+    </div>
+    <h2 class="text-lg font-extrabold text-[#1C2224]">Belum Masuk</h2>
+    <p class="text-sm text-[#607072] mt-2 mb-6">Masuk untuk menyimpan kajian favorit, mencatat kehadiran, dan mengelola profil Anda.</p>
+    <div class="flex gap-3 justify-center">
+      <a href="{{ route('login') }}" class="bg-[#1D4D4F] text-white font-bold px-6 py-3 rounded-xl text-sm">Masuk ke Akun</a>
+      <a href="{{ route('register') }}" class="bg-white border border-[#1D4D4F] text-[#1D4D4F] font-bold px-6 py-3 rounded-xl text-sm">Daftar</a>
+    </div>
+  </div>
+@else
   
   <!-- 1. Header Area (Figma Screen 5) -->
   <header class="flex items-center justify-between">
@@ -27,16 +44,16 @@
     <div class="relative w-14 h-14 mx-auto">
       <img id="userProfileAvatarImg" src="{{ $user->avatar ?? '' }}" alt="{{ $user->name ?? 'User' }}" class="w-14 h-14 rounded-full object-cover shadow-sm ring-4 ring-white/60 {{ !empty($user->avatar) ? '' : 'hidden' }}">
       <div id="userProfileAvatarInitial" class="w-14 h-14 rounded-full bg-[#1D4D4F] text-white flex items-center justify-center font-extrabold text-base shadow-sm ring-4 ring-white/60 {{ !empty($user->avatar) ? 'hidden' : '' }}">
-        {{ strtoupper(substr($user->name ?? 'Ahmad Fauzan', 0, 2)) }}
+        {{ strtoupper(substr($user->name, 0, 2)) }}
       </div>
     </div>
 
     <!-- User Information -->
     <h2 class="text-base font-extrabold text-[#1C2224] mt-2.5">
-      {{ $user->name ?? 'Ahmad Fauzan' }}
+      {{ $user->name }}
     </h2>
     <p class="text-xs text-[#607072] mt-0.5">
-      {{ $user->email ?? 'ahmad.fauzan@contoh.id' }}
+      {{ $user->email }}
     </p>
 
     <div class="flex items-center justify-center gap-1 text-xs text-[#607072] mt-1.5">
@@ -666,4 +683,5 @@
     if (e.target === locationModal) closeLocationModal();
   });
 </script>
+@endif
 @endsection
