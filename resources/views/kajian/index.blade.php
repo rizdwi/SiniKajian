@@ -751,8 +751,14 @@
       return { ...item, distance: dist };
     });
 
-    // Urutkan berdasarkan jarak terdekat
-    processed.sort((a, b) => a.distance - b.distance);
+    // Urutkan berdasarkan tanggal terdekat (bukan jarak)
+    processed.sort((a, b) => {
+      const dateA = a.event_date || '9999-12-31';
+      const dateB = b.event_date || '9999-12-31';
+      if (dateA !== dateB) return dateA.localeCompare(dateB);
+      // Jika tanggal sama, urutkan berdasarkan waktu
+      return (a.time || '').localeCompare(b.time || '');
+    });
 
     // Filter
     let filtered = processed.filter(item => {
