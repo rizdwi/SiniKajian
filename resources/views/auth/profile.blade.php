@@ -76,6 +76,7 @@
       </a>
     </div>
 
+    <div id="agendaListContainer" class="space-y-2">
     @php
       $allAgendaKajians = collect();
       if(isset($attendances)) {
@@ -133,6 +134,7 @@
         </a>
       </div>
     @endforelse
+    </div>
   </div>
 
   <!-- 4. Akun & Preferensi Grouped Card (Figma Screen 5) -->
@@ -539,7 +541,7 @@
       }
     } catch(e) {}
 
-    // 3. Sinkronisasi hitungan metrik dari localStorage
+    // 3. Sinkronisasi hitungan metrik dari localStorage & Hydrate Agenda Terdekat
     try {
       const localBookmarks = JSON.parse(localStorage.getItem('sinikajian_bookmarks') || '[]');
       const localFollows = JSON.parse(localStorage.getItem('sinikajian_followed_majelis') || '[]');
@@ -551,6 +553,90 @@
       if (followedEl && localFollows.length > Number(followedEl.innerText || 0)) {
         followedEl.innerText = localFollows.length;
       }
+
+      // Jika server belum menampilkan kartu agenda tersimpan, tetapi ada bookmark di localStorage
+      const emptyAgendaCard = document.getElementById('emptyAgendaCard');
+      const agendaContainer = document.getElementById('agendaListContainer');
+
+      if (emptyAgendaCard && agendaContainer && Array.isArray(localBookmarks) && localBookmarks.length > 0) {
+        fetch('/api/kajian')
+          .then(r => r.json())
+          .then(res => {
+            if (res.data && res.data.length > 0) {
+              const numericBookmarks = localBookmarks.map(Number);
+              const matched = res.data.filter(k => numericBookmarks.includes(Number(k.id)));
+              if (matched.length > 0) {
+                // Urutkan berdasarkan waktu pelaksanaan terdekat
+                matched.sort((a, b) => new Date(a.event_datetime || 0).getTime() - new Date(b.event_datetime || 0).getTime());
+                const topAgendas = matched.slice(0, 3);
+
+                if (emptyAgendaCard.parentNode) {
+                  emptyAgendaCard.remove();
+                }
+
+                topAgendas.forEach(agenda => {
+                  const dt = agenda.event_datetime ? new Date(agenda.event_datetime) : new Date();
+                  const dateNum = dt.getDate();
+                  const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN', 'JUL', 'AGU', 'SEP', 'OKT', 'NOV', 'DES'];
+                  const dateMonth = monthNames[dt.getMonth()] || 'HARI';
+
+                  const card = document.createElement('a');
+                  card.href = `/kajian/${agenda.id}`;
+                  card.className = 'block p-3 rounded-2xl bg-white border border-[#E5ECEB] hover:border-[#1D4D4F]/40 shadow-2xs transition group';
+                  card.innerHTML = `
+                    <div class="flex items-center gap-3">
+                      <div class="w-12 h-12 rounded-xl bg-[#EDF5F3] border border-[#D1ECE7] text-[#1D4D4F] flex flex-col items-center justify-center shrink-0">
+                        <span class="text-base font-black leading-none">${dateNum}</span>
+                        <span class="text-[9px] font-extrabold uppercase tracking-wider mt-0.5">${dateMonth}</span>
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <h4 class="text-xs sm:text-sm font-bold text-[#1C2224] truncate group-hover:text-[#1D4D4F] transition">
+                          ${agenda.title}
+                        </h4>
+                        <p class="text-[11px] text-[#607072] mt-0.5 truncate">
+                          ${agenda.time || ''} • ${agenda.masjid || ''}
+                        </p>
+                        <div class="inline-flex items-center gap-1 text-[9px] font-bold text-[#1D4D4F] bg-[#E8F5F2] px-2 py-0.5 rounded-full mt-1">
+                          <span class="w-1.5 h-1.5 rounded-full bg-[#1D4D4F]"></span>
+                          <span>Tersimpan di Agenda</span>
+                        </div>
+                      </div>
+                      <div class="text-[#607072] group-hover:text-[#1D4D4F] transition pr-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                      </div>
+                    </div>
+                  `;
+                  agendaContainer.appendChild(card);
+                });
+              }
+            }
+          })
+          .catch(e => console.warn('Gagal memuat agenda tersimpan:', e));
+      }
+
+      // 4. Sinkronisasikan bookmarks lokal ke server database jika user sedang login
+      @auth
+      if (Array.isArray(localBookmarks) && localBookmarks.length > 0) {
+        fetch('/api/bookmarks/sync', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ ids: localBookmarks })
+        })
+        .then(r => r.json())
+        .then(res => {
+          if (res && res.synced > 0) {
+            console.log('Bookmarks lokal berhasil disinkronkan ke server:', res.synced);
+          }
+        })
+        .catch(err => console.warn('Gagal auto-sync bookmark:', err));
+      }
+      @endauth
     } catch(e) {}
   });
 

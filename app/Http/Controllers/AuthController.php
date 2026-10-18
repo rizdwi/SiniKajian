@@ -116,17 +116,18 @@ class AuthController extends Controller
 
             $cutoff = \Carbon\Carbon::now('Asia/Jakarta')->subHours(3)->toDateTimeString();
             // Ambil kajian tersimpan dari Supabase / SQLite dengan filter cutoff aktif
-            $bookmarkedKajians = $this->getUserBookmarks($user->id)
-                ->filter(function ($k) use ($cutoff) {
-                    return $k->event_datetime >= $cutoff;
-                });
+            $allBookmarks = $this->getUserBookmarks($user->id);
+            $bookmarkedKajians = $allBookmarks->filter(function ($k) use ($cutoff) {
+                if (empty($k->event_datetime)) return true;
+                return $k->event_datetime >= $cutoff;
+            });
 
             // Ambil kehadiran dari Supabase (persisten)
             $attendances = $this->getUserAttendances($user->id);
 
             $submittedKajians = $user->submittedKajians()->latest()->get();
 
-            $savedCount = $bookmarkedKajians->count();
+            $savedCount = $allBookmarks->count();
             $agendaCount = $attendances->count();
 
             $dbFollowCount = \App\Models\MajelisFollow::where('user_id', $user->id)->count();

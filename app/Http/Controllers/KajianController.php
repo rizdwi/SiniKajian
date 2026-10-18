@@ -335,6 +335,66 @@ class KajianController extends Controller
     }
 
     /**
+     * Sinkronkan bookmark dari localStorage klien ke database akun server.
+     */
+    public function syncBookmarks(Request $request): JsonResponse
+    {
+        if (!Auth::check()) {
+            return response()->json(['status' => 'unauthenticated', 'synced' => 0], 401);
+        }
+
+        $userId = Auth::id();
+        $ids = $request->input('ids', []);
+        if (!is_array($ids) || empty($ids)) {
+            return response()->json(['status' => 'empty', 'synced' => 0]);
+        }
+
+        $cleanIds = array_filter(array_map('intval', $ids), fn($v) => $v > 0);
+        $validKajianIds = Kajian::whereIn('id', $cleanIds)->pluck('id')->toArray();
+        $synced = 0;
+
+        $supabaseUrl = config('services.supabase.url');
+        $supabaseKey = config('services.supabase.service_key');
+        $hasSupabase = !empty($supabaseUrl) && !empty($supabaseKey);
+
+        foreach ($validKajianIds as $kajianId) {
+            $exists = Bookmark::where('user_id', $userId)
+                ->where('kajian_id', $kajianId)
+                ->exists();
+
+            if (!$exists) {
+                Bookmark::create([
+                    'user_id' => $userId,
+                    'kajian_id' => $kajianId,
+                ]);
+                $synced++;
+
+                if ($hasSupabase) {
+                    try {
+                        \Illuminate\Support\Facades\Http::withHeaders([
+                            'apikey' => $supabaseKey,
+                            'Authorization' => 'Bearer ' . $supabaseKey,
+                            'Prefer' => 'return=minimal',
+                            'Content-Type' => 'application/json',
+                        ])->timeout(5)->post("{$supabaseUrl}/rest/v1/bookmarks", [
+                            'user_id' => $userId,
+                            'kajian_id' => $kajianId,
+                        ]);
+                    } catch (\Exception $e) {
+                        // ignore
+                    }
+                }
+            }
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'synced' => $synced,
+            'total' => Bookmark::where('user_id', $userId)->count(),
+        ]);
+    }
+
+    /**
      * Catat kehadiran kajian (RSVP).
      */
     public function logAttendance(Request $request, Kajian $kajian): JsonResponse

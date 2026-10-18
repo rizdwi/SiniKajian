@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Bookmark;
 use App\Models\Kajian;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -389,5 +390,77 @@ class SiniKajianTest extends TestCase
             'user_id' => $user->id,
             'masjid' => 'Masjid Salman ITB',
         ]);
+    }
+
+    /**
+     * Uji sinkronisasi bookmark lokal klien ke database server.
+     */
+    public function test_sync_bookmarks_from_local_storage_to_database(): void
+    {
+        $user = User::create([
+            'name' => 'User Sync Test',
+            'email' => 'sync_' . uniqid() . '@contoh.id',
+            'password' => Hash::make('secret123'),
+        ]);
+
+        $kajian1 = Kajian::create([
+            'title' => 'Kajian Sync 1',
+            'ustadz' => 'Ustadz Sync',
+            'masjid' => 'Masjid Sync',
+            'address' => 'Jl. Sync No. 1',
+            'lat' => -6.9,
+            'lon' => 107.6,
+            'category' => 'Tematik',
+            'day' => 'Besok',
+            'time' => '09:00 WIB',
+            'event_datetime' => \Carbon\Carbon::now('Asia/Jakarta')->addDays(1),
+            'verified' => true,
+            'is_rutin' => false,
+        ]);
+
+        $kajian2 = Kajian::create([
+            'title' => 'Kajian Sync 2',
+            'ustadz' => 'Ustadz Sync 2',
+            'masjid' => 'Masjid Sync 2',
+            'address' => 'Jl. Sync No. 2',
+            'lat' => -6.9,
+            'lon' => 107.6,
+            'category' => 'Fiqih',
+            'day' => 'Lusa',
+            'time' => '13:00 WIB',
+            'event_datetime' => \Carbon\Carbon::now('Asia/Jakarta')->addDays(2),
+            'verified' => true,
+            'is_rutin' => false,
+        ]);
+
+        $this->actingAs($user);
+
+        // Sync dua kajian
+        $response = $this->postJson('/api/bookmarks/sync', [
+            'ids' => [$kajian1->id, $kajian2->id],
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'status' => 'success',
+            'synced' => 2,
+            'total' => 2,
+        ]);
+
+        $this->assertDatabaseHas('bookmarks', ['user_id' => $user->id, 'kajian_id' => $kajian1->id]);
+        $this->assertDatabaseHas('bookmarks', ['user_id' => $user->id, 'kajian_id' => $kajian2->id]);
+
+        // Kunjungi halaman profil dan pastikan kajian muncul di agenda terdekat
+        $profileRes = $this->get('/profil');
+        $profileRes->assertStatus(200);
+        $profileRes->assertSee('Kajian Sync 1');
+        $profileRes->assertSee('Kajian Sync 2');
+        $profileRes->assertSee('Tersimpan di Agenda');
+
+        // Cleanup data test
+        Bookmark::where('user_id', $user->id)->delete();
+        $kajian1->delete();
+        $kajian2->delete();
+        $user->delete();
     }
 }

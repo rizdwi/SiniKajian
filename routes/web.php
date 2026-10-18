@@ -20,6 +20,7 @@ Route::get('/tersimpan', [KajianController::class, 'saved'])->name('kajian.saved
 // Interaksi Kajian
 Route::post('/kajian', [KajianController::class, 'store'])->name('kajian.store');
 Route::post('/kajian/{kajian}/bookmark', [KajianController::class, 'toggleBookmark'])->name('kajian.bookmark');
+Route::post('/api/bookmarks/sync', [KajianController::class, 'syncBookmarks'])->name('api.bookmarks.sync');
 Route::post('/kajian/{kajian}/kehadiran', [KajianController::class, 'logAttendance'])->name('kajian.attendance');
 Route::post('/majelis/follow', [KajianController::class, 'toggleFollowMajelis'])->name('majelis.follow');
 Route::get('/api/kajian', [KajianController::class, 'apiList'])->name('api.kajian');

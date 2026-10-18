@@ -235,6 +235,21 @@
             }
           });
       }
+
+      // Auto-sync bookmarks lokal ke server database jika user sudah login
+      @auth
+      if (Array.isArray(savedIds) && savedIds.length > 0) {
+        fetch('/api/bookmarks/sync', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ ids: savedIds })
+        }).catch(() => {});
+      }
+      @endauth
     } catch(e) {}
   });
 </script>
