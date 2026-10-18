@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Attendance;
 use App\Models\Bookmark;
 use App\Models\Kajian;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,19 +21,23 @@ class KajianController extends Controller
     public function index(Request $request): View
     {
         // Otomatis hapus kajian yang sudah lewat 3-6 jam dari jadwal
-        Kajian::purgeExpiredKajians(4);
+        Kajian::purgeExpiredKajians(3);
+
+        $cutoff = Carbon::now('Asia/Jakarta')->subHours(3);
 
         // Cache categories (berubah jarang)
-        $categories = Cache::remember('kajian_categories', 3600, function () {
+        $categories = Cache::remember('kajian_categories', 3600, function () use ($cutoff) {
             return Kajian::where('verified', true)
+                ->where('event_datetime', '>=', $cutoff)
                 ->distinct()
                 ->pluck('category')
                 ->filter()
                 ->values();
         });
 
-        // Query kajian terdekat & aktif
+        // Query kajian terdekat & aktif (hanya yang belum lewat > 3 jam)
         $query = Kajian::where('verified', true)
+            ->where('event_datetime', '>=', $cutoff)
             ->select(['id', 'title', 'ustadz', 'day', 'time', 'masjid', 'address', 'lat', 'lon', 'category', 'audience', 'poster_url', 'event_datetime', 'source', 'source_url']);
 
         if ($request->filled('kategori') && $request->kategori !== 'Semua') {
@@ -59,8 +64,9 @@ class KajianController extends Controller
         // Urutkan berdasarkan waktu kajian terdekat
         $kajians = $query->orderBy('event_datetime', 'asc')->paginate(20)->withQueryString();
 
-        // JSON untuk peta & kartu feed client-side
+        // JSON untuk peta & kartu feed client-side (hanya kajian aktif)
         $mapKajians = Kajian::where('verified', true)
+            ->where('event_datetime', '>=', $cutoff)
             ->select(['id', 'title', 'ustadz', 'day', 'time', 'masjid', 'address', 'lat', 'lon', 'category', 'audience', 'poster_url', 'event_datetime', 'source', 'source_url', 'description'])
             ->orderBy('event_datetime', 'asc')
             ->get();
@@ -105,10 +111,12 @@ class KajianController extends Controller
     /**
      * API JSON untuk integrasi mobile atau map renderer.
      */
-    public function apiList(Request $request): JsonResponse
+    public function apiList(): JsonResponse
     {
-        Kajian::purgeExpiredKajians(4);
+        Kajian::purgeExpiredKajians(3);
+        $cutoff = Carbon::now('Asia/Jakarta')->subHours(3);
         $kajians = Kajian::where('verified', true)
+            ->where('event_datetime', '>=', $cutoff)
             ->orderBy('event_datetime', 'asc')
             ->get();
         return response()->json([
@@ -122,8 +130,10 @@ class KajianController extends Controller
      */
     public function map(): View
     {
-        Kajian::purgeExpiredKajians(4);
+        Kajian::purgeExpiredKajians(3);
+        $cutoff = Carbon::now('Asia/Jakarta')->subHours(3);
         $kajians = Kajian::where('verified', true)
+            ->where('event_datetime', '>=', $cutoff)
             ->orderBy('event_datetime', 'asc')
             ->get();
 
@@ -147,12 +157,18 @@ class KajianController extends Controller
      */
     public function saved(): View
     {
+        Kajian::purgeExpiredKajians(3);
+        $cutoff = Carbon::now('Asia/Jakarta')->subHours(3);
         $user = Auth::user();
         $bookmarkedKajians = collect();
         $attendances = collect();
 
         if ($user) {
-            $bookmarkedKajians = $user->bookmarkedKajians()->get();
+            $bookmarkedKajians = $user->bookmarkedKajians()
+                ->where('verified', true)
+                ->where('event_datetime', '>=', $cutoff)
+                ->orderBy('event_datetime', 'asc')
+                ->get();
             $attendances = $user->attendances()->with('kajian')->latest()->get();
         }
 
@@ -196,7 +212,7 @@ class KajianController extends Controller
     /**
      * Toggle bookmark kajian.
      */
-    public function toggleBookmark(Request $request, Kajian $kajian): JsonResponse
+    public function toggleBookmark(Request $request, Kajian $kajian): JsonResponse|\Illuminate\Http\RedirectResponse
     {
         if (Auth::check()) {
             $existing = Bookmark::where('user_id', Auth::id())
@@ -206,25 +222,38 @@ class KajianController extends Controller
             if ($existing) {
                 $existing->delete();
                 $saved = false;
+                $msg = 'Kajian dihapus dari tersimpan.';
             } else {
                 Bookmark::create([
                     'user_id' => Auth::id(),
                     'kajian_id' => $kajian->id,
                 ]);
                 $saved = true;
+                $msg = 'Kajian berhasil disimpan.';
+            }
+
+            if (!$request->wantsJson() && !$request->ajax()) {
+                return back()->with('success', $msg);
             }
 
             return response()->json([
                 'status' => 'success',
                 'saved' => $saved,
                 'kajian_id' => $kajian->id,
+                'message' => $msg,
             ]);
         }
 
+        if (!$request->wantsJson() && !$request->ajax()) {
+            return redirect()->route('login')->with('error', 'Silakan masuk untuk menyimpan bookmark.');
+        }
+
         return response()->json([
-            'status' => 'auth_required',
-            'message' => 'Silakan masuk untuk menyimpan bookmark ke akun Anda.',
-        ], 401);
+            'status' => 'guest',
+            'saved' => null,
+            'message' => 'Tersimpan lokal di perangkat ini. Masuk akun untuk sinkronisasi cloud.',
+            'kajian_id' => $kajian->id,
+        ], 200);
     }
 
     /**

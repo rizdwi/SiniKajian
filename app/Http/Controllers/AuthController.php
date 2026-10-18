@@ -61,13 +61,7 @@ class AuthController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'password' => [
-                'required', 'string', 'confirmed',
-                Password::min(8)
-                    ->numbers()
-                    ->symbols()
-                    ->uncompromised(),
-            ],
+            'password' => ['required', 'string', 'confirmed', Password::min(6)],
         ]);
 
         $user = User::create([
@@ -90,31 +84,38 @@ class AuthController extends Controller
     /**
      * Tampilkan dashboard profil jamaah & ringkasan akun.
      */
-    public function profile(): \Illuminate\Http\RedirectResponse|View
+    public function profile(): View
     {
-        if (!Auth::check()) {
-            return redirect()->route('login')->with('error', 'Silakan login dulu.');
-        }
-        /** @var User $user */
+        /** @var User|null $user */
         $user = Auth::user();
 
-        // Ambil kajian tersimpan yang masih aktif
-        $bookmarkedKajians = $user->bookmarkedKajians()
-            ->where('verified', true)
-            ->orderBy('event_datetime', 'asc')
-            ->get();
+        if ($user) {
+            $cutoff = \Carbon\Carbon::now('Asia/Jakarta')->subHours(3);
+            $bookmarkedKajians = $user->bookmarkedKajians()
+                ->where('verified', true)
+                ->where('event_datetime', '>=', $cutoff)
+                ->orderBy('event_datetime', 'asc')
+                ->get();
 
-        $attendances = $user->attendances()
-            ->with('kajian')
-            ->latest()
-            ->take(10)
-            ->get();
+            $attendances = $user->attendances()
+                ->with('kajian')
+                ->latest()
+                ->take(10)
+                ->get();
 
-        $submittedKajians = $user->submittedKajians()->latest()->get();
+            $submittedKajians = $user->submittedKajians()->latest()->get();
 
-        $savedCount = $bookmarkedKajians->count();
-        $agendaCount = $attendances->count();
-        $majelisCount = $user->bookmarkedKajians()->distinct('masjid')->count('masjid');
+            $savedCount = $bookmarkedKajians->count();
+            $agendaCount = $attendances->count();
+            $majelisCount = $user->bookmarkedKajians()->distinct('masjid')->count('masjid');
+        } else {
+            $bookmarkedKajians = collect();
+            $attendances = collect();
+            $submittedKajians = collect();
+            $savedCount = 0;
+            $agendaCount = 0;
+            $majelisCount = 0;
+        }
 
         return view('auth.profile', [
             'user' => $user,
@@ -143,27 +144,31 @@ class AuthController extends Controller
      */
     public function updateProfile(Request $request): RedirectResponse
     {
-        /** @var User $user */
+        /** @var User|null $user */
         $user = Auth::user();
+
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Silakan masuk terlebih dahulu.');
+        }
 
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email,' . $user->id,
-            'avatar' => 'nullable|image|max:3072',
+            'avatar' => 'nullable|image|max:5120',
             'avatar_data' => 'nullable|string',
         ]);
 
         $user->name = $request->name;
         $user->email = $request->email;
 
-        // Simpan avatar sebagai base64 string di SQLite agar tidak hilang pada lingkungan serverless/container
-        if ($request->hasFile('avatar') && $request->file('avatar')->isValid()) {
+        // Simpan avatar sebagai base64 data URI di SQLite agar persisten di serverless
+        if ($request->filled('avatar_data') && str_starts_with($request->avatar_data, 'data:image')) {
+            $user->avatar = $request->avatar_data;
+        } elseif ($request->hasFile('avatar') && $request->file('avatar')->isValid()) {
             $file = $request->file('avatar');
             $mime = $file->getMimeType();
             $base64 = base64_encode(file_get_contents($file->getRealPath()));
             $user->avatar = 'data:' . $mime . ';base64,' . $base64;
-        } elseif ($request->filled('avatar_data') && str_starts_with($request->avatar_data, 'data:image')) {
-            $user->avatar = $request->avatar_data;
         }
 
         $user->save();

@@ -212,4 +212,143 @@ class SiniKajianTest extends TestCase
         $this->assertStringStartsWith('https://', route('logout'));
         $this->assertStringStartsWith('https://', route('profile.update'));
     }
+
+    /**
+     * Uji alur otentikasi login dengan kredensial valid dan proteksi kegagalan login.
+     */
+    public function test_login_flow_with_credentials_and_validation(): void
+    {
+        $email = 'jamaah_login_' . uniqid() . '@contoh.id';
+        User::create([
+            'name' => 'Jamaah Login Test',
+            'email' => $email,
+            'password' => Hash::make('password123'),
+        ]);
+
+        // Gagal login jika password salah
+        $failResponse = $this->post('/masuk', [
+            'email' => $email,
+            'password' => 'wrongpassword',
+        ]);
+        $failResponse->assertSessionHasErrors('email');
+        $this->assertGuest();
+
+        // Berhasil login jika kredensial benar
+        $successResponse = $this->post('/masuk', [
+            'email' => $email,
+            'password' => 'password123',
+        ]);
+        $successResponse->assertRedirect('/profil');
+        $this->assertAuthenticated();
+    }
+
+    /**
+     * Uji registrasi akun baru pengguna.
+     */
+    public function test_registration_flow_creates_user_and_authenticates(): void
+    {
+        $regEmail = 'daftar_' . uniqid() . '@contoh.id';
+        $response = $this->post('/daftar', [
+            'name' => 'Fulan Baru',
+            'email' => $regEmail,
+            'password' => 'aman12345',
+            'password_confirmation' => 'aman12345',
+        ]);
+
+        $response->assertRedirect(route('verification.notice'));
+        $this->assertAuthenticated();
+        $this->assertDatabaseHas('users', ['email' => $regEmail, 'name' => 'Fulan Baru']);
+    }
+
+    /**
+     * Uji bookmark kajian via AJAX JSON dan via standard Web Form POST.
+     */
+    public function test_bookmark_toggle_via_ajax_and_standard_form(): void
+    {
+        $user = User::create([
+            'name' => 'User Bookmark Test',
+            'email' => 'bm_' . uniqid() . '@contoh.id',
+            'password' => Hash::make('secret123'),
+        ]);
+
+        $kajian = Kajian::create([
+            'title' => 'Kajian Uji Bookmark',
+            'ustadz' => 'Ustadz Uji',
+            'masjid' => 'Masjid Uji',
+            'address' => 'Jl. Uji No. 1',
+            'lat' => -6.9,
+            'lon' => 107.6,
+            'category' => 'Tematik',
+            'day' => 'Ahad',
+            'time' => '10:00 WIB',
+            'event_datetime' => \Carbon\Carbon::now('Asia/Jakarta')->addDays(2),
+            'verified' => true,
+            'is_rutin' => false,
+        ]);
+
+        $this->actingAs($user);
+
+        // 1. Toggle via AJAX JSON (Bookmark)
+        $ajaxResponse = $this->postJson("/kajian/{$kajian->id}/bookmark");
+        $ajaxResponse->assertStatus(200);
+        $ajaxResponse->assertJson(['status' => 'success', 'saved' => true]);
+        $this->assertDatabaseHas('bookmarks', ['user_id' => $user->id, 'kajian_id' => $kajian->id]);
+
+        // 2. Toggle via Standard Form POST (Unbookmark)
+        $formResponse = $this->post("/kajian/{$kajian->id}/bookmark");
+        $formResponse->assertRedirect();
+        $this->assertDatabaseMissing('bookmarks', ['user_id' => $user->id, 'kajian_id' => $kajian->id]);
+    }
+
+    /**
+     * Uji pembersihan kajian yang lewat > 3 jam aktual dari jam mulainya (flyer).
+     */
+    public function test_kajian_past_3_hours_is_automatically_purged(): void
+    {
+        $nowWib = \Carbon\Carbon::now('Asia/Jakarta');
+
+        // Kajian yang baru lewat 1 jam (masih aktif)
+        $activeKajian = Kajian::create([
+            'title' => 'Kajian Masih Aktif Baru Lewat 1 Jam',
+            'ustadz' => 'Ustadz Aktif',
+            'masjid' => 'Masjid Aktif',
+            'address' => 'Jl. Aktif No. 1',
+            'lat' => -6.9,
+            'lon' => 107.6,
+            'category' => 'Tematik',
+            'day' => 'Hari Ini',
+            'time' => '07.00 WIB',
+            'event_datetime' => $nowWib->copy()->subHours(1),
+            'verified' => true,
+            'is_rutin' => false,
+        ]);
+
+        // Kajian yang sudah lewat 4 jam (harus otomatis terhapus)
+        $expiredKajian = Kajian::create([
+            'title' => 'Kajian Lewat 4 Jam Harus Dihapus',
+            'ustadz' => 'Ustadz Expired',
+            'masjid' => 'Masjid Expired',
+            'address' => 'Jl. Expired No. 1',
+            'lat' => -6.9,
+            'lon' => 107.6,
+            'category' => 'Tematik',
+            'day' => 'Hari Ini',
+            'time' => '03.00 WIB',
+            'event_datetime' => $nowWib->copy()->subHours(4),
+            'verified' => true,
+            'is_rutin' => false,
+        ]);
+
+        $this->assertDatabaseHas('kajians', ['id' => $expiredKajian->id]);
+        $this->assertDatabaseHas('kajians', ['id' => $activeKajian->id]);
+
+        // Jalankan purgeExpiredKajians dengan threshold 3 jam
+        $purgedCount = Kajian::purgeExpiredKajians(3);
+        $this->assertGreaterThanOrEqual(1, $purgedCount);
+
+        // Kajian lewat 4 jam terhapus
+        $this->assertDatabaseMissing('kajians', ['id' => $expiredKajian->id]);
+        // Kajian lewat 1 jam tetap ada
+        $this->assertDatabaseHas('kajians', ['id' => $activeKajian->id]);
+    }
 }

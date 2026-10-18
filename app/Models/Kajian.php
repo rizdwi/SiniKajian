@@ -103,23 +103,12 @@ class Kajian extends Model
     /**
      * Otomatis hapus kajian dari database jika jam kajian sudah lewat 3-6 jam.
      */
-    public static function purgeExpiredKajians(int $hours = 4): int
+    public static function purgeExpiredKajians(int $hours = 3): int
     {
-        $cutoff = Carbon::now()->subHours($hours);
+        $cutoff = Carbon::now('Asia/Jakarta')->subHours($hours);
 
-        // Rutin: majukan jadwal +7 hari jika sudah lewat
-        $rutinExpired = self::where('is_rutin', true)
-            ->whereNotNull('event_datetime')
-            ->where('event_datetime', '<', $cutoff)
-            ->get();
-        foreach ($rutinExpired as $k) {
-            $k->event_datetime = Carbon::parse($k->event_datetime)->addDays(7);
-            $k->save();
-        }
-
-        // Non-rutin: otomatis terhapus dari database agar user tidak bingung
-        return self::where('is_rutin', false)
-            ->whereNotNull('event_datetime')
+        // Hapus permanen seluruh rekaman kajian yang telah lewat > 3 jam agar jamaah tidak bingung
+        return self::whereNotNull('event_datetime')
             ->where('event_datetime', '<', $cutoff)
             ->delete();
     }

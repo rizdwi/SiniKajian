@@ -280,45 +280,51 @@
   });
 
   function toggleBookmarkDetailPage(id, btn) {
+    const numericId = Number(id);
     let savedList = [];
     try {
       savedList = JSON.parse(localStorage.getItem('sinikajian_bookmarks') || '[]');
     } catch(e) {}
 
-    const icon = document.getElementById('bookmarkDetailIcon');
+    const wasSaved = savedList.includes(numericId);
+    const newSaved = !wasSaved;
 
-    fetch(`/kajian/${id}/bookmark`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': CSRF_TOKEN
-      }
-    })
-    .then(r => r.json())
-    .then(res => {
-      if (res.saved) {
-        if (!savedList.includes(id)) savedList.push(id);
+    if (newSaved) {
+      if (!savedList.includes(numericId)) savedList.push(numericId);
+    } else {
+      savedList = savedList.filter(x => Number(x) !== numericId);
+    }
+
+    try {
+      localStorage.setItem('sinikajian_bookmarks', JSON.stringify(savedList));
+    } catch(e) {}
+
+    const icon = document.getElementById('bookmarkDetailIcon');
+    if (icon) {
+      if (newSaved) {
         icon.classList.add('text-amber-300');
         icon.setAttribute('fill', 'currentColor');
       } else {
-        savedList = savedList.filter(x => x !== id);
         icon.classList.remove('text-amber-300');
         icon.setAttribute('fill', 'none');
       }
-      localStorage.setItem('sinikajian_bookmarks', JSON.stringify(savedList));
-    })
-    .catch(() => {
-      if (savedList.includes(id)) {
-        savedList = savedList.filter(x => x !== id);
-        icon.classList.remove('text-amber-300');
-        icon.setAttribute('fill', 'none');
-      } else {
-        savedList.push(id);
-        icon.classList.add('text-amber-300');
-        icon.setAttribute('fill', 'currentColor');
-      }
-      localStorage.setItem('sinikajian_bookmarks', JSON.stringify(savedList));
-    });
+    }
+
+    showToastNotification(newSaved ? 'Kajian berhasil disimpan!' : 'Kajian dihapus dari tersimpan.');
+
+    const isLoggedIn = {{ Auth::check() ? 'true' : 'false' }};
+    if (isLoggedIn) {
+      fetch(`/kajian/${numericId}/bookmark`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': CSRF_TOKEN,
+          'Accept': 'application/json'
+        }
+      })
+      .then(r => r.json())
+      .catch(err => console.warn('Gagal sinkronisasi bookmark server:', err));
+    }
   }
 
   function rsvpAttendance(id) {

@@ -21,12 +21,12 @@ foreach ($dirs as $dir) {
     }
 }
 
-// 2. Salin SQLite database dengan data kajian & akun ke /tmp jika di Vercel
+// 2. Salin SQLite database dengan data kajian & akun ke /tmp jika di Vercel (hanya jika target belum ada)
 $sourceDb = __DIR__ . '/../database/database.sqlite';
 $targetDb = $tmp . '/database.sqlite';
 
 if (file_exists($sourceDb)) {
-    if (!file_exists($targetDb) || filesize($targetDb) !== filesize($sourceDb) || @md5_file($sourceDb) !== @md5_file($targetDb)) {
+    if (!file_exists($targetDb)) {
         @copy($sourceDb, $targetDb);
     }
 } elseif (!file_exists($targetDb)) {
@@ -59,6 +59,11 @@ if (file_exists($targetDb)) {
 }
 
 // 3. Konfigurasi runtime environment overrides untuk Vercel Serverless
+date_default_timezone_set('Asia/Jakarta');
+putenv('APP_TIMEZONE=Asia/Jakarta');
+$_ENV['APP_TIMEZONE'] = 'Asia/Jakarta';
+$_SERVER['APP_TIMEZONE'] = 'Asia/Jakarta';
+
 putenv('VERCEL=1');
 $_ENV['VERCEL'] = '1';
 $_SERVER['VERCEL'] = '1';
@@ -68,11 +73,6 @@ $_SERVER['HTTP_X_FORWARDED_PROTO'] = 'https';
 putenv('APP_ENV=production');
 $_ENV['APP_ENV'] = 'production';
 $_SERVER['APP_ENV'] = 'production';
-
-// Force file session driver (cookie bermasalah di Vercel)
-putenv('SESSION_DRIVER=file');
-$_ENV['SESSION_DRIVER'] = 'file';
-$_SERVER['SESSION_DRIVER'] = 'file';
 
 if (!getenv('APP_KEY') && !isset($_ENV['APP_KEY'])) {
     $fallbackKey = 'base64:eneFvNA7mfb/CrYt8SVrrRaHH+nRCD+cZ8pZDsnV72M=';
@@ -96,6 +96,8 @@ putenv('APP_DEBUG=true');
 putenv('APP_URL=https://sinikajian.vercel.app');
 putenv('SESSION_DRIVER=cookie');
 putenv('SESSION_LIFETIME=120');
+putenv('SESSION_SECURE_COOKIE=true');
+putenv('SESSION_SAME_SITE=lax');
 putenv('CACHE_STORE=array');
 
 $_ENV['APP_NAME'] = 'SiniKajian';
@@ -103,6 +105,8 @@ $_ENV['APP_DEBUG'] = 'true';
 $_ENV['APP_URL'] = 'https://sinikajian.vercel.app';
 $_ENV['SESSION_DRIVER'] = 'cookie';
 $_ENV['SESSION_LIFETIME'] = '120';
+$_ENV['SESSION_SECURE_COOKIE'] = 'true';
+$_ENV['SESSION_SAME_SITE'] = 'lax';
 $_ENV['CACHE_STORE'] = 'array';
 
 $_SERVER['APP_NAME'] = 'SiniKajian';
@@ -110,6 +114,8 @@ $_SERVER['APP_DEBUG'] = 'true';
 $_SERVER['APP_URL'] = 'https://sinikajian.vercel.app';
 $_SERVER['SESSION_DRIVER'] = 'cookie';
 $_SERVER['SESSION_LIFETIME'] = '120';
+$_SERVER['SESSION_SECURE_COOKIE'] = 'true';
+$_SERVER['SESSION_SAME_SITE'] = 'lax';
 $_SERVER['CACHE_STORE'] = 'array';
 $_SERVER['SCRIPT_NAME'] = '/index.php';
 $_SERVER['PHP_SELF'] = '/index.php';

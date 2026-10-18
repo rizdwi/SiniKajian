@@ -220,15 +220,20 @@
     <!-- Mobile Drag Handle -->
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto sm:hidden mb-1"></div>
     
-    <!-- Top Navigation Bar: Back Chevron, Title, Share Button -->
+    <!-- Top Navigation Bar: Back Chevron, Title, Bookmark & Share Buttons -->
     <div class="flex items-center justify-between border-b border-[#E5ECEB] pb-3">
       <button onclick="closeDetailModal()" class="w-9 h-9 rounded-full bg-[#F8FAF9] hover:bg-[#E6F4F1] border border-[#E5ECEB] text-[#1D4D4F] flex items-center justify-center touch-btn" aria-label="Kembali">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
       </button>
       <h2 class="text-sm font-bold text-[#1C2224]">Detail Kajian</h2>
-      <button onclick="shareCurrentKajian()" class="w-9 h-9 rounded-full bg-[#F8FAF9] hover:bg-[#E6F4F1] border border-[#E5ECEB] text-[#1D4D4F] flex items-center justify-center touch-btn" aria-label="Bagikan">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
-      </button>
+      <div class="flex items-center gap-1.5">
+        <button id="modalBookmarkBtn" onclick="toggleModalBookmark()" class="w-9 h-9 rounded-full bg-[#F8FAF9] hover:bg-[#E6F4F1] border border-[#E5ECEB] text-[#607072] flex items-center justify-center touch-btn transition" aria-label="Tandai / Simpan">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
+        </button>
+        <button onclick="shareCurrentKajian()" class="w-9 h-9 rounded-full bg-[#F8FAF9] hover:bg-[#E6F4F1] border border-[#E5ECEB] text-[#1D4D4F] flex items-center justify-center touch-btn" aria-label="Bagikan">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+        </button>
+      </div>
     </div>
 
     <!-- Hero Media Card (Flyer Preview / Mosque) -->
@@ -536,6 +541,13 @@
   // Seluruh database kajian dari controller Laravel 13
   const rawKajians = {!! $allKajiansJson !!};
   const userBookmarkIds = new Set({!! json_encode($userBookmarks) !!});
+  // Sinkronkan bookmark dari localStorage
+  try {
+    const localSaved = JSON.parse(localStorage.getItem('sinikajian_bookmarks') || '[]');
+    if (Array.isArray(localSaved)) {
+      localSaved.forEach(id => userBookmarkIds.add(Number(id)));
+    }
+  } catch(e) {}
   const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
   // Titik koordinat Ka'bah (Mekkah)
@@ -720,9 +732,10 @@
       }
       document.getElementById('spotlightDetailBtn').onclick = () => openDetailModalWithEvent(top);
       
-      const isTopSaved = userBookmarkIds.has(top.id);
+      const isTopSaved = userBookmarkIds.has(Number(top.id));
       const topBookmarkBtn = document.getElementById('spotlightBookmarkBtn');
       if (topBookmarkBtn) {
+        topBookmarkBtn.setAttribute('data-kajian-id', top.id);
         topBookmarkBtn.innerHTML = `
           <svg class="w-4 h-4" fill="${isTopSaved ? '#FCD34D' : 'none'}" stroke="${isTopSaved ? '#FCD34D' : 'currentColor'}" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
@@ -803,7 +816,7 @@
           </div>
           
           <div class="self-center flex flex-col items-center gap-2 pl-1">
-            <button onclick="event.stopPropagation(); toggleBookmarkAction(${ev.id}, this)" class="bookmark-btn p-1.5 rounded-full ${isSaved ? 'text-amber-500 bg-amber-50' : 'text-[#607072] hover:text-[#1D4D4F]'} transition touch-btn" aria-label="Simpan">
+            <button data-kajian-id="${ev.id}" onclick="event.stopPropagation(); toggleBookmarkAction(${ev.id}, this)" class="bookmark-btn p-1.5 rounded-full ${isSaved ? 'text-amber-500 bg-amber-50' : 'text-[#607072] hover:text-[#1D4D4F]'} transition touch-btn" aria-label="Simpan">
               <svg class="w-4 h-4" fill="${isSaved ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
               </svg>
@@ -872,8 +885,19 @@
     attendBtn.className = 'w-full py-3 rounded-full bg-[#1D4D4F] hover:bg-[#153A3B] text-white text-xs font-extrabold shadow-sm touch-btn flex items-center justify-center gap-2 transition';
     attendLabel.innerText = 'Saya Ingin Hadir';
 
+    // Status tombol bookmark modal
+    const modalBmBtn = document.getElementById('modalBookmarkBtn');
+    if (modalBmBtn) {
+      updateBookmarkBtn(modalBmBtn, userBookmarkIds.has(Number(ev.id)));
+    }
+
     document.getElementById('modalRouteBtn').onclick = () => openGoogleMapsRoute(ev.lat, ev.lon);
     document.getElementById('detailModal').classList.remove('hidden');
+  }
+
+  function toggleModalBookmark() {
+    if (!currentDetailEvent) return;
+    toggleBookmarkAction(currentDetailEvent.id, document.getElementById('modalBookmarkBtn'));
   }
 
   function submitModalAttendance() {
@@ -1109,49 +1133,126 @@
     }
   }
 
-  // 8. Bookmark Interaktif
+  // 8. Bookmark Interaktif (Offline-first & Cloud-synced)
   function toggleBookmarkAction(kajianId, btnEl) {
-    const isLoggedIn = {{ Auth::check() ? 'true' : 'false' }};
-    if (!isLoggedIn) {
-      window.location.href = '{{ route("login") }}';
-      return;
+    const numericId = Number(kajianId);
+    const wasSaved = userBookmarkIds.has(numericId);
+    const newSaved = !wasSaved;
+
+    // 1. Optimistic update local Set
+    if (newSaved) {
+      userBookmarkIds.add(numericId);
+    } else {
+      userBookmarkIds.delete(numericId);
     }
-    fetch(`/kajian/${kajianId}/bookmark`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': CSRF_TOKEN
-      }
-    })
-    .then(res => {
-      if (res.status === 401) {
-        window.location.href = '{{ route("login") }}';
-        return;
-      }
-      return res.json();
-    })
-    .then(data => {
-      if (!data) return;
-      updateBookmarkBtn(btnEl, data.saved);
-      if (data.saved) userBookmarkIds.add(kajianId); else userBookmarkIds.delete(kajianId);
-    })
-    .catch(err => {
-      console.warn('Gagal mengubah bookmark:', err);
+
+    // 2. Persist in localStorage
+    try {
+      localStorage.setItem('sinikajian_bookmarks', JSON.stringify(Array.from(userBookmarkIds)));
+    } catch(e) {}
+
+    // 3. Update all related buttons across page
+    syncAllBookmarkButtons(numericId, newSaved);
+    showBookmarkToast(newSaved ? 'Kajian berhasil disimpan!' : 'Kajian dihapus dari tersimpan.');
+
+    // 4. Sinkronkan ke server jika pengguna sudah login
+    const isLoggedIn = {{ Auth::check() ? 'true' : 'false' }};
+    if (isLoggedIn) {
+      fetch(`/kajian/${numericId}/bookmark`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': CSRF_TOKEN,
+          'Accept': 'application/json'
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data && typeof data.saved === 'boolean') {
+          if (data.saved !== newSaved) {
+            syncAllBookmarkButtons(numericId, data.saved);
+            if (data.saved) userBookmarkIds.add(numericId); else userBookmarkIds.delete(numericId);
+          }
+        }
+      })
+      .catch(err => {
+        console.warn('Gagal sinkronisasi bookmark server:', err);
+      });
+    }
+  }
+
+  function syncAllBookmarkButtons(numericId, saved) {
+    document.querySelectorAll(`.bookmark-btn[data-kajian-id="${numericId}"]`).forEach(btn => {
+      updateBookmarkBtn(btn, saved);
     });
+    const spotlightBtn = document.getElementById('spotlightBookmarkBtn');
+    if (spotlightBtn && spotlightBtn.getAttribute('data-kajian-id') == numericId) {
+      updateBookmarkBtn(spotlightBtn, saved);
+    }
+    if (currentDetailEvent && Number(currentDetailEvent.id) === numericId) {
+      const modalBtn = document.getElementById('modalBookmarkBtn');
+      if (modalBtn) updateBookmarkBtn(modalBtn, saved);
+    }
   }
 
   function updateBookmarkBtn(btnEl, saved) {
-    if (saved) {
-      btnEl.classList.remove('text-[#607072]');
-      btnEl.classList.add('text-amber-500', 'bg-amber-50');
+    if (!btnEl) return;
+    const isSpotlight = btnEl.id === 'spotlightBookmarkBtn';
+    const isModal = btnEl.id === 'modalBookmarkBtn';
+
+    if (isSpotlight) {
       const svg = btnEl.querySelector('svg');
-      if (svg) svg.setAttribute('fill', 'currentColor');
+      if (svg) {
+        svg.setAttribute('fill', saved ? '#FCD34D' : 'none');
+        svg.setAttribute('stroke', saved ? '#FCD34D' : 'currentColor');
+      }
+    } else if (isModal) {
+      if (saved) {
+        btnEl.className = 'w-9 h-9 rounded-full bg-amber-50 border border-amber-200 text-amber-500 flex items-center justify-center touch-btn transition';
+        const svg = btnEl.querySelector('svg');
+        if (svg) svg.setAttribute('fill', 'currentColor');
+      } else {
+        btnEl.className = 'w-9 h-9 rounded-full bg-[#F8FAF9] hover:bg-[#E6F4F1] border border-[#E5ECEB] text-[#607072] flex items-center justify-center touch-btn transition';
+        const svg = btnEl.querySelector('svg');
+        if (svg) svg.setAttribute('fill', 'none');
+      }
     } else {
-      btnEl.classList.add('text-[#607072]');
-      btnEl.classList.remove('text-amber-500', 'bg-amber-50');
-      const svg = btnEl.querySelector('svg');
-      if (svg) svg.setAttribute('fill', 'none');
+      if (saved) {
+        btnEl.classList.remove('text-[#607072]');
+        btnEl.classList.add('text-amber-500', 'bg-amber-50');
+        const svg = btnEl.querySelector('svg');
+        if (svg) svg.setAttribute('fill', 'currentColor');
+      } else {
+        btnEl.classList.add('text-[#607072]');
+        btnEl.classList.remove('text-amber-500', 'bg-amber-50');
+        const svg = btnEl.querySelector('svg');
+        if (svg) svg.setAttribute('fill', 'none');
+      }
     }
+  }
+
+  let toastTimeout = null;
+  function showBookmarkToast(message) {
+    let toast = document.getElementById('appBookmarkToast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'appBookmarkToast';
+      toast.className = 'fixed top-5 left-1/2 -translate-x-1/2 z-[100] px-4 py-2.5 rounded-full bg-[#1D4D4F] text-white text-xs font-bold shadow-lg transition-all duration-300 pointer-events-none opacity-0 -translate-y-2 flex items-center gap-2';
+      document.body.appendChild(toast);
+    }
+    toast.innerHTML = `
+      <svg class="w-4 h-4 text-amber-300" fill="currentColor" viewBox="0 0 24 24"><path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
+      <span>${message}</span>
+    `;
+    clearTimeout(toastTimeout);
+    requestAnimationFrame(() => {
+      toast.classList.remove('opacity-0', '-translate-y-2');
+      toast.classList.add('opacity-100', 'translate-y-0');
+    });
+    toastTimeout = setTimeout(() => {
+      toast.classList.remove('opacity-100', 'translate-y-0');
+      toast.classList.add('opacity-0', '-translate-y-2');
+    }, 2200);
   }
 
   // Inisialisasi awal

@@ -98,23 +98,41 @@
     const file = e.target.files[0];
     if (!file) return;
 
-    if (file.size > 3 * 1024 * 1024) {
-      alert('Ukuran file maksimal 3 MB.');
-      return;
-    }
-
     const reader = new FileReader();
     reader.onload = function(event) {
-      const dataUrl = event.target.result;
-      const preview = document.getElementById('avatarPreview');
-      const initial = document.getElementById('avatarInitial');
-      
-      preview.src = dataUrl;
-      preview.classList.remove('hidden');
-      if (initial) initial.classList.add('hidden');
-      
-      // Simpan dataUrl ke input hidden agar aman tersimpan
-      document.getElementById('avatarData').value = dataUrl;
+      const img = new Image();
+      img.onload = function() {
+        // Kompresi & downscale otomatis via canvas client-side agar upload kilat & ringan (< 50KB)
+        const canvas = document.createElement('canvas');
+        const maxDim = 400;
+        let w = img.width;
+        let h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) {
+            h = Math.round((h * maxDim) / w);
+            w = maxDim;
+          } else {
+            w = Math.round((w * maxDim) / h);
+            h = maxDim;
+          }
+        }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+        const preview = document.getElementById('avatarPreview');
+        const initial = document.getElementById('avatarInitial');
+        
+        preview.src = compressedDataUrl;
+        preview.classList.remove('hidden');
+        if (initial) initial.classList.add('hidden');
+        
+        // Simpan dataUrl terkompresi ke input hidden
+        document.getElementById('avatarData').value = compressedDataUrl;
+      };
+      img.src = event.target.result;
     };
     reader.readAsDataURL(file);
   }
