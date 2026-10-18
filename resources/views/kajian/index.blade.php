@@ -18,22 +18,27 @@
     </div>
 
     <div class="flex items-center gap-2">
-      <button type="button" onclick="useGpsLocation()" title="Gunakan Lokasi GPS Saya" class="w-10 h-10 rounded-full bg-white border border-[#E5ECEB] text-[#1D4D4F] flex items-center justify-center shadow-xs touch-btn hover:bg-[#E6F4F1] transition" aria-label="Gunakan GPS">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+      <!-- Tombol Masukan Info Kajian -->
+      <button type="button" onclick="openSubmitModal()" title="Masukan Info Kajian" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#E6F4F1] hover:bg-[#D1EAE5] text-[#1D4D4F] text-xs font-bold border border-[#D1ECE7] shadow-2xs touch-btn transition" aria-label="Masukan Info Kajian">
+        <svg class="w-4 h-4 text-[#1D4D4F] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 4v16m8-8H4"></path>
         </svg>
+        <span class="text-[11px] font-bold whitespace-nowrap hidden xs:inline">Info Kajian</span>
       </button>
 
-      <button type="button" onclick="openSubmitModal()" class="w-10 h-10 rounded-full bg-[#1D4D4F] text-white flex items-center justify-center font-bold text-sm shadow-xs touch-btn hover:bg-[#153A3B] transition" aria-label="Kirim Info Kajian">
-        @auth
-          {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
-        @else
-          <svg class="w-5 h-5 text-[#E6F4F1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-          </svg>
-        @endauth
-      </button>
+      <!-- Tombol Foto Profil (Langsung ke Halaman Profil) -->
+      <a href="{{ route('profile') }}" title="Lihat Profil Saya" class="w-10 h-10 rounded-full overflow-hidden bg-[#1D4D4F] text-white flex items-center justify-center font-extrabold text-sm border-2 border-white shadow-xs ring-2 ring-[#1D4D4F]/20 touch-btn hover:opacity-90 transition shrink-0 relative" aria-label="Profil Saya">
+        <img id="headerUserAvatarImg" src="{{ Auth::check() && !empty(Auth::user()->avatar) ? Auth::user()->avatar : '' }}" alt="{{ Auth::check() ? Auth::user()->name : 'Tamu' }}" class="w-full h-full object-cover {{ Auth::check() && !empty(Auth::user()->avatar) ? '' : 'hidden' }}">
+        <span id="headerUserAvatarInitial" class="{{ Auth::check() && !empty(Auth::user()->avatar) ? 'hidden' : '' }}">
+          @auth
+            {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+          @else
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+            </svg>
+          @endauth
+        </span>
+      </a>
     </div>
   </header>
 
@@ -1285,6 +1290,22 @@
 
     const el = document.getElementById('currentLocationName');
     if (el) el.innerText = userCoords.name || 'Mendeteksi Lokasi...';
+
+    // Sinkronisasi avatar header dari localStorage
+    try {
+      const localAvatar = localStorage.getItem('sinikajian_user_avatar');
+      const headerImg = document.getElementById('headerUserAvatarImg');
+      const headerInitial = document.getElementById('headerUserAvatarInitial');
+      if (localAvatar && localAvatar.startsWith('data:image')) {
+        if (headerImg) {
+          headerImg.src = localAvatar;
+          headerImg.classList.remove('hidden');
+        }
+        if (headerInitial) {
+          headerInitial.classList.add('hidden');
+        }
+      }
+    } catch(e) {}
 
     updatePrayerDisplay();
     renderKajianFeed();
