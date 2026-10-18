@@ -216,7 +216,18 @@ class AuthController extends Controller
             return redirect()->route('login');
         }
 
-        // 2. Rate limiting pendaftaran per IP
+        // 2. Cloudflare Turnstile verification (jika dikonfigurasi)
+        $turnstileSecret = config('services.turnstile.secret_key');
+        if ($turnstileSecret) {
+            $token = $request->input('cf-turnstile-response');
+            if (!$token || !$this->verifyTurnstile($token, $turnstileSecret, $request->ip())) {
+                return back()->withErrors([
+                    'email' => 'Verifikasi keamanan gagal. Silakan coba lagi.',
+                ])->withInput();
+            }
+        }
+
+        // 3. Rate limiting pendaftaran per IP
         $regKey = 'reg-ip:' . $request->ip();
         if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($regKey, 3)) {
             $seconds = \Illuminate\Support\Facades\RateLimiter::availableIn($regKey);
@@ -490,5 +501,26 @@ class AuthController extends Controller
 
         $user = User::find($userId);
         return $user ? $user->attendances()->with('kajian')->latest()->take(10)->get() : collect();
+    }
+
+    /**
+     * Verifikasi Cloudflare Turnstile token.
+     */
+    protected function verifyTurnstile(string $token, string $secret, string $ip): bool
+    {
+        try {
+            $res = \Illuminate\Support\Facades\Http::asForm()
+                ->timeout(10)
+                ->post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
+                    'secret' => $secret,
+                    'response' => $token,
+                    'remoteip' => $ip,
+                ]);
+            $data = $res->json();
+            return $data['success'] ?? false;
+        } catch (\Exception $e) {
+            \Log::warning('Turnstile verification gagal: ' . $e->getMessage());
+            return false;
+        }
     }
 }

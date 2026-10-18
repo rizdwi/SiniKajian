@@ -65,6 +65,14 @@
         </div>
       </div>
 
+      <!-- Cloudflare Turnstile (anti-bot) -->
+      @if(config('services.turnstile.site_key'))
+      <div class="flex justify-center">
+        <div class="cf-turnstile" data-sitekey="{{ config('services.turnstile.site_key') }}" data-theme="light"></div>
+      </div>
+      <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+      @endif
+
       <button type="submit" class="w-full py-3 rounded-full bg-[#1D4D4F] text-white text-xs font-bold hover:bg-[#143839] active:scale-98 transition-all shadow-sm touch-btn">
         Daftar Akun Baru
       </button>
