@@ -612,6 +612,17 @@
   let activeAudience = 'Semua';
   let currentDetailEvent = null;
 
+  // Helper: format tanggal YYYY-MM-DD menjadi "19 Okt 2026"
+  function formatTanggalIndo(dateStr) {
+    if (!dateStr) return '';
+    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    const parts = String(dateStr).split('T')[0].split('-');
+    if (parts.length !== 3) return '';
+    const day = parseInt(parts[2], 10);
+    const month = months[parseInt(parts[1], 10) - 1] || '';
+    return `${day} ${month} ${parts[0]}`;
+  }
+
   // 1. Rumus Haversine Presisi
   function calculateHaversine(lat1, lon1, lat2, lon2) {
     const R = 6371; // Jari-jari bumi km
@@ -771,7 +782,7 @@
         <svg class="w-3.5 h-3.5 text-[#E6F4F1] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
         <span>${top.masjid} • ${top.address ? top.address.split(',')[0] : 'Bandung'}</span>
       `;
-      document.getElementById('spotlightTimePill').innerText = `${top.day.toUpperCase()} • ${top.time}`;
+      document.getElementById('spotlightTimePill').innerText = `${top.day.toUpperCase()}${top.event_date ? ', ' + formatTanggalIndo(top.event_date) : ''} • ${top.time}`;
       document.getElementById('spotlightDistance').innerText = `${top.distance.toFixed(1)} km`;
       if (top.poster_url) {
         document.getElementById('spotlightHeroImg').src = top.poster_url;
@@ -829,7 +840,7 @@
           <div class="min-w-0 flex-1">
             <div class="flex items-center justify-between gap-1 mb-1">
               <span class="text-[10px] font-bold text-[#1D4D4F] bg-[#E6F4F1] px-2 py-0.5 rounded-full">
-                ${ev.day}, ${ev.time}
+                ${ev.day}${ev.event_date ? ', ' + formatTanggalIndo(ev.event_date) : ''} • ${ev.time}
               </span>
               <div class="flex items-center gap-1 text-[11px] font-bold text-[#1D4D4F]">
                 <svg class="w-3 h-3 text-[#1D4D4F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
