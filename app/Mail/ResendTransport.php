@@ -43,7 +43,13 @@ class ResendTransport extends AbstractTransport
             return;
         }
 
+        $options = [];
+        if (file_exists('C:/Users/Rizz/AppData/Local/Python/pythoncore-3.15-64/Lib/site-packages/certifi/cacert.pem')) {
+            $options['verify'] = 'C:/Users/Rizz/AppData/Local/Python/pythoncore-3.15-64/Lib/site-packages/certifi/cacert.pem';
+        }
+
         $response = Http::withToken($this->apiKey)
+            ->withOptions($options)
             ->timeout(15)
             ->post('https://api.resend.com/emails', $payload);
 
