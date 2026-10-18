@@ -42,12 +42,8 @@
       <div class="flex flex-col items-center justify-center pb-2">
         <div class="relative group cursor-pointer" onclick="document.getElementById('avatarInput').click();">
           <div id="avatarContainer" class="w-20 h-20 rounded-full overflow-hidden bg-[#1D4D4F] text-white flex items-center justify-center font-extrabold text-2xl shadow-sm ring-4 ring-[#EDF5F3]">
-            @if(!empty($user->avatar))
-              <img id="avatarPreview" src="{{ $user->avatar }}" alt="{{ $user->name }}" class="w-full h-full object-cover">
-            @else
-              <span id="avatarInitial">{{ strtoupper(substr($user->name ?? 'A', 0, 2)) }}</span>
-              <img id="avatarPreview" src="" alt="Avatar" class="w-full h-full object-cover hidden">
-            @endif
+            <img id="avatarPreview" src="{{ $user->avatar ?? '' }}" alt="{{ $user->name }}" class="w-full h-full object-cover {{ !empty($user->avatar) ? '' : 'hidden' }}">
+            <span id="avatarInitial" class="{{ !empty($user->avatar) ? 'hidden' : '' }}">{{ strtoupper(substr($user->name ?? 'A', 0, 2)) }}</span>
           </div>
           
           <div class="absolute inset-0 rounded-full bg-black/35 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition">
@@ -102,9 +98,9 @@
     reader.onload = function(event) {
       const img = new Image();
       img.onload = function() {
-        // Kompresi & downscale otomatis via canvas client-side agar upload kilat & ringan (< 50KB)
+        // Kompresi & downscale otomatis via canvas client-side (maks 320px, ~30KB)
         const canvas = document.createElement('canvas');
-        const maxDim = 400;
+        const maxDim = 320;
         let w = img.width;
         let h = img.height;
         if (w > maxDim || h > maxDim) {
@@ -120,21 +116,58 @@
         canvas.height = h;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, w, h);
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
 
         const preview = document.getElementById('avatarPreview');
         const initial = document.getElementById('avatarInitial');
         
-        preview.src = compressedDataUrl;
-        preview.classList.remove('hidden');
+        if (preview) {
+          preview.src = compressedDataUrl;
+          preview.classList.remove('hidden');
+        }
         if (initial) initial.classList.add('hidden');
         
-        // Simpan dataUrl terkompresi ke input hidden
+        // Simpan dataUrl terkompresi ke input hidden & localStorage
         document.getElementById('avatarData').value = compressedDataUrl;
+        try {
+          localStorage.setItem('sinikajian_user_avatar', compressedDataUrl);
+        } catch(err) {}
       };
       img.src = event.target.result;
     };
     reader.readAsDataURL(file);
+  }
+
+  // Sinkronisasi otomatis dari localStorage jika server belum merender avatar
+  document.addEventListener('DOMContentLoaded', function() {
+    try {
+      const localAvatar = localStorage.getItem('sinikajian_user_avatar');
+      const preview = document.getElementById('avatarPreview');
+      const initial = document.getElementById('avatarInitial');
+      const avatarData = document.getElementById('avatarData');
+      
+      if (localAvatar && localAvatar.startsWith('data:image')) {
+        if (preview && (!preview.src || preview.src.includes('data:image') || preview.classList.contains('hidden') || preview.getAttribute('src') === '')) {
+          preview.src = localAvatar;
+          preview.classList.remove('hidden');
+          if (initial) initial.classList.add('hidden');
+          if (avatarData && !avatarData.value) avatarData.value = localAvatar;
+        }
+      }
+    } catch(e) {}
+  });
+
+  // Simpan sebelum submit
+  const profileForm = document.querySelector('form');
+  if (profileForm) {
+    profileForm.addEventListener('submit', function() {
+      const val = document.getElementById('avatarData').value;
+      if (val && val.startsWith('data:image')) {
+        try {
+          localStorage.setItem('sinikajian_user_avatar', val);
+        } catch(e) {}
+      }
+    });
   }
 </script>
 @endsection

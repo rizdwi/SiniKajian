@@ -24,13 +24,12 @@
   <div class="rounded-3xl bg-[#EDF5F3] border border-[#D1ECE7] p-5 text-center shadow-2xs">
     
     <!-- Circular Avatar with Deep Teal & Initials or Photo -->
-    @if(!empty($user->avatar))
-      <img src="{{ $user->avatar }}" alt="{{ $user->name }}" class="w-14 h-14 rounded-full object-cover mx-auto shadow-sm ring-4 ring-white/60">
-    @else
-      <div class="w-14 h-14 rounded-full bg-[#1D4D4F] text-white flex items-center justify-center font-extrabold text-base mx-auto shadow-sm ring-4 ring-white/60">
+    <div class="relative w-14 h-14 mx-auto">
+      <img id="userProfileAvatarImg" src="{{ $user->avatar ?? '' }}" alt="{{ $user->name ?? 'User' }}" class="w-14 h-14 rounded-full object-cover shadow-sm ring-4 ring-white/60 {{ !empty($user->avatar) ? '' : 'hidden' }}">
+      <div id="userProfileAvatarInitial" class="w-14 h-14 rounded-full bg-[#1D4D4F] text-white flex items-center justify-center font-extrabold text-base shadow-sm ring-4 ring-white/60 {{ !empty($user->avatar) ? 'hidden' : '' }}">
         {{ strtoupper(substr($user->name ?? 'Ahmad Fauzan', 0, 2)) }}
       </div>
-    @endif
+    </div>
 
     <!-- User Information -->
     <h2 class="text-base font-extrabold text-[#1C2224] mt-2.5">
@@ -45,7 +44,7 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
       </svg>
-      <span>Bandung, Jawa Barat</span>
+      <span id="userProfileLocationBadge">Mendeteksi Lokasi...</span>
     </div>
 
     <hr class="border-[#D1ECE7] my-4">
@@ -173,7 +172,7 @@
           </div>
           <div class="min-w-0">
             <span class="text-xs sm:text-sm font-bold text-[#1C2224] block">Lokasi & radius pencarian</span>
-            <span class="text-[11px] text-[#607072] block truncate">Dago, Bandung • 3 km</span>
+            <span id="userProfileLocationRadius" class="text-[11px] text-[#607072] block truncate">Mendeteksi Lokasi...</span>
           </div>
         </div>
         <svg class="w-4 h-4 text-[#607072] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -397,34 +396,149 @@
   </div>
 </div>
 
+<!-- Modal: Ubah Lokasi & Radius Pencarian -->
+<div id="locationModal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
+  <div class="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-2xl p-5 space-y-4 shadow-xl">
+    <div class="flex items-center justify-between border-b border-[#E5ECEB] pb-2">
+      <h3 class="text-sm font-bold text-[#1C2224]">Pilih Lokasi & Radius</h3>
+      <button onclick="closeLocationModal()" class="text-[#607072] hover:text-[#1C2224] p-1" aria-label="Tutup">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+
+    <button onclick="useGpsLocation(); closeLocationModal();" class="w-full flex items-center justify-between p-3 bg-[#E6F4F1] border border-[#D1ECE7] rounded-xl text-[#1D4D4F] text-xs font-bold hover:bg-[#D1EAE5] transition">
+      <div class="flex items-center space-x-2">
+        <svg class="w-4 h-4 text-[#1D4D4F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        </svg>
+        <span>Gunakan Titik GPS Akurat Perangkat</span>
+      </div>
+      <span class="text-[11px] underline">Deteksi</span>
+    </button>
+
+    <div class="space-y-1.5 text-xs">
+      <p class="text-[11px] font-bold text-[#607072] uppercase tracking-wider">Kota Pilihan Lainnya</p>
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="setCityLocation('Jakarta Selatan', -6.2615, 106.8106)" class="p-2.5 text-left bg-white border border-[#E5ECEB] hover:border-[#1D4D4F] rounded-xl font-medium text-[#1C2224] text-xs transition">Jakarta Selatan</button>
+        <button onclick="setCityLocation('Jakarta Pusat', -6.1805, 106.8284)" class="p-2.5 text-left bg-white border border-[#E5ECEB] hover:border-[#1D4D4F] rounded-xl font-medium text-[#1C2224] text-xs transition">Jakarta Pusat</button>
+        <button onclick="setCityLocation('Bandung Kota', -6.9175, 107.6191)" class="p-2.5 text-left bg-white border border-[#E5ECEB] hover:border-[#1D4D4F] rounded-xl font-medium text-[#1C2224] text-xs transition">Bandung</button>
+        <button onclick="setCityLocation('Bekasi', -6.2383, 106.9756)" class="p-2.5 text-left bg-white border border-[#E5ECEB] hover:border-[#1D4D4F] rounded-xl font-medium text-[#1C2224] text-xs transition">Bekasi</button>
+        <button onclick="setCityLocation('Bogor', -6.5971, 106.8060)" class="p-2.5 text-left bg-white border border-[#E5ECEB] hover:border-[#1D4D4F] rounded-xl font-medium text-[#1C2224] text-xs transition">Bogor</button>
+        <button onclick="setCityLocation('Surabaya', -7.2575, 112.7521)" class="p-2.5 text-left bg-white border border-[#E5ECEB] hover:border-[#1D4D4F] rounded-xl font-medium text-[#1C2224] text-xs transition">Surabaya</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
   function openHelpModal() {
     const modal = document.getElementById('helpModal');
-    if (modal) {
-      modal.classList.remove('hidden');
-    }
+    if (modal) modal.classList.remove('hidden');
   }
 
   function closeHelpModal() {
     const modal = document.getElementById('helpModal');
-    if (modal) {
-      modal.classList.add('hidden');
-    }
+    if (modal) modal.classList.add('hidden');
   }
 
   function openPrivacyModal() {
     const modal = document.getElementById('privacyModal');
-    if (modal) {
-      modal.classList.remove('hidden');
-    }
+    if (modal) modal.classList.remove('hidden');
   }
 
   function closePrivacyModal() {
     const modal = document.getElementById('privacyModal');
-    if (modal) {
-      modal.classList.add('hidden');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  function openLocationModal() {
+    const modal = document.getElementById('locationModal');
+    if (modal) modal.classList.remove('hidden');
+  }
+
+  function closeLocationModal() {
+    const modal = document.getElementById('locationModal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  function useGpsLocation() {
+    if (window.SiniKajianGeo) {
+      window.SiniKajianGeo.requestLiveGps();
+    } else if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((pos) => {
+        updateProfileLocationDisplay({
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude,
+          name: 'Lokasi GPS Perangkat',
+          city: 'Lokasi GPS'
+        });
+      }, (err) => {
+        alert('Gagal mendeteksi lokasi GPS.');
+      }, { enableHighAccuracy: true });
     }
   }
+
+  function setCityLocation(name, lat, lon) {
+    if (window.SiniKajianGeo) {
+      window.SiniKajianGeo.setManualCity(name, lat, lon);
+    }
+    updateProfileLocationDisplay({ name: name, city: name });
+    closeLocationModal();
+  }
+
+  function updateProfileLocationDisplay(geo) {
+    if (!geo) return;
+    const badge = document.getElementById('userProfileLocationBadge');
+    if (badge) {
+      if (geo.city && geo.province) {
+        badge.innerText = `${geo.city}, ${geo.province}`;
+      } else if (geo.name) {
+        badge.innerText = geo.name;
+      }
+    }
+    const radiusText = document.getElementById('userProfileLocationRadius');
+    if (radiusText) {
+      const radius = localStorage.getItem('sk_search_radius') || '5 km';
+      radiusText.innerText = `${geo.name || 'Lokasi GPS'} • ${radius}`;
+    }
+  }
+
+  // Dengarkan event pembaruan lokasi dari Geo-Engine
+  window.addEventListener('sk:location-updated', function(e) {
+    if (e.detail) {
+      updateProfileLocationDisplay(e.detail);
+    }
+  });
+
+  // Sinkronisasi otomatis dari localStorage saat halaman siap
+  document.addEventListener('DOMContentLoaded', function() {
+    // 1. Sinkronisasi Avatar lokal jika server belum merender
+    try {
+      const localAvatar = localStorage.getItem('sinikajian_user_avatar');
+      const img = document.getElementById('userProfileAvatarImg');
+      const initial = document.getElementById('userProfileAvatarInitial');
+      if (localAvatar && localAvatar.startsWith('data:image')) {
+        if (img) {
+          img.src = localAvatar;
+          img.classList.remove('hidden');
+        }
+        if (initial) {
+          initial.classList.add('hidden');
+        }
+      }
+    } catch(e) {}
+
+    // 2. Sinkronisasi Lokasi GPS dari cache
+    try {
+      const cached = JSON.parse(localStorage.getItem('sk_geo_state') || 'null');
+      if (cached && (cached.name || cached.city)) {
+        updateProfileLocationDisplay(cached);
+      }
+    } catch(e) {}
+  });
 
   function copyOwnerEmail(email) {
     if (navigator.clipboard) {
@@ -446,8 +560,10 @@
   window.addEventListener('click', function(e) {
     const helpModal = document.getElementById('helpModal');
     const privacyModal = document.getElementById('privacyModal');
+    const locationModal = document.getElementById('locationModal');
     if (e.target === helpModal) closeHelpModal();
     if (e.target === privacyModal) closePrivacyModal();
+    if (e.target === locationModal) closeLocationModal();
   });
 </script>
 @endsection

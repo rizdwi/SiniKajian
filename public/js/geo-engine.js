@@ -74,6 +74,31 @@
     return `Lokasi GPS (${latStr}, ${lonStr})`;
   }
 
+  function reverseGeocode(lat, lon, callback) {
+    const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=id`;
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        let locality = data.locality || '';
+        let city = data.city || '';
+        let province = data.principalSubdivision || '';
+        city = city.replace(/^Kota\s+/i, '');
+        
+        let formatted = '';
+        if (locality && city && locality.toLowerCase() !== city.toLowerCase()) {
+          formatted = `${locality}, ${city}`;
+        } else if (city) {
+          formatted = city;
+        } else if (province) {
+          formatted = province;
+        }
+        if (formatted) {
+          callback(formatted, city, province);
+        }
+      })
+      .catch(() => {});
+  }
+
   function calculateQiblaAzimuth(lat, lon) {
     const phiK = KAABA_COORDS.lat * Math.PI / 180;
     const lambdaK = KAABA_COORDS.lon * Math.PI / 180;
@@ -89,9 +114,11 @@
 
   const SiniKajianGeo = {
     current: {
-      lat: -6.8851,
-      lon: 107.6136,
-      name: 'Dago, Bandung',
+      lat: -6.9175,
+      lon: 107.6191,
+      name: 'Mendeteksi Lokasi...',
+      city: 'Bandung',
+      province: 'Jawa Barat',
       accuracy: 0,
       isGps: false,
       qiblaAzimuth: 295.2,
@@ -102,18 +129,20 @@
     init() {
       // 1. Muat cache dari localStorage untuk respon 0 detik
       try {
-        const cached = JSON.parse(localStorage.getItem('sk_user_coords') || 'null');
+        const cached = JSON.parse(localStorage.getItem('sk_geo_state') || 'null');
         if (cached && cached.lat && cached.lon) {
           this.current.lat = Number(cached.lat);
           this.current.lon = Number(cached.lon);
           this.current.name = cached.name || resolveRegionName(this.current.lat, this.current.lon);
+          this.current.city = cached.city || '';
+          this.current.province = cached.province || '';
           this.current.isGps = !!cached.isGps;
         } else {
           const oldLoc = JSON.parse(localStorage.getItem('sk_user_loc') || 'null');
           if (oldLoc && oldLoc.lat && oldLoc.lon) {
             this.current.lat = Number(oldLoc.lat);
             this.current.lon = Number(oldLoc.lon);
-            this.current.name = oldLoc.name || 'Dago, Bandung';
+            this.current.name = oldLoc.name || resolveRegionName(this.current.lat, this.current.lon);
           }
         }
       } catch (e) {
@@ -125,6 +154,23 @@
 
       // 2. LANGSUNG nyalakan geolokasi GPS otomatis di background begitu app dibuka
       this.startAutoGps();
+    },
+
+    requestLiveGps() {
+      if (!navigator.geolocation) {
+        alert('Geolocation tidak didukung browser ini.');
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          this.handlePositionUpdate(pos, true);
+        },
+        (err) => {
+          console.warn('GPS Error:', err.message);
+          alert('Tidak dapat mendeteksi lokasi GPS. Pastikan izin lokasi aktif pada peramban Anda.');
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
     },
 
     startAutoGps() {
@@ -174,23 +220,36 @@
         this.current.qiblaAzimuth = calculateQiblaAzimuth(lat, lon);
         this.current.kaabaDistance = Math.round(haversine(lat, lon, KAABA_COORDS.lat, KAABA_COORDS.lon));
 
-        // Simpan ke storage
-        try {
-          const payload = {
-            lat: this.current.lat,
-            lon: this.current.lon,
-            name: this.current.name,
-            accuracy: this.current.accuracy,
-            isGps: true,
-            timestamp: Date.now()
-          };
-          localStorage.setItem('sk_user_coords', JSON.stringify(payload));
-          localStorage.setItem('sk_user_loc', JSON.stringify(payload));
-        } catch (e) {}
-
-        // Siarkan event ke seluruh komponen aktif
+        // Simpan ke storage sementara dengan nama centroid
+        this.saveState();
         window.dispatchEvent(new CustomEvent('sk:location-updated', { detail: this.current }));
+
+        // Lakukan reverse geocode online untuk mendapatkan nama wilayah / kecamatan akurat
+        reverseGeocode(lat, lon, (formattedName, cityName, provinceName) => {
+          this.current.name = formattedName;
+          this.current.city = cityName;
+          this.current.province = provinceName;
+          this.saveState();
+          window.dispatchEvent(new CustomEvent('sk:location-updated', { detail: this.current }));
+        });
       }
+    },
+
+    saveState() {
+      try {
+        const payload = {
+          lat: this.current.lat,
+          lon: this.current.lon,
+          name: this.current.name,
+          city: this.current.city || '',
+          province: this.current.province || '',
+          accuracy: this.current.accuracy,
+          isGps: this.current.isGps,
+          timestamp: Date.now()
+        };
+        localStorage.setItem('sk_geo_state', JSON.stringify(payload));
+        localStorage.setItem('sk_user_loc', JSON.stringify(payload));
+      } catch (e) {}
     },
 
     getCoords() {
@@ -205,18 +264,7 @@
       this.current.qiblaAzimuth = calculateQiblaAzimuth(lat, lon);
       this.current.kaabaDistance = Math.round(haversine(lat, lon, KAABA_COORDS.lat, KAABA_COORDS.lon));
 
-      try {
-        const payload = {
-          lat: this.current.lat,
-          lon: this.current.lon,
-          name: this.current.name,
-          isGps: false,
-          timestamp: Date.now()
-        };
-        localStorage.setItem('sk_user_coords', JSON.stringify(payload));
-        localStorage.setItem('sk_user_loc', JSON.stringify(payload));
-      } catch (e) {}
-
+      this.saveState();
       window.dispatchEvent(new CustomEvent('sk:location-updated', { detail: this.current }));
     }
   };

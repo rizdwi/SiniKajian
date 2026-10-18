@@ -217,11 +217,15 @@
       const data = window.SiniKajianGeo.getCoords();
       applyLocationData(data);
     } else {
-      // Fallback lokal
+      // Fallback dari cache atau default
+      let cached = null;
+      try {
+        cached = JSON.parse(localStorage.getItem('sk_geo_state') || 'null');
+      } catch(e) {}
       applyLocationData({
-        lat: currentLat,
-        lon: currentLon,
-        name: 'Dago, Bandung',
+        lat: cached?.lat || currentLat,
+        lon: cached?.lon || currentLon,
+        name: cached?.name || 'Lokasi Saya',
         qiblaAzimuth: 295.2,
         kaabaDistance: 7924,
         isGps: false

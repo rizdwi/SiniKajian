@@ -94,19 +94,24 @@ class AuthController extends Controller
             if (session()->has('profile_name')) {
                 $user->name = session('profile_name');
                 $user->email = session('profile_email', $user->email);
-            } else {
-                try {
-                    $svc = new \App\Services\SupabaseUserService();
-                    if ($svc->enabled()) {
-                        $sbUser = $svc->findOrCreate(['name' => $user->name, 'email' => $user->email]);
-                        if ($sbUser) {
+            }
+            
+            try {
+                $svc = new \App\Services\SupabaseUserService();
+                if ($svc->enabled()) {
+                    $sbUser = $svc->findOrCreate(['name' => $user->name, 'email' => $user->email]);
+                    if ($sbUser) {
+                        if (!session()->has('profile_name')) {
                             $user->name = $sbUser['name'] ?? $user->name;
                             $user->email = $sbUser['email'] ?? $user->email;
                         }
+                        if (!empty($sbUser['avatar'])) {
+                            $user->avatar = $sbUser['avatar'];
+                        }
                     }
-                } catch (\Exception $e) {
-                    \Log::warning('Ambil profil Supabase gagal: ' . $e->getMessage());
                 }
+            } catch (\Exception $e) {
+                \Log::warning('Ambil profil Supabase gagal: ' . $e->getMessage());
             }
 
             $cutoff = \Carbon\Carbon::now('Asia/Jakarta')->subHours(3)->toDateTimeString();
@@ -203,10 +208,14 @@ class AuthController extends Controller
                 // Update data terbaru
                 $sbUser = $svc->findOrCreate(['name' => $user->name, 'email' => $user->email]);
                 if ($sbUser && isset($sbUser['id'])) {
-                    $svc->update($sbUser['id'], [
+                    $updatePayload = [
                         'name' => $request->name,
                         'email' => $request->email,
-                    ]);
+                    ];
+                    if (!empty($user->avatar)) {
+                        $updatePayload['avatar'] = $user->avatar;
+                    }
+                    $svc->update($sbUser['id'], $updatePayload);
                 }
             }
         } catch (\Exception $e) {

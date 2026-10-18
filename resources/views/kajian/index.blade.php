@@ -12,14 +12,17 @@
       <h1 class="text-xl font-extrabold text-[#1D4D4F] tracking-tight mt-0.5">Yuk, dekatkan hati.</h1>
       <button type="button" onclick="openLocationModal()" class="inline-flex items-center gap-1 text-[11px] font-semibold text-[#1D4D4F] bg-[#E6F4F1] hover:bg-[#D1EAE5] px-2.5 py-0.5 rounded-full mt-1.5 transition">
         <svg class="w-3 h-3 text-[#1D4D4F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
-        <span id="currentLocationName">Dago, Bandung</span>
+        <span id="currentLocationName">Mendeteksi Lokasi...</span>
         <svg class="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
       </button>
     </div>
 
     <div class="flex items-center gap-2">
       <button type="button" onclick="useGpsLocation()" title="Gunakan Lokasi GPS Saya" class="w-10 h-10 rounded-full bg-white border border-[#E5ECEB] text-[#1D4D4F] flex items-center justify-center shadow-xs touch-btn hover:bg-[#E6F4F1] transition" aria-label="Gunakan GPS">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        </svg>
       </button>
 
       <button type="button" onclick="openSubmitModal()" class="w-10 h-10 rounded-full bg-[#1D4D4F] text-white flex items-center justify-center font-bold text-sm shadow-xs touch-btn hover:bg-[#153A3B] transition" aria-label="Kirim Info Kajian">
@@ -170,7 +173,7 @@
         </h2>
         <p id="spotlightMasjid" class="text-xs text-white/85 mt-0.5 flex items-center gap-1 truncate">
           <svg class="w-3.5 h-3.5 text-[#E6F4F1] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
-          <span>Masjid Taman Ilmu • Dago, Bandung</span>
+          <span>Masjid Terdekat di Sekitarmu</span>
         </p>
       </div>
       <button id="spotlightDetailBtn" class="hidden"></button>
@@ -415,7 +418,8 @@
     <button onclick="useGpsLocation(); closeLocationModal();" class="w-full flex items-center justify-between p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-900 text-xs font-bold">
       <div class="flex items-center space-x-2">
         <svg class="w-4 h-4 text-emerald-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
         </svg>
         <span>Gunakan Titik GPS Akurat Perangkat</span>
       </div>
@@ -553,10 +557,19 @@
   // Titik koordinat Ka'bah (Mekkah)
   const KAABA_COORDS = { lat: 21.4225, lon: 39.8262 };
 
-  // Titik lokasi default (disinkronkan dari SiniKajianGeo)
-  let userCoords = (typeof window.SiniKajianGeo !== 'undefined')
-    ? window.SiniKajianGeo.getCoords()
-    : { lat: -6.8851, lon: 107.6136, name: 'Dago, Bandung' };
+  // Titik lokasi default (disinkronkan dari SiniKajianGeo atau cache)
+  let userCoords = (() => {
+    try {
+      const cached = JSON.parse(localStorage.getItem('sk_geo_state') || 'null');
+      if (cached && cached.lat && cached.lon) {
+        return { lat: Number(cached.lat), lon: Number(cached.lon), name: cached.name || cached.city || 'Lokasi Saya' };
+      }
+    } catch(e) {}
+    if (typeof window.SiniKajianGeo !== 'undefined') {
+      return window.SiniKajianGeo.getCoords();
+    }
+    return { lat: -6.9175, lon: 107.6191, name: 'Mendeteksi Lokasi...' };
+  })();
 
   // State Filter Aktif
   let activeSearch = '';
@@ -1257,11 +1270,22 @@
 
   // Inisialisasi awal
   document.addEventListener('DOMContentLoaded', () => {
-    if (window.SiniKajianGeo) {
-      userCoords = window.SiniKajianGeo.getCoords();
-      const el = document.getElementById('currentLocationName');
-      if (el) el.innerText = userCoords.name || 'Dago, Bandung';
-    }
+    try {
+      const cached = JSON.parse(localStorage.getItem('sk_geo_state') || 'null');
+      if (cached && (cached.name || cached.city)) {
+        userCoords = {
+          lat: Number(cached.lat),
+          lon: Number(cached.lon),
+          name: cached.name || cached.city
+        };
+      } else if (window.SiniKajianGeo) {
+        userCoords = window.SiniKajianGeo.getCoords();
+      }
+    } catch(e) {}
+
+    const el = document.getElementById('currentLocationName');
+    if (el) el.innerText = userCoords.name || 'Mendeteksi Lokasi...';
+
     updatePrayerDisplay();
     renderKajianFeed();
     setInterval(updatePrayerDisplay, 60000); // Perbarui waktu sholat tiap menit

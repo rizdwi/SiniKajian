@@ -246,7 +246,7 @@
             <span class="text-[10px] font-extrabold text-[#1D4D4F] bg-[#E6F4F1] px-2 py-0.5 rounded-full">${distStr}</span>
           </div>
           <h3 class="text-xs sm:text-sm font-bold text-[#1C2224] truncate">${item.masjid}</h3>
-          <p class="text-[11px] text-[#607072] truncate mt-0.5">${item.address || 'Bandung'}</p>
+          <p class="text-[11px] text-[#607072] truncate mt-0.5">${item.address || 'Lokasi Kajian'}</p>
           <p class="text-[10px] text-[#1D4D4F] font-semibold mt-1 flex items-center gap-1">
             <svg class="w-3 h-3 text-[#1D4D4F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             <span>${item.day}, ${item.time}</span>
