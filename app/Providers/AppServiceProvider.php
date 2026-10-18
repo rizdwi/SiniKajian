@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -25,5 +29,41 @@ class AppServiceProvider extends ServiceProvider
         if (config('app.env') === 'production' || isset($_SERVER['VERCEL']) || isset($_ENV['VERCEL']) || env('VERCEL') || app()->environment('production')) {
             URL::forceScheme('https');
         }
+
+        // Daftarkan driver email custom Resend API (HTTP REST, optimal untuk serverless Vercel)
+        Mail::extend('resend', function (array $config = []) {
+            $key = config('services.resend.key') ?: env('RESEND_API_KEY');
+            return new \App\Mail\ResendTransport($key);
+        });
+
+        // Kustomisasi pesan email verifikasi akun (bahasa Indonesia & ramah jamaah)
+        VerifyEmail::toMailUsing(function ($notifiable, $url) {
+            return (new MailMessage)
+                ->subject('Verifikasi Alamat Email Anda - SiniKajian')
+                ->greeting('Assalamu\'alaikum, ' . ($notifiable->name ?? 'Jamaah SiniKajian') . '!')
+                ->line('Terima kasih telah mendaftar di SiniKajian, direktori jadwal kajian & majelis ilmu sunnah.')
+                ->line('Klik tombol di bawah ini untuk memverifikasi dan mengaktifkan akun Anda:')
+                ->action('Verifikasi Email Saya', $url)
+                ->line('Tautan verifikasi ini aman dan akan kadaluarsa dalam 60 menit.')
+                ->line('Jika Anda tidak merasa mendaftarkan akun di SiniKajian, abaikan saja email ini.')
+                ->salutation('Wassalamu\'alaikum Warahmatullahi Wabarakatuh,' . "\n" . 'Tim SiniKajian');
+        });
+
+        // Kustomisasi pesan email reset kata sandi
+        ResetPassword::toMailUsing(function ($notifiable, $token) {
+            $url = url(route('password.reset', [
+                'token' => $token,
+                'email' => $notifiable->getEmailForPasswordReset(),
+            ], false));
+
+            return (new MailMessage)
+                ->subject('Permintaan Reset Kata Sandi - SiniKajian')
+                ->greeting('Assalamu\'alaikum, ' . ($notifiable->name ?? 'Jamaah SiniKajian') . '!')
+                ->line('Kami menerima permintaan untuk mengatur ulang kata sandi akun SiniKajian Anda.')
+                ->action('Atur Ulang Kata Sandi', $url)
+                ->line('Tautan pengaturan ulang sandi ini akan kadaluarsa dalam 60 menit.')
+                ->line('Jika Anda tidak meminta perubahan kata sandi, abaikan email ini.')
+                ->salutation('Wassalamu\'alaikum Warahmatullahi Wabarakatuh,' . "\n" . 'Tim SiniKajian');
+        });
     }
 }

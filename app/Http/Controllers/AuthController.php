@@ -167,7 +167,11 @@ class AuthController extends Controller
         Auth::login($user);
 
         // Kirim email verifikasi
-        $user->sendEmailVerificationNotification();
+        try {
+            $user->sendEmailVerificationNotification();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Gagal mengirim email verifikasi ke ' . $user->email . ': ' . $e->getMessage());
+        }
 
         $request->session()->regenerate();
 

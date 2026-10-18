@@ -602,4 +602,49 @@ class SiniKajianTest extends TestCase
             $response->assertSee('<meta name="twitter:card"', false);
         }
     }
+
+    /**
+     * Uji alur registrasi jamaah baru dan pengiriman email verifikasi.
+     */
+    public function test_new_user_registration_dispatches_verification_and_redirects(): void
+    {
+        $email = 'jamaah_' . uniqid() . '@example.com';
+
+        $response = $this->post('/daftar', [
+            'name' => 'Jamaah Baru',
+            'email' => $email,
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ]);
+
+        $response->assertStatus(302);
+        $response->assertRedirect('/email/verify');
+
+        $user = User::where('email', $email)->first();
+        $this->assertNotNull($user);
+        $this->assertFalse($user->hasVerifiedEmail());
+
+        // Uji akses halaman verifikasi
+        $verifyPage = $this->actingAs($user)->get('/email/verify');
+        $verifyPage->assertStatus(200);
+        $verifyPage->assertSee('Verifikasi Email Anda');
+        $verifyPage->assertSee($email);
+
+        // Uji verifikasi menggunakan signed URL
+        $verificationUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addMinutes(60),
+            ['id' => $user->id, 'hash' => sha1($user->getEmailForVerification())]
+        );
+
+        $verifyAction = $this->get($verificationUrl);
+        $verifyAction->assertStatus(302);
+        $verifyAction->assertRedirect(route('profile'));
+
+        $user->refresh();
+        $this->assertTrue($user->hasVerifiedEmail());
+
+        // Cleanup
+        $user->delete();
+    }
 }

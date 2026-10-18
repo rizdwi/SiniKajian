@@ -83,12 +83,51 @@ Route::get('/email/verify', function () {
     return view('auth.verify-email');
 })->middleware('auth')->name('verification.notice');
 
-Route::get('/email/verify/{id}/{hash}', function (\Illuminate\Foundation\Auth\EmailVerificationRequest $request) {
-    $request->fulfill();
-    return redirect()->route('profile')->with('success', 'Email terverifikasi!');
-})->middleware(['auth', 'signed'])->name('verification.verify');
+Route::get('/email/verify/{id}/{hash}', function (\Illuminate\Http\Request $request, $id, $hash) {
+    $user = \App\Models\User::find($id);
+
+    if (!$user || !hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+        abort(403, 'Tautan verifikasi tidak sah.');
+    }
+
+    if (!$request->hasValidSignature()) {
+        abort(403, 'Tautan verifikasi telah kadaluarsa atau tidak valid.');
+    }
+
+    if (!$user->hasVerifiedEmail()) {
+        $user->markEmailAsVerified();
+        event(new \Illuminate\Auth\Events\Verified($user));
+
+        // Sinkronisasi status email_verified_at ke Supabase jika aktif
+        try {
+            $svc = new \App\Services\SupabaseUserService();
+            if ($svc->enabled()) {
+                \Illuminate\Support\Facades\Http::withHeaders([
+                    'apikey' => config('services.supabase.service_key'),
+                    'Authorization' => 'Bearer ' . config('services.supabase.service_key'),
+                    'Content-Type' => 'application/json',
+                ])->patch(config('services.supabase.url') . '/rest/v1/app_users?email=eq.' . urlencode($user->email), [
+                    'email_verified_at' => now()->toIso8601String(),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Supabase sync email_verified_at error: ' . $e->getMessage());
+        }
+    }
+
+    if (!\Illuminate\Support\Facades\Auth::check()) {
+        \Illuminate\Support\Facades\Auth::login($user);
+    }
+
+    return redirect()->route('profile')->with('success', 'Alhamdulillah! Alamat email Anda berhasil diverifikasi.');
+})->middleware(['signed'])->name('verification.verify');
 
 Route::post('/email/verification-notification', function (\Illuminate\Http\Request $request) {
-    $request->user()->sendEmailVerificationNotification();
-    return back()->with('success', 'Link verifikasi dikirim ulang!');
+    try {
+        $request->user()->sendEmailVerificationNotification();
+        return back()->with('success', 'Tautan verifikasi baru berhasil dikirimkan ke kotak masuk email Anda.');
+    } catch (\Throwable $e) {
+        \Illuminate\Support\Facades\Log::error('Kirim ulang email verifikasi gagal: ' . $e->getMessage());
+        return back()->with('error', 'Gagal mengirim email: periksa pengaturan mailer (SMTP/Resend) di server.');
+    }
 })->middleware(['auth', 'throttle:6,1'])->name('verification.send');
