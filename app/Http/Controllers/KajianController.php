@@ -28,17 +28,23 @@ class KajianController extends Controller
         // Cache categories (berubah jarang)
         $categories = Cache::remember('kajian_categories', 3600, function () use ($cutoff) {
             return Kajian::where('verified', true)
-                ->where('event_datetime', '>=', $cutoff)
+                ->where(function ($q) use ($cutoff) {
+                    $q->where('event_datetime', '>=', $cutoff)
+                      ->orWhere('is_rutin', true);
+                })
                 ->distinct()
                 ->pluck('category')
                 ->filter()
                 ->values();
         });
 
-        // Query kajian terdekat & aktif (hanya yang belum lewat > 3 jam)
+        // Query kajian terdekat & aktif (kajian belum lewat > 3 jam atau kajian rutin)
         $query = Kajian::where('verified', true)
-            ->where('event_datetime', '>=', $cutoff)
-            ->select(['id', 'title', 'ustadz', 'day', 'time', 'masjid', 'address', 'lat', 'lon', 'category', 'audience', 'poster_url', 'event_datetime', 'source', 'source_url']);
+            ->where(function ($q) use ($cutoff) {
+                $q->where('event_datetime', '>=', $cutoff)
+                  ->orWhere('is_rutin', true);
+            })
+            ->select(['id', 'title', 'ustadz', 'day', 'time', 'masjid', 'address', 'lat', 'lon', 'category', 'audience', 'poster_url', 'event_datetime', 'source', 'source_url', 'is_rutin']);
 
         if ($request->filled('kategori') && $request->kategori !== 'Semua') {
             $query->where('category', $request->kategori);
@@ -64,10 +70,13 @@ class KajianController extends Controller
         // Urutkan berdasarkan waktu kajian terdekat
         $kajians = $query->orderBy('event_datetime', 'asc')->paginate(20)->withQueryString();
 
-        // JSON untuk peta & kartu feed client-side (hanya kajian aktif)
+        // JSON untuk peta & kartu feed client-side (hanya kajian aktif atau rutin)
         $mapKajians = Kajian::where('verified', true)
-            ->where('event_datetime', '>=', $cutoff)
-            ->select(['id', 'title', 'ustadz', 'day', 'time', 'masjid', 'address', 'lat', 'lon', 'category', 'audience', 'poster_url', 'event_datetime', 'source', 'source_url', 'description'])
+            ->where(function ($q) use ($cutoff) {
+                $q->where('event_datetime', '>=', $cutoff)
+                  ->orWhere('is_rutin', true);
+            })
+            ->select(['id', 'title', 'ustadz', 'day', 'time', 'masjid', 'address', 'lat', 'lon', 'category', 'audience', 'poster_url', 'event_datetime', 'source', 'source_url', 'description', 'is_rutin'])
             ->orderBy('event_datetime', 'asc')
             ->get();
         $mapJson = $mapKajians->toJson();
@@ -116,7 +125,10 @@ class KajianController extends Controller
         Kajian::purgeExpiredKajians(3);
         $cutoff = Carbon::now('Asia/Jakarta')->subHours(3);
         $kajians = Kajian::where('verified', true)
-            ->where('event_datetime', '>=', $cutoff)
+            ->where(function ($q) use ($cutoff) {
+                $q->where('event_datetime', '>=', $cutoff)
+                  ->orWhere('is_rutin', true);
+            })
             ->orderBy('event_datetime', 'asc')
             ->get();
         return response()->json([
@@ -133,7 +145,10 @@ class KajianController extends Controller
         Kajian::purgeExpiredKajians(3);
         $cutoff = Carbon::now('Asia/Jakarta')->subHours(3);
         $kajians = Kajian::where('verified', true)
-            ->where('event_datetime', '>=', $cutoff)
+            ->where(function ($q) use ($cutoff) {
+                $q->where('event_datetime', '>=', $cutoff)
+                  ->orWhere('is_rutin', true);
+            })
             ->orderBy('event_datetime', 'asc')
             ->get();
 
@@ -166,7 +181,7 @@ class KajianController extends Controller
         if ($user) {
             $bookmarkedKajians = $this->getUserBookmarks($user->id)
                 ->filter(function ($k) use ($cutoff) {
-                    return $k->event_datetime >= $cutoff;
+                    return $k->is_rutin || $k->event_datetime >= $cutoff;
                 });
             $attendances = $user->attendances()->with('kajian')->latest()->get();
         }

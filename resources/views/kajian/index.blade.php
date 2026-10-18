@@ -878,7 +878,18 @@
     document.getElementById('modalSpeakerInitial').innerText = (ev.ustadz || 'U').replace(/^Ustadz\s+/i, '').charAt(0) || 'U';
     document.getElementById('modalMasjid').innerText = ev.masjid;
     document.getElementById('modalAddress').innerText = ev.address;
-    document.getElementById('modalDateTimeStr').innerText = `${ev.day} • ${ev.time}`;
+    let modalDateText = ev.day;
+    if (ev.event_datetime) {
+      try {
+        const d = new Date(ev.event_datetime);
+        if (!isNaN(d.getTime())) {
+          const dayNum = d.getDate();
+          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+          modalDateText = `${ev.day}, ${dayNum} ${months[d.getMonth()]} ${d.getFullYear()}`;
+        }
+      } catch (e) {}
+    }
+    document.getElementById('modalDateTimeStr').innerText = `${modalDateText} • ${ev.time}`;
     document.getElementById('modalAudience').innerText = ev.audience ? `Terbuka untuk ${ev.audience}` : 'Terbuka untuk umum';
     document.getElementById('modalHeroSub').innerText = `${ev.ustadz} • ${ev.masjid}`;
     document.getElementById('modalDescription').innerText = ev.description || 'Kajian ilmiah ahlussunnah wal jamaah, terbuka untuk jamaah yang ingin menuntut ilmu syar\'i.';

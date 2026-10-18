@@ -47,7 +47,7 @@
     <!-- Bottom In-Image Teal Banner (Figma Screen 2) -->
     <div class="relative z-10 bg-[#1D4D4F] text-white p-3.5 rounded-2xl shadow-md space-y-1">
       <p class="text-[10px] font-bold tracking-wider text-[#A4D3CC] uppercase">
-        {{ strtoupper(\Carbon\Carbon::parse($kajian->event_date)->translatedFormat('d M Y')) }} • {{ $kajian->time }}
+        {{ strtoupper(\Carbon\Carbon::parse($kajian->event_datetime)->translatedFormat('d M Y')) }} • {{ $kajian->time }}
       </p>
       <h2 class="text-sm sm:text-base font-extrabold leading-tight text-white">
         {{ $kajian->title }}
@@ -95,9 +95,9 @@
       <div class="min-w-0">
         <span class="text-[10px] font-extrabold tracking-wider text-[#607072] uppercase block">TANGGAL & WAKTU</span>
         <p class="text-xs sm:text-sm font-bold text-[#1C2224] mt-0.5">
-          {{ \Carbon\Carbon::parse($kajian->event_date)->translatedFormat('l, d F Y') }} · {{ $kajian->time }}
+          {{ $kajian->day ? $kajian->day . ', ' : '' }}{{ \Carbon\Carbon::parse($kajian->event_datetime)->translatedFormat('d F Y') }} · {{ $kajian->time }}
         </p>
-        <p class="text-[11px] text-[#607072] mt-0.5">Selesai 11.00 WIB · Hadir 15 menit lebih awal</p>
+        <p class="text-[11px] text-[#607072] mt-0.5">Hadir 15 menit lebih awal</p>
       </div>
     </div>
 
