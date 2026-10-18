@@ -130,8 +130,20 @@
             ? "https://www.google.com/maps/dir/?api=1&destination={$kajian->lat},{$kajian->lon}" 
             : "https://www.google.com/maps/search/?api=1&query=" . urlencode($kajian->masjid . ' ' . $kajian->address);
         @endphp
+
+        @if($kajian->lat && $kajian->lon)
+          <!-- Mini Mapbox Preview -->
+          <div class="mt-2.5 relative w-full h-32 rounded-xl overflow-hidden border border-[#D1ECE7] shadow-2xs group">
+            <div id="miniMap" class="w-full h-full"></div>
+            <a href="{{ route('kajian.map') }}?selected={{ $kajian->id }}&lat={{ $kajian->lat }}&lon={{ $kajian->lon }}" class="absolute bottom-2 right-2 z-10 px-2.5 py-1 rounded-lg bg-[#1D4D4F] text-white text-[10px] font-bold shadow-md hover:bg-[#143839] transition-all flex items-center gap-1">
+              <span>Buka Peta Penuh</span>
+              <span>↗</span>
+            </a>
+          </div>
+        @endif
+
         <a href="{{ $gmapsUrl }}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-xs font-bold text-[#1D4D4F] hover:underline mt-2">
-          <span>Lihat petunjuk arah</span>
+          <span>Petunjuk arah navigasi</span>
           <span id="detailDistanceBadge" class="text-[11px] font-normal text-[#607072]">· 850 m</span>
           <span>↗</span>
         </a>
@@ -402,4 +414,40 @@
     toggleBookmarkDetailPage(id);
   }
 </script>
+
+@if($kajian->lat && $kajian->lon)
+  @push('styles')
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.10.0/mapbox-gl.css" rel="stylesheet">
+  <style>
+    .mapboxgl-ctrl-bottom-right, .mapboxgl-ctrl-bottom-left { display: none !important; }
+  </style>
+  @endpush
+
+  @push('scripts')
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.10.0/mapbox-gl.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const container = document.getElementById('miniMap');
+      if (!container || !window.mapboxgl) return;
+
+      mapboxgl.accessToken = '{{ config("services.mapbox.token") }}';
+      const miniMap = new mapboxgl.Map({
+        container: 'miniMap',
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: [{{ (float)$kajian->lon }}, {{ (float)$kajian->lat }}],
+        zoom: 14.8,
+        interactive: false,
+        attributionControl: false
+      });
+
+      const pinEl = document.createElement('div');
+      pinEl.className = 'w-7 h-7 rounded-full bg-[#1D4D4F] border-2 border-white shadow-md flex items-center justify-center text-white text-xs pointer-events-none';
+      pinEl.innerHTML = '🕌';
+      new mapboxgl.Marker({ element: pinEl })
+        .setLngLat([{{ (float)$kajian->lon }}, {{ (float)$kajian->lat }}])
+        .addTo(miniMap);
+    });
+  </script>
+  @endpush
+@endif
 @endsection
