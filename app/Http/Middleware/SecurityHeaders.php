@@ -21,13 +21,14 @@ class SecurityHeaders
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('Permissions-Policy', 'geolocation=(self), camera=(), microphone=()');
 
-        // CSP: izinkan self, Google Maps, CDN yang dipakai
+        // CSP: izinkan self, Tailwind CDN, Google Maps, Fonts
         $csp = "default-src 'self'; " .
-               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://maps.gstatic.com; " .
-               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " .
+               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://maps.googleapis.com https://maps.gstatic.com https://challenges.cloudflare.com; " .
+               "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com; " .
                "img-src 'self' data: blob: https:; " .
                "font-src 'self' https://fonts.gstatic.com; " .
                "connect-src 'self' https://*.supabase.co https://maps.googleapis.com; " .
+               "frame-src https://challenges.cloudflare.com; " .
                "frame-ancestors 'self';";
 
         $response->headers->set('Content-Security-Policy', $csp);
