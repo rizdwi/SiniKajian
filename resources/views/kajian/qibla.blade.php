@@ -301,30 +301,9 @@
     window.addEventListener('deviceorientation', onSensorData, true);
   }
 
+  // Generic Sensor API dinonaktifkan - konflik dengan deviceorientation di beberapa HP Android
   function tryStartGenericSensor() {
-    // Generic Sensor API (Chrome Android 67+) - lebih reliable
-    try {
-      if (typeof AbsoluteOrientationSensor !== 'undefined') {
-        const sensor = new AbsoluteOrientationSensor({ frequency: 10 });
-        sensor.addEventListener('reading', () => {
-          // Quaternion ke heading
-          const q = sensor.quaternion;
-          if (q) {
-            // Hitung yaw dari quaternion
-            const yaw = Math.atan2(
-              2 * (q[3] * q[2] + q[0] * q[1]),
-              1 - 2 * (q[1] * q[1] + q[2] * q[2])
-            );
-            let heading = (-yaw * 180 / Math.PI + 360) % 360;
-            onCompassHeading(heading);
-          }
-        });
-        sensor.addEventListener('error', () => {});
-        sensor.start();
-      }
-    } catch (e) {
-      // Generic Sensor tidak tersedia, abaikan
-    }
+    // Sengaja kosong - pakai deviceorientation saja yang lebih stabil
   }
 
   function onSensorData(event) {
@@ -357,7 +336,7 @@
     heading = ((heading % 360) + 360) % 360;
     currentHeading = Math.round(heading);
     updateCompassDisplay(currentHeading);
-    updateSensorStatus('aktif', 'Kompas aktif & mengikuti arah');
+    updateSensorStatus('aktif', 'Kompas aktif & mengikuti arah (' + currentHeading + '°)');
   }
 
   function updateSensorStatus(state, msg) {
