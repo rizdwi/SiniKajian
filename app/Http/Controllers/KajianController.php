@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Attendance;
 use App\Models\Bookmark;
 use App\Models\Kajian;
+use App\Services\SupabaseKajianService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
@@ -17,8 +19,85 @@ class KajianController extends Controller
 {
     /**
      * Tampilkan halaman beranda jadwal kajian.
+     * Data dibaca langsung dari Supabase (bukan SQLite yang ephemeral di Vercel).
      */
     public function index(Request $request): View
+    {
+        $service = new SupabaseKajianService();
+
+        if ($service->isConfigured()) {
+            return $this->indexFromSupabase($request, $service);
+        }
+
+        // Fallback ke SQLite jika Supabase belum dikonfigurasi
+        return $this->indexFromSqlite($request);
+    }
+
+    /**
+     * Index via Supabase REST API.
+     */
+    protected function indexFromSupabase(Request $request, SupabaseKajianService $service): View
+    {
+        $allRows = $service->getActiveKajians();
+        $collection = SupabaseKajianService::toCollection($allRows);
+
+        $categories = $service->getCategories();
+
+        // Filter
+        if ($request->filled('kategori') && $request->kategori !== 'Semua') {
+            $collection = $collection->where('category', $request->kategori);
+        }
+        if ($request->filled('hari') && $request->hari !== 'Semua') {
+            $collection = $collection->where('day', $request->hari);
+        }
+        if ($request->filled('audience') && $request->audience !== 'Semua') {
+            $collection = $collection->where('audience', $request->audience);
+        }
+        if ($request->filled('q')) {
+            $q = strtolower($request->q);
+            $collection = $collection->filter(function ($k) use ($q) {
+                return str_contains(strtolower($k->title), $q)
+                    || str_contains(strtolower($k->ustadz), $q)
+                    || str_contains(strtolower($k->masjid), $q);
+            });
+        }
+
+        // Sort: event_date terdekat dulu, null (rutin) di belakang
+        $collection = $collection->sortBy([
+            fn($a, $b) => ($a->event_date ?? '9999') <=> ($b->event_date ?? '9999'),
+        ])->values();
+
+        // Manual pagination
+        $perPage = 20;
+        $page = max(1, (int)$request->get('page', 1));
+        $total = $collection->count();
+        $items = $collection->forPage($page, $perPage)->values();
+        $kajians = new LengthAwarePaginator($items, $total, $perPage, $page, [
+            'path' => $request->url(),
+            'query' => $request->query(),
+        ]);
+
+        // JSON untuk peta (semua, tanpa pagination)
+        $allForMap = SupabaseKajianService::toCollection($service->getActiveKajians());
+        $mapJson = $allForMap->toJson();
+
+        $userBookmarks = [];
+        if (Auth::check()) {
+            $userBookmarks = Bookmark::where('user_id', Auth::id())->pluck('kajian_id')->toArray();
+        }
+
+        return view('kajian.index', [
+            'kajians' => $kajians,
+            'allKajiansJson' => $mapJson,
+            'categories' => $categories,
+            'userBookmarks' => $userBookmarks,
+        ]);
+    }
+
+    /**
+     * Index via SQLite (fallback).
+     */
+    protected function indexFromSqlite(Request $request): View
     {
         // Otomatis hapus kajian yang sudah lewat 3-6 jam dari jadwal
         Kajian::purgeExpiredKajians(3);
@@ -99,9 +178,19 @@ class KajianController extends Controller
      */
     public function show($id): View|\Illuminate\Http\RedirectResponse
     {
-        $kajian = Kajian::find($id);
-        if (!$kajian) {
-            return redirect()->route('kajian.index')->with('error', 'Kajian tidak ditemukan atau telah berakhir.');
+        $service = new SupabaseKajianService();
+
+        if ($service->isConfigured()) {
+            $row = $service->find((int)$id);
+            if (!$row) {
+                return redirect()->route('kajian.index')->with('error', 'Kajian tidak ditemukan atau telah berakhir.');
+            }
+            $kajian = SupabaseKajianService::toObject($row);
+        } else {
+            $kajian = Kajian::find($id);
+            if (!$kajian) {
+                return redirect()->route('kajian.index')->with('error', 'Kajian tidak ditemukan atau telah berakhir.');
+            }
         }
 
         $isBookmarked = false;
@@ -122,15 +211,23 @@ class KajianController extends Controller
      */
     public function apiList(): JsonResponse
     {
-        Kajian::purgeExpiredKajians(3);
-        $cutoff = Carbon::now('Asia/Jakarta')->subHours(3);
-        $kajians = Kajian::where('verified', true)
-            ->where(function ($q) use ($cutoff) {
-                $q->where('event_datetime', '>=', $cutoff)
-                  ->orWhere('is_rutin', true);
-            })
-            ->orderBy('event_datetime', 'asc')
-            ->get();
+        $service = new SupabaseKajianService();
+
+        if ($service->isConfigured()) {
+            $rows = $service->getActiveKajians();
+            $kajians = SupabaseKajianService::toCollection($rows);
+        } else {
+            Kajian::purgeExpiredKajians(3);
+            $cutoff = Carbon::now('Asia/Jakarta')->subHours(3);
+            $kajians = Kajian::where('verified', true)
+                ->where(function ($q) use ($cutoff) {
+                    $q->where('event_datetime', '>=', $cutoff)
+                      ->orWhere('is_rutin', true);
+                })
+                ->orderBy('event_datetime', 'asc')
+                ->get();
+        }
+
         return response()->json([
             'status' => 'success',
             'data' => $kajians,
@@ -142,15 +239,22 @@ class KajianController extends Controller
      */
     public function map(): View
     {
-        Kajian::purgeExpiredKajians(3);
-        $cutoff = Carbon::now('Asia/Jakarta')->subHours(3);
-        $kajians = Kajian::where('verified', true)
-            ->where(function ($q) use ($cutoff) {
-                $q->where('event_datetime', '>=', $cutoff)
-                  ->orWhere('is_rutin', true);
-            })
-            ->orderBy('event_datetime', 'asc')
-            ->get();
+        $service = new SupabaseKajianService();
+
+        if ($service->isConfigured()) {
+            $rows = $service->getActiveKajians();
+            $kajians = SupabaseKajianService::toCollection($rows);
+        } else {
+            Kajian::purgeExpiredKajians(3);
+            $cutoff = Carbon::now('Asia/Jakarta')->subHours(3);
+            $kajians = Kajian::where('verified', true)
+                ->where(function ($q) use ($cutoff) {
+                    $q->where('event_datetime', '>=', $cutoff)
+                      ->orWhere('is_rutin', true);
+                })
+                ->orderBy('event_datetime', 'asc')
+                ->get();
+        }
 
         return view('kajian.map', [
             'events' => $kajians,

@@ -151,5 +151,7 @@ Route::post('/webhook/sync-kajian', function (\Illuminate\Http\Request $request)
         abort(403, 'Unauthorized');
     }
     \Illuminate\Support\Facades\Artisan::call('kajian:sync-supabase');
+    // Clear Supabase cache agar data baru langsung tampil
+    \App\Services\SupabaseKajianService::clearCache();
     return response()->json(['ok' => true, 'output' => \Illuminate\Support\Facades\Artisan::output()]);
 });
