@@ -153,6 +153,17 @@
   <!-- Konten Utama Halaman -->
   <main class="flex-1 pb-24">
     @yield('content')
+
+    <!-- Banner Infaq -->
+    <div class="max-w-md mx-auto px-4 mt-6 mb-4">
+      <div style="background:linear-gradient(135deg,#1D4D4F 0%,#2A6B6E 100%); border-radius:16px; padding:20px; color:#fff; text-align:center; box-shadow:0 4px 16px rgba(29,77,79,.2);">
+        <div style="font-size:24px; margin-bottom:8px;">🤲</div>
+        <div style="font-weight:700; font-size:16px; margin-bottom:6px;">Dukung Majelisku Tetap Berjalan</div>
+        <div style="font-size:13px; opacity:.9; margin-bottom:14px; line-height:1.5;">Infaq Anda membantu kami menjaga layanan tetap gratis dan terus berkembang menyebarkan info kajian sunnah.</div>
+        <a href="https://wa.me/6281380622197?text=Assalamu%27alaikum%2C%20saya%20ingin%20berinfaq%20untuk%20Majelisku" target="_blank" style="display:inline-block; background:#F4A300; color:#1D4D4F; font-weight:700; padding:10px 28px; border-radius:10px; text-decoration:none; font-size:14px;">Berinfaq Sekarang</a>
+        <div style="font-size:11px; opacity:.7; margin-top:10px;">"Perumpamaan orang yang menginfakkan hartanya di jalan Allah seperti sebutir biji yang menumbuhkan tujuh tangkai" (QS. Al-Baqarah: 261)</div>
+      </div>
+    </div>
   </main>
 
   <!-- Bottom Navigation Bar Native PWA (4 Destinasi sesuai Desain Figma) -->
