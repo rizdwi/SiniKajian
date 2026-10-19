@@ -1378,12 +1378,11 @@
         <div class="flex items-start gap-3"${cancelledDim}>
           ${flyerThumb}
           <div class="min-w-0 flex-1">
-            <div class="flex items-center gap-1 flex-wrap">
-                <span class="text-[10px] font-bold text-[#1D4D4F] bg-[#E6F4F1] px-2 py-0.5 rounded-full whitespace-nowrap">
-                  ${ev.day}${ev.event_date ? ', ' + formatTanggalIndo(ev.event_date) : ''} • ${ev.time}
-                </span>
-                ${hariLagiBadge(ev.event_date)}
-              </div>
+            <div class="flex items-center gap-1 flex-wrap mb-1">
+              <span class="text-[10px] font-bold text-[#1D4D4F] bg-[#E6F4F1] px-2 py-0.5 rounded-full whitespace-nowrap">
+                ${ev.day}${ev.event_date ? ', ' + formatTanggalIndo(ev.event_date) : ''} • ${ev.time}
+              </span>
+              ${hariLagiBadge(ev.event_date)}
             </div>
             
             <h3 class="text-xs sm:text-sm font-bold text-[#1C2224] dark:text-[#E8EDED] leading-snug line-clamp-2 hover:text-[#1D4D4F]">
