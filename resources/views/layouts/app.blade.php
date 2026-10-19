@@ -183,9 +183,9 @@
         <div style="font-weight:700; font-size:16px; margin-bottom:6px;">Dukung Majelisku Tetap Berjalan</div>
         <div style="font-size:13px; opacity:.9; margin-bottom:14px; line-height:1.5;">Infaq Anda membantu kami menjaga layanan tetap gratis dan terus berkembang menyebarkan info kajian sunnah.</div>
         <div style="background:rgba(255,255,255,.15); border-radius:10px; padding:12px; margin-bottom:12px;">
-          <div style="font-size:12px; opacity:.8; margin-bottom:4px;">Bank Jago</div>
-          <div style="font-size:20px; font-weight:700; letter-spacing:1px; font-family:monospace;">106429900520</div>
-          <div style="font-size:11px; opacity:.7; margin-top:4px;">a.n. Majelisku</div>
+          <div style="font-size:12px; opacity:.8; margin-bottom:4px;">Bank Syariah Indonesia (BSI)</div>
+          <div style="font-size:20px; font-weight:700; letter-spacing:1px; font-family:monospace;">7182045556</div>
+          <div style="font-size:11px; opacity:.7; margin-top:4px;">a.n. Yayasan Insan Muslim</div>
         </div>
         <div style="font-size:11px; opacity:.7; margin-top:10px;">"Perumpamaan orang yang menginfakkan hartanya di jalan Allah seperti sebutir biji yang menumbuhkan tujuh tangkai" (QS. Al-Baqarah: 261)</div>
       </div>
