@@ -107,17 +107,6 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
-
-      <button 
-        type="button" 
-        onclick="openFilterModal()" 
-        class="w-10 h-10 bg-white border border-[#E5ECEB] rounded-2xl text-[#1D4D4F] hover:bg-[#E6F4F1] shadow-xs touch-btn flex items-center justify-center shrink-0 transition"
-        aria-label="Buka Filter"
-      >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
-        </svg>
-      </button>
     </div>
 
     <!-- Quick Chips: Kategori Kajian (Figma Screen 1: Filter Chips) -->
@@ -126,24 +115,26 @@
         Untukmu
       </button>
       @foreach($categories as $cat)
+      @if(!in_array($cat, ['Kajian', 'Kajian Akhir Pekan', 'Kajian Akhir Pekan & Bazar', 'Bazar']))
       <button onclick="setCategoryFilter('{{ $cat }}')" class="category-chip whitespace-nowrap px-4 py-2 rounded-full font-medium transition-all bg-white dark:bg-[#162526] text-[#607072] dark:text-[#9BA8A9] border border-[#E5ECEB] hover:border-[#1D4D4F] hover:text-[#1D4D4F]" data-cat="{{ $cat }}">
         {{ $cat }}
       </button>
+      @endif
       @endforeach
     </div>
 
     <!-- Quick Chips: Radius Jarak & Hari -->
-    <div class="flex items-center justify-between text-xs text-[#607072] dark:text-[#9BA8A9] pt-0.5">
-      <div class="flex items-center space-x-1.5 overflow-x-auto no-scrollbar">
-        <span class="text-[11px] font-medium text-[#607072] dark:text-[#9BA8A9]">Radius:</span>
-        <button onclick="setRadiusFilter(5)" class="radius-chip px-2.5 py-1 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F]" data-radius="5">5 km</button>
-        <button onclick="setRadiusFilter(15)" class="radius-chip px-2.5 py-1 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F]" data-radius="15">15 km</button>
-        <button onclick="setRadiusFilter(25)" class="radius-chip px-2.5 py-1 rounded-xl border border-[#1D4D4F] bg-[#E6F4F1] text-[#1D4D4F] font-bold" data-radius="25">25 km</button>
-        <button onclick="setRadiusFilter(999)" class="radius-chip px-2.5 py-1 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F]" data-radius="999">Semua</button>
+    <div class="flex items-center justify-between text-xs text-[#607072] dark:text-[#9BA8A9] pt-0.5 gap-2">
+      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar shrink-0">
+        <span class="text-[11px] font-medium text-[#607072] dark:text-[#9BA8A9] whitespace-nowrap">Radius:</span>
+        <button onclick="setRadiusFilter(5)" class="radius-chip px-3.5 py-1.5 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] whitespace-nowrap" data-radius="5">5 km</button>
+        <button onclick="setRadiusFilter(15)" class="radius-chip px-3.5 py-1.5 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] whitespace-nowrap" data-radius="15">15 km</button>
+        <button onclick="setRadiusFilter(25)" class="radius-chip px-3.5 py-1.5 rounded-xl border border-[#1D4D4F] bg-[#E6F4F1] text-[#1D4D4F] font-bold whitespace-nowrap" data-radius="25">25 km</button>
+        <button onclick="setRadiusFilter(999)" class="radius-chip px-3.5 py-1.5 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] whitespace-nowrap" data-radius="999">Semua</button>
       </div>
 
       <div class="flex items-center space-x-1">
-        <button id="viewModeToggle" onclick="toggleViewMode()" class="px-2.5 py-1 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] flex items-center gap-1 transition" title="Ganti tampilan">
+        <button id="viewModeToggle" onclick="openCalendarModal()" class="px-2.5 py-1 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] flex items-center gap-1 transition" title="Buka kalender">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
           </svg>
@@ -426,10 +417,60 @@
           </svg>
           <span id="modalFollowLabel" class="truncate">Ikuti Majelis</span>
         </button>
+
+        <!-- Tombol 3: Tambah ke Kalender -->
+        <button onclick="if(currentDetailEvent) downloadICS(currentDetailEvent.id)" class="w-full py-3 px-2 rounded-2xl bg-[#E6F4F1] dark:bg-[#1E2E2F] hover:bg-[#D1EAE5] text-[#1D4D4F] dark:text-[#7FC4BC] text-xs font-extrabold shadow-sm touch-btn flex items-center justify-center gap-1.5 transition">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+          <span class="truncate">Tambah ke Kalender</span>
+        </button>
       </div>
       <p class="text-[10px] text-center text-[#607072] dark:text-[#9BA8A9]">
         Kajian tersimpan di agenda pribadi dan majelis tercatat diikuti di profil.
       </p>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Kalender Kajian -->
+<div id="calendarModal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
+  <div class="bg-white dark:bg-[#162526] w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 space-y-4 max-h-[85vh] overflow-y-auto no-scrollbar">
+    <div class="flex items-center justify-between border-b border-[#E5ECEB] dark:border-[#1E2E2F] pb-3">
+      <h3 class="text-sm font-bold text-[#1C2224] dark:text-[#E8EDED]">Kalender Kajian</h3>
+      <button onclick="closeCalendarModal()" class="text-[#607072] dark:text-[#9BA8A9] hover:text-[#1C2224] dark:text-[#E8EDED] p-1" aria-label="Tutup Kalender">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Navigasi bulan -->
+    <div class="flex items-center justify-between">
+      <button onclick="changeCalendarMonth(-1)" class="w-9 h-9 rounded-full bg-[#F8FAF9] dark:bg-[#1E2E2F] border border-[#E5ECEB] dark:border-[#1E2E2F] flex items-center justify-center text-[#1D4D4F] dark:text-[#7FC4BC] touch-btn" aria-label="Bulan sebelumnya">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+      </button>
+      <h4 id="calendarMonthLabel" class="text-sm font-extrabold text-[#1C2224] dark:text-[#E8EDED]"></h4>
+      <button onclick="changeCalendarMonth(1)" class="w-9 h-9 rounded-full bg-[#F8FAF9] dark:bg-[#1E2E2F] border border-[#E5ECEB] dark:border-[#1E2E2F] flex items-center justify-center text-[#1D4D4F] dark:text-[#7FC4BC] touch-btn" aria-label="Bulan berikutnya">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+      </button>
+    </div>
+
+    <!-- Grid kalender -->
+    <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-[#607072] dark:text-[#9BA8A9] uppercase">
+      <div>Min</div><div>Sen</div><div>Sel</div><div>Rab</div><div>Kam</div><div>Jum</div><div>Sab</div>
+    </div>
+    <div id="calendarGrid" class="grid grid-cols-7 gap-1"></div>
+
+    <p class="text-[11px] text-[#607072] dark:text-[#9BA8A9] text-center">
+      <span class="inline-block w-2 h-2 rounded-full bg-[#1D4D4F] mr-1"></span>Ada kajian
+      <span class="inline-block w-2 h-2 rounded-full bg-red-500 ml-3 mr-1"></span>Hari ini
+    </p>
+
+    <!-- Daftar kajian tanggal terpilih -->
+    <div id="calendarDateList" class="hidden space-y-2">
+      <h4 id="calendarDateLabel" class="text-xs font-extrabold text-[#1C2224] dark:text-[#E8EDED]"></h4>
+      <div id="calendarDateItems" class="space-y-2 max-h-48 overflow-y-auto no-scrollbar"></div>
     </div>
   </div>
 </div>
@@ -715,6 +756,139 @@
     const label = document.getElementById('viewModeLabel');
     if (label) label.innerText = viewMode === 'list' ? 'Kalender' : 'List';
     renderKajianFeed();
+  }
+
+  // ===== KALENDER MODAL =====
+  let calendarCursor = new Date();
+  calendarCursor.setDate(1);
+
+  // Ubah tombol "Kalender" jadi buka modal kalender (bukan toggle agenda)
+  function openCalendarModal() {
+    document.getElementById('calendarModal').classList.remove('hidden');
+    renderCalendar();
+  }
+  function closeCalendarModal() {
+    document.getElementById('calendarModal').classList.add('hidden');
+  }
+  function changeCalendarMonth(delta) {
+    calendarCursor.setMonth(calendarCursor.getMonth() + delta);
+    renderCalendar();
+  }
+
+  function getKajianDatesMap() {
+    const map = {};
+    (typeof rawKajians !== 'undefined' ? rawKajians : []).forEach(ev => {
+      if (ev.event_date && !ev.is_cancelled) {
+        const key = String(ev.event_date).split('T')[0];
+        if (!map[key]) map[key] = [];
+        map[key].push(ev);
+      }
+    });
+    return map;
+  }
+
+  function renderCalendar() {
+    const year = calendarCursor.getFullYear();
+    const month = calendarCursor.getMonth();
+    const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    document.getElementById('calendarMonthLabel').innerText = `${months[month]} ${year}`;
+
+    const grid = document.getElementById('calendarGrid');
+    grid.innerHTML = '';
+
+    const firstDay = new Date(year, month, 1).getDay(); // 0=Min
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const todayStr = new Date().toISOString().split('T')[0];
+    const kajianMap = getKajianDatesMap();
+
+    for (let i = 0; i < firstDay; i++) {
+      grid.appendChild(document.createElement('div'));
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const hasKajian = !!(kajianMap[dateStr] && kajianMap[dateStr].length);
+      const isToday = dateStr === todayStr;
+
+      const cell = document.createElement('button');
+      cell.className = 'relative aspect-square rounded-xl text-xs font-semibold flex flex-col items-center justify-center transition touch-btn ' +
+        (isToday
+          ? 'bg-red-500 text-white'
+          : hasKajian
+            ? 'bg-[#E6F4F1] dark:bg-[#1E2E2F] text-[#1D4D4F] dark:text-[#7FC4BC] hover:bg-[#D1EAE5]'
+            : 'text-[#607072] dark:text-[#9BA8A9] hover:bg-slate-100 dark:hover:bg-[#1E2E2F]');
+      cell.innerHTML = `<span>${d}</span>` +
+        (hasKajian && !isToday ? `<span class="w-1.5 h-1.5 rounded-full bg-[#1D4D4F] dark:bg-[#7FC4BC] mt-0.5"></span>` : '') +
+        (hasKajian && isToday ? `<span class="w-1.5 h-1.5 rounded-full bg-white mt-0.5"></span>` : '');
+      if (hasKajian) {
+        cell.onclick = () => showCalendarDateKajian(dateStr, kajianMap[dateStr]);
+      } else {
+        cell.disabled = true;
+        cell.classList.add('opacity-60');
+      }
+      grid.appendChild(cell);
+    }
+
+    // Sembunyikan daftar tanggal saat ganti bulan
+    document.getElementById('calendarDateList').classList.add('hidden');
+  }
+
+  function showCalendarDateKajian(dateStr, items) {
+    const listWrap = document.getElementById('calendarDateList');
+    const label = document.getElementById('calendarDateLabel');
+    const itemsWrap = document.getElementById('calendarDateItems');
+    label.innerText = `${formatTanggalIndo(dateStr)} — ${items.length} kajian`;
+    itemsWrap.innerHTML = '';
+    items.forEach(ev => {
+      const row = document.createElement('div');
+      row.className = 'bg-[#F8FAF9] dark:bg-[#1E2E2F] rounded-xl p-3 flex items-center gap-2 cursor-pointer hover:border hover:border-[#1D4D4F]/40 transition';
+      row.onclick = () => { closeCalendarModal(); openDetailModalWithId(ev.id); };
+      const timeShort = (ev.time || '').split('-')[0] || '';
+      row.innerHTML = `
+        <div class="flex-1 min-w-0">
+          <div class="text-[13px] font-bold text-[#1C2224] dark:text-[#E8EDED] truncate">${escapeHtml(ev.title)}</div>
+          <div class="text-[11px] text-[#607072] dark:text-[#9BA8A9] truncate">${escapeHtml(timeShort)} • ${escapeHtml(ev.ustadz)} • ${escapeHtml(ev.masjid)}</div>
+        </div>
+        <button onclick="event.stopPropagation(); downloadICS(${ev.id})" class="p-2 rounded-lg bg-[#E6F4F1] dark:bg-[#0F1B1C] text-[#1D4D4F] dark:text-[#7FC4BC] touch-btn" title="Tambah ke kalender" aria-label="Tambah ke kalender">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+        </button>
+      `;
+      itemsWrap.appendChild(row);
+    });
+    listWrap.classList.remove('hidden');
+  }
+
+  // Download .ics untuk sinkron ke kalender user (Google/Apple/Outlook)
+  function downloadICS(kajianId) {
+    const ev = (typeof rawKajians !== 'undefined' ? rawKajians : []).find(k => k.id === kajianId);
+    if (!ev || !ev.event_date) return;
+    const dateStr = String(ev.event_date).split('T')[0].replace(/-/g, '');
+    let timeStart = '090000', timeEnd = '110000';
+    const m = (ev.time || '').match(/(\d{1,2})[:.](\d{2})/);
+    if (m) {
+      timeStart = m[1].padStart(2, '0') + m[2] + '00';
+      const endH = (parseInt(m[1], 10) + 2) % 24;
+      timeEnd = String(endH).padStart(2, '0') + m[2] + '00';
+    }
+    const ics = [
+      'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Majelisku//Kajian//ID',
+      'BEGIN:VEVENT',
+      `UID:kajian-${ev.id}@majelisku.web.id`,
+      `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
+      `DTSTART;TZID=Asia/Jakarta:${dateStr}T${timeStart}`,
+      `DTEND;TZID=Asia/Jakarta:${dateStr}T${timeEnd}`,
+      `SUMMARY:${(ev.title || 'Kajian').replace(/[,;\\]/g, ' ')}`,
+      `DESCRIPTION:${(ev.ustadz || '').replace(/[,;\\]/g, ' ')} - ${('majelisku.web.id')}`,
+      `LOCATION:${((ev.masjid || '') + ' ' + (ev.address || '')).replace(/[,;\\]/g, ' ').substring(0, 120)}`,
+      'END:VEVENT', 'END:VCALENDAR'
+    ].join('\r\n');
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `kajian-${ev.id}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   }
 
   // Render agenda: grup berdasarkan tanggal
