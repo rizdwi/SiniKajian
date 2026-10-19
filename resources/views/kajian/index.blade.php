@@ -1450,6 +1450,10 @@
   function openDetailModalWithEvent(ev) {
     if (!ev) return;
     currentDetailEvent = ev;
+    // Tampilkan modal DULU agar selalu merespons klik
+    const modal = document.getElementById('detailModal');
+    if (modal) modal.classList.remove('hidden');
+    try {
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
     set('modalCategory', ev.category || 'Kajian Sunnah');
     set('modalTitle', ev.title);
@@ -1529,8 +1533,9 @@
     const isFollowed = getFollowedMajelisList().includes(ev.masjid);
     updateModalFollowButtonState(isFollowed);
 
-    document.getElementById('modalRouteBtn').onclick = () => openGoogleMapsRoute(ev.lat, ev.lon);
-    document.getElementById('detailModal').classList.remove('hidden');
+    const routeBtn = document.getElementById('modalRouteBtn');
+    if (routeBtn) routeBtn.onclick = () => openGoogleMapsRoute(ev.lat, ev.lon);
+    } catch (err) { console.error('Error isi modal:', err); }
   }
 
   function getFollowedMajelisList() {
