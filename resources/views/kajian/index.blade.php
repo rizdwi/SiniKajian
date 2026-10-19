@@ -858,7 +858,9 @@
     listWrap.classList.remove('hidden');
   }
 
-  // Download .ics untuk sinkron ke kalender user (Google/Apple/Outlook)
+  // Tambah ke kalender user langsung (tanpa .ics):
+  // - iPhone: buka Apple Calendar via file .ics inline
+  // - Android/Desktop: buka Google Calendar dengan event terisi
   function downloadICS(kajianId) {
     const ev = (typeof rawKajians !== 'undefined' ? rawKajians : []).find(k => k.id === kajianId);
     if (!ev || !ev.event_date) return;
@@ -870,25 +872,37 @@
       const endH = (parseInt(m[1], 10) + 2) % 24;
       timeEnd = String(endH).padStart(2, '0') + m[2] + '00';
     }
-    const ics = [
-      'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Majelisku//Kajian//ID',
-      'BEGIN:VEVENT',
-      `UID:kajian-${ev.id}@majelisku.web.id`,
-      `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
-      `DTSTART;TZID=Asia/Jakarta:${dateStr}T${timeStart}`,
-      `DTEND;TZID=Asia/Jakarta:${dateStr}T${timeEnd}`,
-      `SUMMARY:${(ev.title || 'Kajian').replace(/[,;\\]/g, ' ')}`,
-      `DESCRIPTION:${(ev.ustadz || '').replace(/[,;\\]/g, ' ')} - ${('majelisku.web.id')}`,
-      `LOCATION:${((ev.masjid || '') + ' ' + (ev.address || '')).replace(/[,;\\]/g, ' ').substring(0, 120)}`,
-      'END:VEVENT', 'END:VCALENDAR'
-    ].join('\r\n');
-    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `kajian-${ev.id}.ics`;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    const title = ev.title || 'Kajian';
+    const desc = `${ev.ustadz || ''} - majelisku.web.id`;
+    const loc = ((ev.masjid || '') + ' ' + (ev.address || '')).substring(0, 120);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+    if (isIOS) {
+      // Apple Calendar: .ics inline langsung buka import
+      const ics = [
+        'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Majelisku//Kajian//ID',
+        'BEGIN:VEVENT',
+        `UID:kajian-${ev.id}@majelisku.web.id`,
+        `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
+        `DTSTART;TZID=Asia/Jakarta:${dateStr}T${timeStart}`,
+        `DTEND;TZID=Asia/Jakarta:${dateStr}T${timeEnd}`,
+        `SUMMARY:${title.replace(/[,;\\]/g, ' ')}`,
+        `DESCRIPTION:${desc.replace(/[,;\\]/g, ' ')}`,
+        `LOCATION:${loc.replace(/[,;\\]/g, ' ')}`,
+        'END:VEVENT', 'END:VCALENDAR'
+      ].join('\r\n');
+      window.location.href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ics);
+    } else {
+      // Google Calendar: buka langsung dengan event terisi
+      const dates = `${dateStr}T${timeStart}/${dateStr}T${timeEnd}`;
+      const url = 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
+        `&text=${encodeURIComponent(title)}` +
+        `&dates=${dates}` +
+        `&ctz=Asia/Jakarta` +
+        `&details=${encodeURIComponent(desc)}` +
+        `&location=${encodeURIComponent(loc)}`;
+      window.open(url, '_blank');
+    }
   }
 
   // Render agenda: grup berdasarkan tanggal
