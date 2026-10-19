@@ -198,6 +198,17 @@
     // 1. Langsung baca koordinat otomatis dari Geo Engine begitu halaman dibuka
     syncFromGeoEngine();
 
+    // 1b. Minta GPS fresh setiap kali halaman qibla dibuka (iOS & Android)
+    if (window.SiniKajianGeo && typeof window.SiniKajianGeo.requestLiveGps === 'function') {
+      window.SiniKajianGeo.requestLiveGps();
+    } else if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((pos) => {
+        if (window.SiniKajianGeo && typeof window.SiniKajianGeo.handlePositionUpdate === 'function') {
+          window.SiniKajianGeo.handlePositionUpdate(pos, true);
+        }
+      }, () => {}, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+    }
+
     // 2. Langsung mulai dengarkan sensor kompas otomatis tanpa perlu klik tombol
     autoStartCompass();
 
