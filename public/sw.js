@@ -102,8 +102,8 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title || 'Majelisku', {
       body: data.body || '',
-      icon: '/android-chrome-192x192.png',
-      badge: '/android-chrome-192x192.png',
+      icon: '/icon-192-v2.png',
+      badge: '/icon-192-v2.png',
       data: { url: data.url || '/' },
       vibrate: [200, 100, 200],
     })
