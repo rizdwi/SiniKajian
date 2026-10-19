@@ -793,8 +793,8 @@
       const dateB = b.event_date || '9999-12-31';
       if (dateA !== dateB) return dateA.localeCompare(dateB);
       // Jika tanggal sama, urutkan berdasarkan jarak terdekat
-      const distA = a.distance ?? 999999;
-      const distB = b.distance ?? 999999;
+      const distA = (a.distance === null || a.distance === undefined) ? 999999 : a.distance;
+      const distB = (b.distance === null || b.distance === undefined) ? 999999 : b.distance;
       if (distA !== distB) return distA - distB;
       // Jika jarak sama, urutkan berdasarkan waktu
       return (a.time || '').localeCompare(b.time || '');
