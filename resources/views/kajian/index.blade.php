@@ -843,7 +843,9 @@
     items.forEach(ev => {
       const row = document.createElement('div');
       row.className = 'bg-[#F8FAF9] dark:bg-[#1E2E2F] rounded-xl p-3 flex items-center gap-2 cursor-pointer hover:border hover:border-[#1D4D4F]/40 transition';
-      row.onclick = () => { closeCalendarModal(); openDetailModalWithId(ev.id); };
+      row.addEventListener('click', () => {
+        try { closeCalendarModal(); openDetailModalWithEvent(ev); } catch (err) { console.error('Gagal buka detail:', err); }
+      });
       const timeShort = (ev.time || '').split('-')[0] || '';
       row.innerHTML = `
         <div class="flex-1 min-w-0">
@@ -970,7 +972,9 @@
       list.forEach(ev => {
         const row = document.createElement('div');
         row.className = 'bg-white dark:bg-[#162526] rounded-xl p-3 mb-2 border border-[#E5ECEB] dark:border-[#1E2E2F] flex items-center gap-3 cursor-pointer hover:border-[#1D4D4F]/50 transition' + (ev.is_cancelled ? ' opacity-60' : '');
-        row.onclick = () => openDetailModalWithId(ev.id);
+        row.addEventListener('click', () => {
+          try { openDetailModalWithEvent(ev); } catch (err) { console.error('Gagal buka detail:', err); }
+        });
         const timeShort = (ev.time || '').split('-')[0].split(' ')[0] || '';
         row.innerHTML = `
           <div class="text-center shrink-0 w-14">
@@ -1339,7 +1343,13 @@
       card.className = 'bg-white dark:bg-[#162526] rounded-2xl p-3.5 border border-[#E5ECEB] dark:border-[#1E2E2F] shadow-xs hover:border-[#1D4D4F]/50 transition-all cursor-pointer' + (ev.is_cancelled ? ' !border-red-300' : '');
       card.style.position = 'relative';
       card.style.overflow = 'hidden';
-      card.onclick = () => openDetailModalWithId(ev.id);
+      card.addEventListener('click', () => {
+        try {
+          openDetailModalWithEvent(ev);
+        } catch (err) {
+          console.error('Gagal buka detail:', err);
+        }
+      });
       const cancelledStamp = ev.is_cancelled ? `
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:10;">
           <span style="border:4px solid #dc2626;color:#dc2626;font-weight:900;font-size:28px;letter-spacing:4px;padding:6px 20px;border-radius:8px;transform:rotate(-12deg);background:rgba(255,255,255,0.75);text-transform:uppercase;font-family:system-ui;">Dibatalkan</span>
@@ -1432,13 +1442,16 @@
   }
 
   function openDetailModalWithEvent(ev) {
+    if (!ev) return;
     currentDetailEvent = ev;
-    document.getElementById('modalCategory').innerText = ev.category || 'Kajian Sunnah';
-    document.getElementById('modalTitle').innerText = ev.title;
-    document.getElementById('modalSpeaker').innerText = ev.ustadz;
-    document.getElementById('modalSpeakerInitial').innerText = (ev.ustadz || 'U').replace(/^Ustadz\s+/i, '').charAt(0) || 'U';
-    document.getElementById('modalMasjid').innerText = ev.masjid;
-    document.getElementById('modalAddress').innerText = ev.address;
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+    set('modalCategory', ev.category || 'Kajian Sunnah');
+    set('modalTitle', ev.title);
+    set('modalSpeaker', ev.ustadz);
+    const speakerInitial = document.getElementById('modalSpeakerInitial');
+    if (speakerInitial) speakerInitial.innerText = (ev.ustadz || 'U').replace(/^Ustadz\s+/i, '').charAt(0) || 'U';
+    set('modalMasjid', ev.masjid);
+    set('modalAddress', ev.address);
     let modalDateText = ev.day;
     if (ev.event_datetime) {
       try {
