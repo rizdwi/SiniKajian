@@ -50,7 +50,7 @@ class SupabaseKajianService
                 $res = Http::withHeaders($this->headers())
                     ->timeout(15)
                     ->get("{$this->url}/rest/v1/kajian", [
-                        'select' => 'id,title,ustadz,category,audience,masjid,address,lat,lon,day,time,description,verified,source,source_url,flyer_url,event_date',
+                        'select' => 'id,title,ustadz,category,audience,masjid,address,lat,lon,day,time,description,verified,source,source_url,flyer_url,event_date,is_cancelled',
                         'verified' => 'eq.true',
                         'order' => 'event_date.asc.nullslast,id.desc',
                         'limit' => 500,
@@ -82,7 +82,7 @@ class SupabaseKajianService
             $res = Http::withHeaders($this->headers())
                 ->timeout(15)
                 ->get("{$this->url}/rest/v1/kajian", [
-                    'select' => 'id,title,ustadz,category,audience,masjid,address,lat,lon,day,time,description,verified,source,source_url,flyer_url,event_date',
+                    'select' => 'id,title,ustadz,category,audience,masjid,address,lat,lon,day,time,description,verified,source,source_url,flyer_url,event_date,is_cancelled',
                     'order' => 'id.desc',
                     'limit' => 1000,
                 ]);
@@ -114,7 +114,7 @@ class SupabaseKajianService
                 ->timeout(10)
                 ->get("{$this->url}/rest/v1/kajian", [
                     'id' => "eq.{$id}",
-                    'select' => 'id,title,ustadz,category,audience,masjid,address,lat,lon,day,time,description,verified,source,source_url,flyer_url,event_date',
+                    'select' => 'id,title,ustadz,category,audience,masjid,address,lat,lon,day,time,description,verified,source,source_url,flyer_url,event_date,is_cancelled',
                 ]);
             $rows = $res->json() ?? [];
             return $rows[0] ?? null;
@@ -169,6 +169,7 @@ class SupabaseKajianService
             'event_date' => $row['event_date'] ?? null,
             'event_datetime' => $row['event_date'] ?? null,
             'is_rutin' => empty($row['event_date']),
+            'is_cancelled' => (bool)($row['is_cancelled'] ?? false),
         ];
     }
 

@@ -166,6 +166,11 @@
         </button>
       </div>
 
+      <!-- Stempel DIBATALKAN -->
+      <div id="spotlightCancelledStamp" class="hidden absolute inset-0 items-center justify-center pointer-events-none" style="z-index:20;">
+        <span style="border:4px solid #dc2626;color:#dc2626;font-weight:900;font-size:30px;letter-spacing:4px;padding:6px 22px;border-radius:8px;transform:rotate(-12deg);background:rgba(255,255,255,0.78);text-transform:uppercase;">Dibatalkan</span>
+      </div>
+
       <!-- Bottom Floating Glassmorphism Overlay Card -->
       <div class="absolute bottom-3 inset-x-3 p-3.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-white shadow-sm">
         <div class="flex items-center gap-2 mb-1">
@@ -251,6 +256,11 @@
     <div id="modalFlyerWrapper" class="relative rounded-2xl overflow-hidden border border-[#E5ECEB] bg-slate-900 group">
       <img id="modalFlyerImg" src="" alt="Flyer Kajian" class="w-full h-48 sm:h-56 object-cover" loading="lazy">
       <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/20"></div>
+
+      <!-- Stempel DIBATALKAN -->
+      <div id="modalCancelledStamp" class="hidden absolute inset-0 items-center justify-center pointer-events-none" style="z-index:20;">
+        <span style="border:4px solid #dc2626;color:#dc2626;font-weight:900;font-size:32px;letter-spacing:4px;padding:8px 24px;border-radius:8px;transform:rotate(-12deg);background:rgba(255,255,255,0.78);text-transform:uppercase;">Dibatalkan</span>
+      </div>
       
       <!-- Badges on Image -->
       <div class="absolute top-2.5 inset-x-2.5 flex items-center justify-between">
@@ -834,6 +844,18 @@
         document.getElementById('spotlightHeroImg').src = top.poster_url;
       }
       document.getElementById('spotlightDetailBtn').onclick = () => openDetailModalWithEvent(top);
+
+      // Stempel DIBATALKAN di hero spotlight
+      const spotlightStamp = document.getElementById('spotlightCancelledStamp');
+      if (spotlightStamp) {
+        if (top.is_cancelled) {
+          spotlightStamp.classList.remove('hidden');
+          spotlightStamp.classList.add('flex');
+        } else {
+          spotlightStamp.classList.add('hidden');
+          spotlightStamp.classList.remove('flex');
+        }
+      }
       
       const isTopSaved = userBookmarkIds.has(Number(top.id));
       const topBookmarkBtn = document.getElementById('spotlightBookmarkBtn');
@@ -882,10 +904,18 @@
            </div>`;
       
       const card = document.createElement('article');
-      card.className = 'bg-white rounded-2xl p-3.5 border border-[#E5ECEB] shadow-xs hover:border-[#1D4D4F]/50 transition-all cursor-pointer';
+      card.className = 'bg-white rounded-2xl p-3.5 border border-[#E5ECEB] shadow-xs hover:border-[#1D4D4F]/50 transition-all cursor-pointer' + (ev.is_cancelled ? ' !border-red-300' : '');
+      card.style.position = 'relative';
+      card.style.overflow = 'hidden';
       card.onclick = () => openDetailModalWithId(ev.id);
+      const cancelledStamp = ev.is_cancelled ? `
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:10;">
+          <span style="border:4px solid #dc2626;color:#dc2626;font-weight:900;font-size:28px;letter-spacing:4px;padding:6px 20px;border-radius:8px;transform:rotate(-12deg);background:rgba(255,255,255,0.75);text-transform:uppercase;font-family:system-ui;">Dibatalkan</span>
+        </div>` : '';
+      const cancelledDim = ev.is_cancelled ? ' style="opacity:0.45;filter:grayscale(0.6);"' : '';
       card.innerHTML = `
-        <div class="flex items-start gap-3">
+        ${cancelledStamp}
+        <div class="flex items-start gap-3"${cancelledDim}>
           ${flyerThumb}
           <div class="min-w-0 flex-1">
             <div class="flex items-center justify-between gap-1 mb-1">
@@ -998,6 +1028,18 @@
       flyerWrapper.classList.remove('hidden');
     } else {
       flyerWrapper.classList.add('hidden');
+    }
+
+    // Stempel DIBATALKAN
+    const cancelledStamp = document.getElementById('modalCancelledStamp');
+    if (cancelledStamp) {
+      if (ev.is_cancelled) {
+        cancelledStamp.classList.remove('hidden');
+        cancelledStamp.classList.add('flex');
+      } else {
+        cancelledStamp.classList.add('hidden');
+        cancelledStamp.classList.remove('flex');
+      }
     }
 
     // Sumber Asli Link
