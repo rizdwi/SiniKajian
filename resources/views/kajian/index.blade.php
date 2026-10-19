@@ -1428,6 +1428,10 @@
 
     // Sinkronisasi avatar header dari localStorage
     try {
+      @guest
+        // Hapus avatar localStorage saat logout
+        localStorage.removeItem('sinikajian_user_avatar');
+      @else
       const localAvatar = localStorage.getItem('sinikajian_user_avatar');
       const headerImg = document.getElementById('headerUserAvatarImg');
       const headerInitial = document.getElementById('headerUserAvatarInitial');
@@ -1440,6 +1444,7 @@
           headerInitial.classList.add('hidden');
         }
       }
+      @endguest
     } catch(e) {}
 
     updatePrayerDisplay();
