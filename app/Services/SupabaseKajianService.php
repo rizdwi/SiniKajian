@@ -73,6 +73,30 @@ class SupabaseKajianService
     }
 
     /**
+     * Ambil SEMUA kajian dari Supabase (termasuk yang belum verified) — untuk panel admin.
+     * Tidak di-cache agar data moderasi selalu fresh.
+     */
+    public function getAllKajians(): array
+    {
+        try {
+            $res = Http::withHeaders($this->headers())
+                ->timeout(15)
+                ->get("{$this->url}/rest/v1/kajian", [
+                    'select' => 'id,title,ustadz,category,audience,masjid,address,lat,lon,day,time,description,verified,source,source_url,flyer_url,event_date',
+                    'order' => 'id.desc',
+                    'limit' => 1000,
+                ]);
+
+            if ($res->successful()) {
+                return $res->json() ?? [];
+            }
+        } catch (\Exception $e) {
+            Log::warning('SupabaseKajianService getAllKajians gagal: ' . $e->getMessage());
+        }
+        return [];
+    }
+
+    /**
      * Ambil satu kajian by ID.
      */
     public function find(int $id): ?array

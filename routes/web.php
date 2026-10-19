@@ -19,9 +19,9 @@ Route::get('/tersimpan', [KajianController::class, 'saved'])->name('kajian.saved
 
 // Interaksi Kajian
 Route::post('/kajian', [KajianController::class, 'store'])->middleware('throttle:5,15')->name('kajian.store');
-Route::post('/kajian/{kajian}/bookmark', [KajianController::class, 'toggleBookmark'])->middleware('throttle:30,1')->name('kajian.bookmark');
+Route::post('/kajian/{id}/bookmark', [KajianController::class, 'toggleBookmark'])->middleware('throttle:30,1')->name('kajian.bookmark');
 Route::post('/api/bookmarks/sync', [KajianController::class, 'syncBookmarks'])->middleware('throttle:30,1')->name('api.bookmarks.sync');
-Route::post('/kajian/{kajian}/kehadiran', [KajianController::class, 'logAttendance'])->middleware('throttle:20,1')->name('kajian.attendance');
+Route::post('/kajian/{id}/kehadiran', [KajianController::class, 'logAttendance'])->middleware('throttle:20,1')->name('kajian.attendance');
 Route::post('/majelis/follow', [KajianController::class, 'toggleFollowMajelis'])->middleware('throttle:30,1')->name('majelis.follow');
 Route::get('/api/kajian', [KajianController::class, 'apiList'])->middleware('throttle:60,1')->name('api.kajian');
 Route::get('/api/kajians', [KajianController::class, 'apiList'])->middleware('throttle:60,1');

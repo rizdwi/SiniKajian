@@ -447,8 +447,10 @@ class KajianController extends Controller
 
     /**
      * Toggle bookmark kajian.
+     * Menerima $id mentah (bukan route-model-binding) karena kajian
+     * berasal dari Supabase, bukan SQLite lokal yang kosong di Vercel.
      */
-    public function toggleBookmark(Request $request, Kajian $kajian): JsonResponse|\Illuminate\Http\RedirectResponse
+    public function toggleBookmark(Request $request, $id): JsonResponse|\Illuminate\Http\RedirectResponse
     {
         if (!Auth::check()) {
             if (!$request->wantsJson() && !$request->ajax()) {
@@ -460,8 +462,23 @@ class KajianController extends Controller
             ], 401);
         }
 
+        // Validasi kajian ada di Supabase (atau SQLite fallback)
+        $kajianId = (int) $id;
+        $sbKajianSvc = new SupabaseKajianService();
+        $kajianExists = false;
+        if ($sbKajianSvc->isConfigured()) {
+            $kajianExists = (bool) $sbKajianSvc->find($kajianId);
+        } else {
+            $kajianExists = Kajian::where('id', $kajianId)->exists();
+        }
+        if (!$kajianExists) {
+            if (!$request->wantsJson() && !$request->ajax()) {
+                return back()->with('error', 'Kajian tidak ditemukan.');
+            }
+            return response()->json(['status' => 'error', 'message' => 'Kajian tidak ditemukan.'], 404);
+        }
+
         $userId = Auth::id();
-        $kajianId = $kajian->id;
         $saved = false;
 
         // 1. Gunakan Supabase untuk persistensi jika dikonfigurasi (SQLite Vercel ephemeral)
@@ -599,8 +616,10 @@ class KajianController extends Controller
 
     /**
      * Catat kehadiran kajian (RSVP).
+     * Menerima $id mentah (bukan route-model-binding) karena kajian
+     * berasal dari Supabase, bukan SQLite lokal yang kosong di Vercel.
      */
-    public function logAttendance(Request $request, Kajian $kajian): JsonResponse
+    public function logAttendance(Request $request, $id): JsonResponse
     {
         if (!Auth::check()) {
             return response()->json([
@@ -609,8 +628,20 @@ class KajianController extends Controller
             ], 401);
         }
 
+        // Validasi kajian ada di Supabase (atau SQLite fallback)
+        $kajianId = (int) $id;
+        $sbKajianSvc = new SupabaseKajianService();
+        $kajianExists = false;
+        if ($sbKajianSvc->isConfigured()) {
+            $kajianExists = (bool) $sbKajianSvc->find($kajianId);
+        } else {
+            $kajianExists = Kajian::where('id', $kajianId)->exists();
+        }
+        if (!$kajianExists) {
+            return response()->json(['status' => 'error', 'message' => 'Kajian tidak ditemukan.'], 404);
+        }
+
         $userId = Auth::id();
-        $kajianId = $kajian->id;
         $today = now()->toDateString();
 
         $supabaseUrl = config('services.supabase.url');

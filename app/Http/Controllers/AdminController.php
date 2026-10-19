@@ -25,18 +25,30 @@ class AdminController extends Controller
 
     /**
      * Tampilkan antarmuka moderasi kajian masuk dan daftar seluruh kajian.
+     * Baca dari Supabase (SQLite lokal kosong di Vercel).
      */
     public function index(): View
     {
         $this->ensureAdmin();
 
-        $pendingKajians = Kajian::where('verified', false)
-            ->orderBy('id', 'desc')
-            ->get();
+        $sbKajianSvc = new \App\Services\SupabaseKajianService();
+        $pendingKajians = collect();
+        $verifiedKajians = collect();
 
-        $verifiedKajians = Kajian::where('verified', true)
-            ->orderBy('id', 'desc')
-            ->paginate(20);
+        if ($sbKajianSvc->isConfigured()) {
+            try {
+                $rows = $sbKajianSvc->getAllKajians(); // termasuk yang belum verified
+                $all = \App\Services\SupabaseKajianService::toCollection($rows);
+                $pendingKajians = $all->where('verified', false)->sortByDesc('id')->values();
+                $verifiedKajians = $all->where('verified', true)->sortByDesc('id')->values();
+            } catch (\Throwable $e) {
+                Log::warning('Admin panel Supabase read gagal: ' . $e->getMessage());
+            }
+        } else {
+            // Fallback SQLite lokal (dev)
+            $pendingKajians = Kajian::where('verified', false)->orderBy('id', 'desc')->get();
+            $verifiedKajians = Kajian::where('verified', true)->orderBy('id', 'desc')->get();
+        }
 
         return view('admin.kajian', compact('pendingKajians', 'verifiedKajians'));
     }
@@ -54,7 +66,7 @@ class AdminController extends Controller
 
         // Sinkronisasi status terverifikasi ke Supabase jika aktif
         $supabaseUrl = config('services.supabase.url');
-        $supabaseKey = config('services.supabase.service_role_key') ?: config('services.supabase.key');
+        $supabaseKey = config('services.supabase.service_key');
         if ($supabaseUrl && $supabaseKey) {
             try {
                 Http::withHeaders([
@@ -86,7 +98,7 @@ class AdminController extends Controller
 
         // Hapus dari Supabase jika aktif
         $supabaseUrl = config('services.supabase.url');
-        $supabaseKey = config('services.supabase.service_role_key') ?: config('services.supabase.key');
+        $supabaseKey = config('services.supabase.service_key');
         if ($supabaseUrl && $supabaseKey) {
             try {
                 Http::withHeaders([

@@ -826,7 +826,7 @@
       document.getElementById('spotlightTitle').innerText = top.title;
       document.getElementById('spotlightMasjid').innerHTML = `
         <svg class="w-3.5 h-3.5 text-[#E6F4F1] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
-        <span>${top.masjid} • ${top.address ? top.address.split(',')[0] : 'Bandung'}</span>
+        <span>${top.masjid} • ${top.address ? top.address.split(',')[0] : 'Lokasi belum tersedia'}</span>
       `;
       document.getElementById('spotlightTimePill').innerText = `${top.day.toUpperCase()}${top.event_date ? ', ' + formatTanggalIndo(top.event_date) : ''} • ${top.time}`;
       document.getElementById('spotlightDistance').innerText = `${top.distance.toFixed(1)} km`;

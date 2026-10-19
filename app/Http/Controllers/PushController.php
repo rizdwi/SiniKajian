@@ -58,8 +58,9 @@ class PushController extends Controller
      */
     public function send(Request $request): JsonResponse
     {
-        $secret = env('SYNC_WEBHOOK_SECRET');
-        if (!$secret || $request->header('X-Sync-Secret') !== $secret) {
+        $secret = config('app.sync_webhook_secret') ?: env('SYNC_WEBHOOK_SECRET');
+        $provided = (string) $request->header('X-Sync-Secret', '');
+        if (!$secret || !hash_equals($secret, $provided)) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -75,12 +76,16 @@ class PushController extends Controller
         $sent = 0;
         $failed = 0;
         foreach ($subs as $sub) {
-            if ($this->sendWebPush($sub, $request->only(['title', 'body', 'url']))) {
+            $result = $this->sendWebPush($sub, $request->only(['title', 'body', 'url']));
+            if ($result === true) {
                 $sent++;
             } else {
                 $failed++;
-                // Hapus subscription yang invalid (410 Gone)
-                $svc->deletePushSubscription($sub['endpoint']);
+                // Hapus subscription HANYA bila server push menyatakan gone/invalid (410/404).
+                // Jangan hapus pada error jaringan sementara agar subscription valid tidak hilang.
+                if ($result === 410 || $result === 404) {
+                    $svc->deletePushSubscription($sub['endpoint']);
+                }
             }
         }
 
@@ -90,8 +95,9 @@ class PushController extends Controller
     /**
      * Kirim satu web push menggunakan VAPID.
      * Memerlukan minishlink/web-push; jika belum ter-install, return false.
+     * Return: true jika sukses, int (HTTP status) jika gagal dengan status diketahui, false jika gagal tanpa status.
      */
-    private function sendWebPush(array $sub, array $payload): bool
+    private function sendWebPush(array $sub, array $payload): bool|int
     {
         if (!class_exists(\Minishlink\WebPush\WebPush::class)) {
             \Illuminate\Support\Facades\Log::warning('WebPush library belum ter-install.');
@@ -128,7 +134,16 @@ class PushController extends Controller
                 json_encode($payload)
             );
 
-            return $report->isSuccess();
+            if ($report->isSuccess()) {
+                return true;
+            }
+
+            // Kembalikan status HTTP agar caller bisa bedakan 410/404 vs error sementara
+            $response = $report->getResponse();
+            if ($response && method_exists($response, 'getStatusCode')) {
+                return $response->getStatusCode();
+            }
+            return false;
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::warning('WebPush gagal: ' . $e->getMessage());
             return false;

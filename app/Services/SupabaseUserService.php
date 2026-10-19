@@ -100,6 +100,9 @@ class SupabaseUserService
 
     /**
      * Update user by ID.
+     * PENTING: filter ID harus di query string URL — Laravel Http::patch()
+     * hanya menerima 2 parameter, argumen ke-3 akan diam-diam dibuang
+     * sehingga PATCH tanpa filter akan menimpa SELURUH baris tabel.
      */
     public function update(int $id, array $data): bool
     {
@@ -108,11 +111,9 @@ class SupabaseUserService
         try {
             $res = Http::withHeaders($this->headers())
                 ->timeout(10)
-                ->patch("{$this->url}/rest/v1/app_users", array_merge($data, [
+                ->patch("{$this->url}/rest/v1/app_users?id=eq.{$id}", array_merge($data, [
                     'updated_at' => now()->toIso8601String(),
-                ]), [
-                    'id' => 'eq.' . $id,
-                ]);
+                ]));
 
             return $res->successful();
         } catch (\Exception $e) {
@@ -191,18 +192,14 @@ class SupabaseUserService
     }
 
     /**
-     * Simpan atau update push subscription.
+     * Simpan atau update push subscription (upsert via Prefer header).
      */
     public function upsertPushSubscription(array $data): bool
     {
         if (!$this->enabled()) return false;
 
         try {
-            $res = Http::withHeaders($this->headers())
-                ->timeout(10)
-                ->post("{$this->url}/rest/v1/push_subscriptions", array_merge($data, ['_upsert' => true]));
-
-            // Gunakan upsert via POST dengan Prefer header
+            // Upsert via POST dengan Prefer: resolution=merge-duplicates
             $res = Http::withHeaders(array_merge($this->headers(), ['Prefer' => 'resolution=merge-duplicates']))
                 ->timeout(10)
                 ->post("{$this->url}/rest/v1/push_subscriptions", $data);

@@ -12,7 +12,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 
-#[Fillable(['name', 'email', 'password', 'provider', 'provider_id', 'avatar', 'role'])]
+#[Fillable(['name', 'email', 'password', 'provider', 'provider_id', 'avatar'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -22,7 +22,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function isAdmin(): bool
     {
-        return ($this->role ?? '') === 'admin' || strtolower($this->email ?? '') === 'rizkidwisandy@gmail.com';
+        return ($this->role ?? '') === 'admin' || strtolower($this->email ?? '') === strtolower(config('app.admin_email', ''));
     }
 
     /**

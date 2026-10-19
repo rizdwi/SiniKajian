@@ -172,7 +172,7 @@ class AuthController extends Controller
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error("Gagal mengirim email reset sandi ke {$email}: " . $e->getMessage());
             return back()->withErrors([
-                'email' => 'Gagal mengirimkan email reset kata sandi: ' . $e->getMessage() . '. Silakan coba lagi beberapa saat.',
+                'email' => 'Gagal mengirimkan email reset kata sandi. Silakan coba lagi beberapa saat.',
             ])->onlyInput('email');
         }
 
@@ -489,7 +489,8 @@ class AuthController extends Controller
     public function logout(Request $request): RedirectResponse
     {
         Auth::logout();
-        $request->session()->flush();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
         return redirect()->route('kajian.index');
     }

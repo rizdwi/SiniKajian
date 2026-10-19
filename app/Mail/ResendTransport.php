@@ -43,19 +43,16 @@ class ResendTransport extends AbstractTransport
         }
 
         if (empty($this->apiKey)) {
-            Log::warning('ResendTransport: RESEND_API_KEY belum disetel. Email dicatat di log.', $payload);
+            // Jangan log isi email (berisi token reset) — hanya metadata
+            Log::warning('ResendTransport: RESEND_API_KEY belum disetel. Email tidak terkirim.', [
+                'to' => $to,
+                'subject' => $email->getSubject(),
+            ]);
             return;
         }
 
-        $options = [];
-        if (file_exists('C:/Users/Rizz/AppData/Local/Python/pythoncore-3.15-64/Lib/site-packages/certifi/cacert.pem')) {
-            $options['verify'] = 'C:/Users/Rizz/AppData/Local/Python/pythoncore-3.15-64/Lib/site-packages/certifi/cacert.pem';
-        } elseif (PHP_OS_FAMILY === 'Windows') {
-            $options['verify'] = false;
-        }
-
+        // Selalu verifikasi TLS (jangan pernah nonaktifkan)
         $response = Http::withToken($this->apiKey)
-            ->withOptions($options)
             ->timeout(15)
             ->post('https://api.resend.com/emails', $payload);
 

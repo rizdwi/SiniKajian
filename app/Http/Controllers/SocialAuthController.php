@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\SupabaseUserService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
@@ -11,48 +12,51 @@ use Illuminate\Support\Str;
 class SocialAuthController extends Controller
 {
     /**
-     * Redirect ke provider OAuth.
+     * Redirect ke Google OAuth dengan state anti-CSRF.
      */
     public function redirect(string $provider): RedirectResponse
     {
-        if (!in_array($provider, ['facebook', 'google'])) {
+        // Hanya Google yang didukung (Facebook dibatalkan permanen per keputusan user)
+        if ($provider !== 'google') {
             abort(404);
         }
 
-        $config = config("services.{$provider}");
+        $config = config('services.google');
 
         // Force HTTPS untuk redirect URI (Vercel proxy)
         $redirectUri = str_replace('http://', 'https://', route('social.callback', $provider));
 
-        if ($provider === 'google') {
-            $params = http_build_query([
-                'client_id' => $config['client_id'],
-                'redirect_uri' => $redirectUri,
-                'response_type' => 'code',
-                'scope' => 'openid email profile',
-                'access_type' => 'online',
-                'prompt' => 'select_account',
-            ]);
-            return redirect("https://accounts.google.com/o/oauth2/v2/auth?{$params}");
-        }
+        // Generate state anti-CSRF, simpan di session
+        $state = Str::random(40);
+        session(['oauth_state' => $state]);
 
-        // facebook
         $params = http_build_query([
             'client_id' => $config['client_id'],
             'redirect_uri' => $redirectUri,
             'response_type' => 'code',
-            'scope' => 'email,public_profile',
+            'scope' => 'openid email profile',
+            'access_type' => 'online',
+            'prompt' => 'select_account',
+            'state' => $state,
         ]);
-        return redirect("https://www.facebook.com/v18.0/dialog/oauth?{$params}");
+
+        return redirect("https://accounts.google.com/o/oauth2/v2/auth?{$params}");
     }
 
     /**
-     * Handle callback dari provider.
+     * Handle callback dari Google OAuth.
      */
     public function callback(string $provider): RedirectResponse
     {
-        if (!in_array($provider, ['facebook', 'google'])) {
+        if ($provider !== 'google') {
             abort(404);
+        }
+
+        // Validasi state anti-CSRF
+        $state = request('state');
+        $expectedState = session()->pull('oauth_state');
+        if (!$state || !$expectedState || !hash_equals($expectedState, $state)) {
+            return redirect()->route('login')->withErrors(['social' => 'Sesi login tidak valid. Silakan coba lagi.']);
         }
 
         $code = request('code');
@@ -60,45 +64,46 @@ class SocialAuthController extends Controller
             return redirect()->route('login')->withErrors(['social' => 'Login dibatalkan.']);
         }
 
-        $config = config("services.{$provider}");
+        $config = config('services.google');
         $redirectUri = str_replace('http://', 'https://', route('social.callback', $provider));
 
         try {
-            if ($provider === 'google') {
-                $tokenRes = Http::asForm()->post('https://oauth2.googleapis.com/token', [
-                    'code' => $code,
-                    'client_id' => $config['client_id'],
-                    'client_secret' => $config['client_secret'],
-                    'redirect_uri' => $redirectUri,
-                    'grant_type' => 'authorization_code',
-                ]);
-                $accessToken = $tokenRes->json('access_token');
-
-                $userRes = Http::withToken($accessToken)->get('https://www.googleapis.com/oauth2/v3/userinfo');
-                $socialUser = $userRes->json();
-                $providerId = $socialUser['sub'];
-                $email = $socialUser['email'] ?? null;
-                $name = $socialUser['name'] ?? 'Pengguna Google';
-            } else {
-                $tokenRes = Http::get('https://graph.facebook.com/v18.0/oauth/access_token', [
-                    'code' => $code,
-                    'client_id' => $config['client_id'],
-                    'client_secret' => $config['client_secret'],
-                    'redirect_uri' => $redirectUri,
-                ]);
-                $accessToken = $tokenRes->json('access_token');
-
-                $userRes = Http::get('https://graph.facebook.com/v18.0/me', [
-                    'fields' => 'id,name,email',
-                    'access_token' => $accessToken,
-                ]);
-                $socialUser = $userRes->json();
-                $providerId = $socialUser['id'];
-                $email = $socialUser['email'] ?? null;
-                $name = $socialUser['name'] ?? 'Pengguna Facebook';
+            $tokenRes = Http::asForm()->post('https://oauth2.googleapis.com/token', [
+                'code' => $code,
+                'client_id' => $config['client_id'],
+                'client_secret' => $config['client_secret'],
+                'redirect_uri' => $redirectUri,
+                'grant_type' => 'authorization_code',
+            ]);
+            $accessToken = $tokenRes->json('access_token');
+            if (!$accessToken) {
+                throw new \RuntimeException('Gagal menukar kode otorisasi.');
             }
 
-            // Cari atau buat user
+            $userRes = Http::withToken($accessToken)->get('https://www.googleapis.com/oauth2/v3/userinfo');
+            $socialUser = $userRes->json();
+
+            // Guard: pastikan field penting ada
+            $providerId = $socialUser['sub'] ?? null;
+            $email = $socialUser['email'] ?? null;
+            $emailVerified = $socialUser['email_verified'] ?? false;
+            $name = $socialUser['name'] ?? 'Pengguna Google';
+
+            if (!$providerId || !$email) {
+                throw new \RuntimeException('Respons Google tidak lengkap.');
+            }
+
+            // Tolak email yang belum terverifikasi Google
+            if ($emailVerified !== true) {
+                return redirect()->route('login')->withErrors([
+                    'social' => 'Email Google Anda belum terverifikasi. Silakan verifikasi dulu di akun Google Anda.',
+                ]);
+            }
+
+            // Cari atau buat user (sinkron ke Supabase agar persisten di Vercel)
+            $sbSvc = new SupabaseUserService();
+            $sbUser = $sbSvc->enabled() ? $sbSvc->findByEmail($email) : null;
+
             $user = User::where('provider', $provider)
                 ->where('provider_id', $providerId)
                 ->first();
@@ -113,11 +118,27 @@ class SocialAuthController extends Controller
             if (!$user) {
                 $user = User::create([
                     'name' => $name,
-                    'email' => $email ?? "{$provider}_{$providerId}@sinikajian.local",
+                    'email' => $email,
                     'password' => bcrypt(Str::random(32)),
                     'provider' => $provider,
                     'provider_id' => $providerId,
+                    'email_verified_at' => now(),
                 ]);
+
+                // Sinkron ke Supabase
+                if ($sbSvc->enabled()) {
+                    try {
+                        $sbSvc->findOrCreate([
+                            'name' => $name,
+                            'email' => $email,
+                            'password' => $user->password,
+                            'provider' => $provider,
+                            'provider_id' => $providerId,
+                        ]);
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::warning('Supabase sync OAuth gagal: ' . $e->getMessage());
+                    }
+                }
             }
 
             Auth::login($user, true);

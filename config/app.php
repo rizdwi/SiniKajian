@@ -17,6 +17,30 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Admin Email
+    |--------------------------------------------------------------------------
+    |
+    | Email pemilik/admin aplikasi. Dipakai untuk pengecekan isAdmin()
+    | dan link bantuan. Set via env ADMIN_EMAIL.
+    |
+    */
+
+    'admin_email' => env('ADMIN_EMAIL', 'rizkidwisandy@gmail.com'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sync Webhook Secret
+    |--------------------------------------------------------------------------
+    |
+    | Secret untuk memverifikasi webhook internal (cron push reminder, dll).
+    | Jangan baca via env() langsung di controller (rusak saat config:cache).
+    |
+    */
+
+    'sync_webhook_secret' => env('SYNC_WEBHOOK_SECRET'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |

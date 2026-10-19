@@ -558,7 +558,7 @@
   }
 
   function promptChangeLocation() {
-    const currentName = document.getElementById('qiblaLocationName').textContent || 'Bandung';
+    const currentName = document.getElementById('qiblaLocationName').textContent || 'Lokasi belum dipilih';
     const city = prompt('Masukkan nama kota atau daerah Anda (contoh: Bandung, Jakarta, Surabaya, Yogyakarta):', currentName);
     if (!city) return;
 

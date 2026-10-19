@@ -253,7 +253,7 @@
 
       <!-- Item 5: Bantuan & Tentang Majelisku (Kirim Pesan Langsung ke Email Owner) -->
       @php
-        $ownerEmail = 'rizkidwisandy@gmail.com';
+        $ownerEmail = config('app.admin_email');
         $userName = Auth::check() ? Auth::user()->name : 'Jamaah Pengguna Majelisku';
         $userEmail = Auth::check() ? Auth::user()->email : 'Belum login';
         $mailSubject = rawurlencode('Bantuan Aplikasi Majelisku');
