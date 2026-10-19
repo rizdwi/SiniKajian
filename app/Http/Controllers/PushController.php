@@ -88,10 +88,16 @@ class PushController extends Controller
     }
 
     /**
-     * Kirim satu web push menggunakan VAPID (minishlink/web-push).
+     * Kirim satu web push menggunakan VAPID.
+     * Memerlukan minishlink/web-push; jika belum ter-install, return false.
      */
     private function sendWebPush(array $sub, array $payload): bool
     {
+        if (!class_exists(\Minishlink\WebPush\WebPush::class)) {
+            \Illuminate\Support\Facades\Log::warning('WebPush library belum ter-install.');
+            return false;
+        }
+
         $publicKey = config('services.vapid.public_key');
         $privateKey = config('services.vapid.private_key');
         $subject = config('services.vapid.subject');
