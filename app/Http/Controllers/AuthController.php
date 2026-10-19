@@ -31,6 +31,15 @@ class AuthController extends Controller
             return back()->withErrors(['email' => 'Percobaan masuk tidak valid.'])->onlyInput('email');
         }
 
+        // 1b. Cloudflare Turnstile verification (jika dikonfigurasi)
+        $turnstileSecret = config('services.turnstile.secret_key');
+        if ($turnstileSecret) {
+            $token = $request->input('cf-turnstile-response');
+            if (!$token || !$this->verifyTurnstile($token, $turnstileSecret, $request->ip())) {
+                return back()->withErrors(['email' => 'Verifikasi keamanan gagal. Silakan coba lagi.'])->onlyInput('email');
+            }
+        }
+
         // 2. Proteksi Brute Force & Credential Stuffing
         $throttleKey = \Illuminate\Support\Str::transliterate(\Illuminate\Support\Str::lower((string) $request->input('email')) . '|' . $request->ip());
         if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($throttleKey, 5)) {
