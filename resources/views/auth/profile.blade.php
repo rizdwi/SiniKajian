@@ -28,13 +28,6 @@
       <h1 class="text-xl font-extrabold text-[#1D4D4F] tracking-tight">Profil</h1>
       <p class="text-xs text-[#607072] mt-0.5">Langkah kecil, kebaikan setiap hari.</p>
     </div>
-    
-    <!-- Settings / Adjustment Sliders Button -->
-    <button type="button" onclick="openPreferencesModal()" class="w-9 h-9 rounded-full bg-white border border-[#E5ECEB] text-[#1D4D4F] flex items-center justify-center hover:bg-[#F8FAF9] active:scale-95 transition shadow-2xs" aria-label="Pengaturan">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
-      </svg>
-    </button>
   </header>
 
   <!-- 2. Profile Summary Card (Figma Screen 5: Soft Mint Background, Avatar, 3 Stats) -->
