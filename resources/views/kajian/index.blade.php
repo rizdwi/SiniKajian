@@ -858,7 +858,11 @@
     emptyState.classList.add('hidden');
     container.innerHTML = '';
 
-    filtered.forEach(ev => {
+    // Pagination: tampilkan 12 dulu, load more jika ada
+    const displayLimit = window.kajianDisplayLimit || 12;
+    const toShow = filtered.slice(0, displayLimit);
+
+    toShow.forEach(ev => {
       const isSaved = userBookmarkIds.has(ev.id);
       const srcMeta = SOURCE_META[ev.source] || SOURCE_META.facebook;
       const hasSource = ev.source_url && ev.source_url !== '#';
@@ -931,6 +935,23 @@
       `;
       container.appendChild(card);
     });
+
+    // Tombol "Muat Lebih Banyak" jika masih ada
+    const existingBtn = document.getElementById('loadMoreBtn');
+    if (existingBtn) existingBtn.remove();
+    if (filtered.length > displayLimit) {
+      const loadMoreBtn = document.createElement('button');
+      loadMoreBtn.id = 'loadMoreBtn';
+      loadMoreBtn.className = 'w-full mt-4 py-3 rounded-2xl bg-[#E6F4F1] text-[#1D4D4F] font-bold text-sm hover:bg-[#D1EAE5] transition';
+      loadMoreBtn.innerText = `Muat ${Math.min(12, filtered.length - displayLimit)} lagi (${filtered.length - displayLimit} tersisa)`;
+      loadMoreBtn.onclick = () => {
+        window.kajianDisplayLimit = displayLimit + 12;
+        renderKajianFeed();
+        // Scroll sedikit agar user tahu ada konten baru
+        loadMoreBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      };
+      container.appendChild(loadMoreBtn);
+    }
   }
 
   // 4. Modal Handlers
@@ -1111,6 +1132,7 @@
   // 5. Filter Actions
   function setCategoryFilter(cat) {
     activeCategory = cat;
+    window.kajianDisplayLimit = 12; // Reset pagination
     document.querySelectorAll('.category-chip').forEach(btn => {
       if (btn.getAttribute('data-cat') === cat) {
         btn.className = 'category-chip whitespace-nowrap px-4 py-2 rounded-full font-bold transition-all bg-[#1D4D4F] text-white shadow-xs';
