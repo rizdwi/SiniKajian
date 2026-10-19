@@ -14,7 +14,7 @@
         </svg>
       </div>
       <h1 class="text-xl font-extrabold text-[#1D4D4F] tracking-tight">Buat Kata Sandi Baru</h1>
-      <p class="text-xs text-[#607072] mt-1">Masukkan kata sandi baru yang aman untuk akun SiniKajian Anda.</p>
+      <p class="text-xs text-[#607072] mt-1">Masukkan kata sandi baru yang aman untuk akun Majelisku Anda.</p>
     </div>
 
     <!-- Error Validation Alert -->

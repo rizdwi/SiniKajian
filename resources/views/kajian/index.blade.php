@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'SiniKajian | Jadwal Kajian Sunnah & Waktu Sholat')
+@section('title', 'Majelisku | Jadwal Kajian Sunnah & Waktu Sholat')
 
 @section('content')
 <div class="max-w-md mx-auto px-4 pt-4 pb-8 space-y-5">
@@ -1247,7 +1247,7 @@
 
   function shareCurrentKajian() {
     if (!currentDetailEvent) return;
-    const shareText = `*${currentDetailEvent.title}*\nBersama: ${currentDetailEvent.ustadz}\nWaktu: ${currentDetailEvent.day}, ${currentDetailEvent.time}\nTempat: ${currentDetailEvent.masjid}\nAlamat: ${currentDetailEvent.address}\n\nDitemukan via SiniKajian: https://sinikajian.vercel.app`;
+    const shareText = `*${currentDetailEvent.title}*\nBersama: ${currentDetailEvent.ustadz}\nWaktu: ${currentDetailEvent.day}, ${currentDetailEvent.time}\nTempat: ${currentDetailEvent.masjid}\nAlamat: ${currentDetailEvent.address}\n\nDitemukan via Majelisku: https://majelisku.web.id`;
 
     if (navigator.share) {
       navigator.share({

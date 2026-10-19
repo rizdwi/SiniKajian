@@ -63,7 +63,7 @@ class SiniKajianTest extends TestCase
     {
         $response = $this->get('/masuk');
         $response->assertStatus(200);
-        $response->assertSee('Masuk ke SiniKajian');
+        $response->assertSee('Masuk ke Majelisku');
         $response->assertSee('name="email"', false);
         $response->assertSee('name="password"', false);
     }
@@ -75,7 +75,7 @@ class SiniKajianTest extends TestCase
     {
         $response = $this->get('/daftar');
         $response->assertStatus(200);
-        $response->assertSee('Buat Akun SiniKajian');
+        $response->assertSee('Buat Akun Majelisku');
     }
 
     /**
