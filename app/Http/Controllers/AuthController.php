@@ -361,15 +361,16 @@ class AuthController extends Controller
             }
 
             $cutoff = \Carbon\Carbon::now('Asia/Jakarta')->subHours(3)->toDateTimeString();
-            // Ambil kajian tersimpan dari Supabase / SQLite dengan filter cutoff aktif
-            $allBookmarks = $this->getUserBookmarks($user->id);
+            // Ambil kajian tersimpan dari Supabase (gunakan Supabase user ID, bukan local ID)
+            $supabaseUserId = isset($sbUser) && isset($sbUser['id']) ? $sbUser['id'] : null;
+            $allBookmarks = $supabaseUserId ? $this->getUserBookmarksBySupabaseId($supabaseUserId) : collect();
             $bookmarkedKajians = $allBookmarks->filter(function ($k) use ($cutoff) {
                 if (empty($k->event_datetime)) return true;
                 return $k->event_datetime >= $cutoff;
             });
 
-            // Ambil kehadiran dari Supabase (persisten)
-            $attendances = $this->getUserAttendances($user->id);
+            // Ambil kehadiran dari Supabase (gunakan Supabase user ID)
+            $attendances = $supabaseUserId ? $this->getUserAttendancesBySupabaseId($supabaseUserId) : collect();
 
             $submittedKajians = $user->submittedKajians()->latest()->get();
 
@@ -525,6 +526,68 @@ class AuthController extends Controller
 
         $user = User::find($userId);
         return $user ? $user->bookmarkedKajians()->get() : collect();
+    }
+
+    /**
+     * Ambil bookmarks via Supabase user ID (tanpa fallback SQLite).
+     */
+    private function getUserBookmarksBySupabaseId(int $supabaseUserId)
+    {
+        $supabaseUrl = config('services.supabase.url');
+        $supabaseKey = config('services.supabase.service_key');
+
+        if (!$supabaseUrl || !$supabaseKey) return collect();
+
+        try {
+            $res = \Illuminate\Support\Facades\Http::withHeaders([
+                    'apikey' => $supabaseKey,
+                    'Authorization' => 'Bearer ' . $supabaseKey,
+                ])
+                ->timeout(10)
+                ->get("{$supabaseUrl}/rest/v1/bookmarks", [
+                    'user_id' => "eq.{$supabaseUserId}",
+                    'select' => 'kajian_id',
+                ]);
+            $rows = $res->json();
+            $ids = array_column($rows ?? [], 'kajian_id');
+            if (!empty($ids)) {
+                return \App\Models\Kajian::whereIn('id', $ids)->get();
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Supabase get bookmarks gagal: ' . $e->getMessage());
+        }
+        return collect();
+    }
+
+    /**
+     * Ambil attendances via Supabase user ID (tanpa fallback SQLite).
+     */
+    private function getUserAttendancesBySupabaseId(int $supabaseUserId)
+    {
+        $supabaseUrl = config('services.supabase.url');
+        $supabaseKey = config('services.supabase.service_key');
+
+        if (!$supabaseUrl || !$supabaseKey) return collect();
+
+        try {
+            $res = \Illuminate\Support\Facades\Http::withHeaders([
+                    'apikey' => $supabaseKey,
+                    'Authorization' => 'Bearer ' . $supabaseKey,
+                ])
+                ->timeout(10)
+                ->get("{$supabaseUrl}/rest/v1/attendances", [
+                    'user_id' => "eq.{$supabaseUserId}",
+                    'select' => 'kajian_id',
+                ]);
+            $rows = $res->json();
+            $ids = array_column($rows ?? [], 'kajian_id');
+            if (!empty($ids)) {
+                return \App\Models\Kajian::whereIn('id', $ids)->get();
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Supabase get attendances gagal: ' . $e->getMessage());
+        }
+        return collect();
     }
 
     /**
