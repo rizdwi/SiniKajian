@@ -8,7 +8,7 @@
   <!-- Header Area Sesuai Desain Figma (Assalamu'alaikum & Lokasi) -->
   <header class="flex items-center justify-between pt-2">
     <div>
-      <p class="text-xs text-[#607072] font-medium">Assalamu'alaikum, {{ Auth::check() ? Auth::user()->name : 'Tamu' }}</p>
+      <p class="text-xs text-[#607072] dark:text-[#9BA8A9] font-medium">Assalamu'alaikum, {{ Auth::check() ? Auth::user()->name : 'Tamu' }}</p>
       <h1 class="text-xl font-extrabold text-[#1D4D4F] tracking-tight mt-0.5">Yuk, kita ngaji.</h1>
       <button type="button" onclick="openLocationModal()" class="inline-flex items-center gap-1 text-[11px] font-semibold text-[#1D4D4F] bg-[#E6F4F1] hover:bg-[#D1EAE5] px-2.5 py-0.5 rounded-full mt-1.5 transition">
         <svg class="w-3 h-3 text-[#1D4D4F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
@@ -86,7 +86,7 @@
   <section class="space-y-3">
     <div class="flex items-center gap-2">
       <div class="relative flex-1">
-        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#607072]">
+        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#607072] dark:text-[#9BA8A9]">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
           </svg>
@@ -95,13 +95,13 @@
           type="text" 
           id="searchInput"
           placeholder="Cari tema kajian, ustadz, atau masjid" 
-          class="w-full pl-10 pr-9 py-2.5 bg-white border border-[#E5ECEB] rounded-2xl text-xs sm:text-sm text-[#1C2224] placeholder-[#607072] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F] focus:border-[#1D4D4F] shadow-xs"
+          class="w-full pl-10 pr-9 py-2.5 bg-white dark:bg-[#162526] border border-[#E5ECEB] dark:border-[#1E2E2F] rounded-2xl text-xs sm:text-sm text-[#1C2224] dark:text-[#E8EDED] placeholder-[#607072] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F] focus:border-[#1D4D4F] shadow-xs"
           oninput="onSearchFilterChange()"
         >
         <button 
           id="clearSearchBtn"
           onclick="clearSearchInput()"
-          class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-[#607072] hover:text-[#1C2224]"
+          class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-[#607072] dark:text-[#9BA8A9] hover:text-[#1C2224] dark:text-[#E8EDED]"
           aria-label="Bersihkan pencarian"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -126,23 +126,35 @@
         Untukmu
       </button>
       @foreach($categories as $cat)
-      <button onclick="setCategoryFilter('{{ $cat }}')" class="category-chip whitespace-nowrap px-4 py-2 rounded-full font-medium transition-all bg-white text-[#607072] border border-[#E5ECEB] hover:border-[#1D4D4F] hover:text-[#1D4D4F]" data-cat="{{ $cat }}">
+      <button onclick="setCategoryFilter('{{ $cat }}')" class="category-chip whitespace-nowrap px-4 py-2 rounded-full font-medium transition-all bg-white dark:bg-[#162526] text-[#607072] dark:text-[#9BA8A9] border border-[#E5ECEB] hover:border-[#1D4D4F] hover:text-[#1D4D4F]" data-cat="{{ $cat }}">
         {{ $cat }}
       </button>
       @endforeach
     </div>
 
     <!-- Quick Chips: Radius Jarak & Hari -->
-    <div class="flex items-center justify-between text-xs text-[#607072] pt-0.5">
+    <div class="flex items-center justify-between text-xs text-[#607072] dark:text-[#9BA8A9] pt-0.5">
       <div class="flex items-center space-x-1.5 overflow-x-auto no-scrollbar">
-        <span class="text-[11px] font-medium text-[#607072]">Radius:</span>
-        <button onclick="setRadiusFilter(5)" class="radius-chip px-2.5 py-1 rounded-xl border border-[#E5ECEB] bg-white font-medium hover:border-[#1D4D4F]" data-radius="5">5 km</button>
-        <button onclick="setRadiusFilter(15)" class="radius-chip px-2.5 py-1 rounded-xl border border-[#E5ECEB] bg-white font-medium hover:border-[#1D4D4F]" data-radius="15">15 km</button>
+        <span class="text-[11px] font-medium text-[#607072] dark:text-[#9BA8A9]">Radius:</span>
+        <button onclick="setRadiusFilter(5)" class="radius-chip px-2.5 py-1 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F]" data-radius="5">5 km</button>
+        <button onclick="setRadiusFilter(15)" class="radius-chip px-2.5 py-1 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F]" data-radius="15">15 km</button>
         <button onclick="setRadiusFilter(25)" class="radius-chip px-2.5 py-1 rounded-xl border border-[#1D4D4F] bg-[#E6F4F1] text-[#1D4D4F] font-bold" data-radius="25">25 km</button>
-        <button onclick="setRadiusFilter(999)" class="radius-chip px-2.5 py-1 rounded-xl border border-[#E5ECEB] bg-white font-medium hover:border-[#1D4D4F]" data-radius="999">Semua</button>
+        <button onclick="setRadiusFilter(999)" class="radius-chip px-2.5 py-1 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F]" data-radius="999">Semua</button>
       </div>
 
       <div class="flex items-center space-x-1">
+        <button id="viewModeToggle" onclick="toggleViewMode()" class="px-2.5 py-1 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] flex items-center gap-1 transition" title="Ganti tampilan">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+          <span class="text-[11px]" id="viewModeLabel">Kalender</span>
+        </button>
+        <button id="favUstadzToggle" onclick="toggleFavUstadzFilter()" class="px-2.5 py-1 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-amber-500 flex items-center gap-1 transition" title="Hanya ustadz favorit">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+          </svg>
+          <span class="text-[11px]">Favorit</span>
+        </button>
         <span id="filteredCountBadge" class="font-bold text-[#1D4D4F] bg-[#E6F4F1] px-2 py-0.5 rounded-full">{{ $kajians->count() }}</span>
         <span class="text-[11px]">Kajian</span>
       </div>
@@ -177,6 +189,8 @@
           <span id="spotlightTimePill" class="text-[10px] font-bold uppercase tracking-wider text-[#FCD34D]">Ahad • 09.00 WIB</span>
           <span class="text-white/40">•</span>
           <span id="spotlightDistance" class="text-[10px] text-white/90 font-medium">850 m</span>
+          <span class="flex-1"></span>
+          <span id="spotlightDots" class="flex items-center gap-1.5"></span>
         </div>
         <h2 id="spotlightTitle" class="text-sm sm:text-base font-bold text-white leading-snug line-clamp-1">
           Menata Hati, Menemukan Tenang
@@ -193,8 +207,8 @@
   <!-- Feed Section Header: Luangkan waktu untuk ilmu -->
   <div class="flex items-center justify-between pt-1">
     <div>
-      <h2 class="text-sm font-bold text-[#1C2224]">Luangkan waktu untuk ilmu</h2>
-      <p class="text-[11px] text-[#607072]">Kajian sunnah pilihan di sekitarmu</p>
+      <h2 class="text-sm font-bold text-[#1C2224] dark:text-[#E8EDED]">Luangkan waktu untuk ilmu</h2>
+      <p class="text-[11px] text-[#607072] dark:text-[#9BA8A9]">Kajian sunnah pilihan di sekitarmu</p>
     </div>
     <span id="filteredCountText" class="text-xs font-bold text-[#1D4D4F] bg-[#E6F4F1] px-2.5 py-0.5 rounded-full">
       {{ $kajians->count() }} Kajian
@@ -203,11 +217,43 @@
 
   <!-- Feed Daftar Kajian -->
   <section class="space-y-3" id="kajianCardsList">
-    <!-- Di-render oleh script JavaScript secara dinamis dengan kalkulasi Haversine -->
+    <!-- Skeleton loading (diganti JS saat data siap) -->
+    <div id="feedSkeleton" class="space-y-3" aria-hidden="true">
+      <div class="bg-white dark:bg-[#162526] rounded-2xl p-3.5 border border-[#E5ECEB] dark:border-[#1E2E2F]">
+        <div class="flex items-start gap-3">
+          <div class="w-16 h-16 rounded-2xl bg-slate-200 dark:bg-[#2A3F40] animate-pulse shrink-0"></div>
+          <div class="flex-1 space-y-2">
+            <div class="h-3 bg-slate-200 rounded-full animate-pulse w-2/3"></div>
+            <div class="h-4 bg-slate-200 rounded animate-pulse w-full"></div>
+            <div class="h-3 bg-slate-100 dark:bg-[#223336] rounded animate-pulse w-1/2"></div>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white dark:bg-[#162526] rounded-2xl p-3.5 border border-[#E5ECEB] dark:border-[#1E2E2F]">
+        <div class="flex items-start gap-3">
+          <div class="w-16 h-16 rounded-2xl bg-slate-200 dark:bg-[#2A3F40] animate-pulse shrink-0"></div>
+          <div class="flex-1 space-y-2">
+            <div class="h-3 bg-slate-200 rounded-full animate-pulse w-1/2"></div>
+            <div class="h-4 bg-slate-200 rounded animate-pulse w-5/6"></div>
+            <div class="h-3 bg-slate-100 dark:bg-[#223336] rounded animate-pulse w-2/3"></div>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white dark:bg-[#162526] rounded-2xl p-3.5 border border-[#E5ECEB] dark:border-[#1E2E2F]">
+        <div class="flex items-start gap-3">
+          <div class="w-16 h-16 rounded-2xl bg-slate-200 dark:bg-[#2A3F40] animate-pulse shrink-0"></div>
+          <div class="flex-1 space-y-2">
+            <div class="h-3 bg-slate-200 rounded-full animate-pulse w-3/5"></div>
+            <div class="h-4 bg-slate-200 rounded animate-pulse w-full"></div>
+            <div class="h-3 bg-slate-100 dark:bg-[#223336] rounded animate-pulse w-1/3"></div>
+          </div>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- Empty State (R-27 compliant) -->
-  <div id="emptyStateContainer" class="hidden text-center py-12 px-4 bg-white rounded-2xl border border-slate-200">
+  <div id="emptyStateContainer" class="hidden text-center py-12 px-4 bg-white dark:bg-[#162526] rounded-2xl border border-slate-200 dark:border-[#1E2E2F]">
     <div class="w-12 h-12 mx-auto rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -229,7 +275,7 @@
 
 <!-- Modal Bottom Sheet: Detail Kajian (Sesuai Desain Figma Screen 2) -->
 <div id="detailModal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 transition-opacity">
-  <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto no-scrollbar shadow-2xl p-4 sm:p-5 space-y-4">
+  <div class="bg-white dark:bg-[#162526] w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto no-scrollbar shadow-2xl p-4 sm:p-5 space-y-4">
     <!-- Mobile Drag Handle -->
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto sm:hidden mb-1"></div>
     
@@ -238,9 +284,9 @@
       <button onclick="closeDetailModal()" class="w-9 h-9 rounded-full bg-[#F8FAF9] hover:bg-[#E6F4F1] border border-[#E5ECEB] text-[#1D4D4F] flex items-center justify-center touch-btn" aria-label="Kembali">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
       </button>
-      <h2 class="text-sm font-bold text-[#1C2224]">Detail Kajian</h2>
+      <h2 class="text-sm font-bold text-[#1C2224] dark:text-[#E8EDED]">Detail Kajian</h2>
       <div class="flex items-center gap-1.5">
-        <button id="modalBookmarkBtn" onclick="toggleModalBookmark()" class="w-9 h-9 rounded-full bg-[#F8FAF9] hover:bg-[#E6F4F1] border border-[#E5ECEB] text-[#607072] flex items-center justify-center touch-btn transition" aria-label="Tandai / Simpan">
+        <button id="modalBookmarkBtn" onclick="toggleModalBookmark()" class="w-9 h-9 rounded-full bg-[#F8FAF9] hover:bg-[#E6F4F1] border border-[#E5ECEB] text-[#607072] dark:text-[#9BA8A9] flex items-center justify-center touch-btn transition" aria-label="Tandai / Simpan">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
         </button>
         <button onclick="shareCurrentKajian()" class="w-9 h-9 rounded-full bg-[#F8FAF9] hover:bg-[#E6F4F1] border border-[#E5ECEB] text-[#1D4D4F] flex items-center justify-center touch-btn" aria-label="Bagikan">
@@ -283,7 +329,7 @@
       <span id="modalCategory" class="px-3 py-1 rounded-full text-[10px] font-bold bg-[#E6F4F1] text-[#1D4D4F]">
         Akhlak & Hati
       </span>
-      <span id="modalAudience" class="px-3 py-1 rounded-full text-[10px] font-medium bg-[#F8FAF9] text-[#607072] border border-[#E5ECEB]">
+      <span id="modalAudience" class="px-3 py-1 rounded-full text-[10px] font-medium bg-[#F8FAF9] text-[#607072] dark:text-[#9BA8A9] border border-[#E5ECEB]">
         Terbuka untuk umum
       </span>
       <span class="px-3 py-1 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-100">
@@ -293,7 +339,7 @@
 
     <!-- Main Title Heading -->
     <div>
-      <h1 id="modalTitle" class="text-lg font-extrabold text-[#1C2224] leading-snug">Judul Kajian</h1>
+      <h1 id="modalTitle" class="text-lg font-extrabold text-[#1C2224] dark:text-[#E8EDED] leading-snug">Judul Kajian</h1>
     </div>
 
     <!-- Detail Cards List (Figma Screen 2) -->
@@ -304,9 +350,9 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
         </div>
         <div class="flex-1 min-w-0">
-          <p class="text-[10px] font-extrabold uppercase tracking-wider text-[#607072]">TANGGAL & WAKTU</p>
-          <p id="modalDateTimeStr" class="text-xs font-bold text-[#1C2224] mt-0.5">Ahad • 09:00 WIB</p>
-          <p class="text-[11px] text-[#607072] mt-0.5">Hadir 15 menit lebih awal untuk menyempurnakan shaf</p>
+          <p class="text-[10px] font-extrabold uppercase tracking-wider text-[#607072] dark:text-[#9BA8A9]">TANGGAL & WAKTU</p>
+          <p id="modalDateTimeStr" class="text-xs font-bold text-[#1C2224] dark:text-[#E8EDED] mt-0.5">Ahad • 09:00 WIB</p>
+          <p class="text-[11px] text-[#607072] dark:text-[#9BA8A9] mt-0.5">Hadir 15 menit lebih awal untuk menyempurnakan shaf</p>
         </div>
       </div>
 
@@ -316,9 +362,9 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
         </div>
         <div class="flex-1 min-w-0">
-          <p class="text-[10px] font-extrabold uppercase tracking-wider text-[#607072]">TEMPAT KAJIAN</p>
-          <p id="modalMasjid" class="text-xs font-bold text-[#1C2224] mt-0.5">Masjid</p>
-          <p id="modalAddress" class="text-[11px] text-[#607072] mt-0.5">Alamat lengkap...</p>
+          <p class="text-[10px] font-extrabold uppercase tracking-wider text-[#607072] dark:text-[#9BA8A9]">TEMPAT KAJIAN</p>
+          <p id="modalMasjid" class="text-xs font-bold text-[#1C2224] dark:text-[#E8EDED] mt-0.5">Masjid</p>
+          <p id="modalAddress" class="text-[11px] text-[#607072] dark:text-[#9BA8A9] mt-0.5">Alamat lengkap...</p>
           <a id="modalRouteBtn" href="#" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-[11px] font-bold text-[#1D4D4F] mt-1.5 hover:underline">
             <span>Lihat petunjuk arah ↗</span>
           </a>
@@ -331,20 +377,20 @@
           <span id="modalSpeakerInitial">U</span>
         </div>
         <div class="flex-1 min-w-0">
-          <p class="text-[10px] font-extrabold uppercase tracking-wider text-[#607072]">PEMBICARA / USTADZ</p>
-          <p id="modalSpeaker" class="text-xs font-bold text-[#1C2224] mt-0.5 truncate">Ustadz</p>
-          <p class="text-[10px] text-[#607072]">Pengasuh Kajian Sunnah</p>
+          <p class="text-[10px] font-extrabold uppercase tracking-wider text-[#607072] dark:text-[#9BA8A9]">PEMBICARA / USTADZ</p>
+          <p id="modalSpeaker" class="text-xs font-bold text-[#1C2224] dark:text-[#E8EDED] mt-0.5 truncate">Ustadz</p>
+          <p class="text-[10px] text-[#607072] dark:text-[#9BA8A9]">Pengasuh Kajian Sunnah</p>
         </div>
       </div>
     </div>
 
     <!-- Deskripsi & Pokok Bahasan -->
     <div class="bg-white p-3.5 rounded-2xl border border-[#E5ECEB] space-y-2">
-      <h4 class="text-xs font-bold text-[#1C2224]">Apa yang akan dibahas?</h4>
-      <p id="modalDescription" class="text-xs text-[#607072] leading-relaxed">
+      <h4 class="text-xs font-bold text-[#1C2224] dark:text-[#E8EDED]">Apa yang akan dibahas?</h4>
+      <p id="modalDescription" class="text-xs text-[#607072] dark:text-[#9BA8A9] leading-relaxed">
         Kajian ilmiah sunnah ahlussunnah wal jamaah, terbuka untuk jamaah ikhwan dan akhwat yang ingin memperdalam ilmu syar'i.
       </p>
-      <div class="space-y-1.5 pt-1 text-[11px] text-[#1C2224]">
+      <div class="space-y-1.5 pt-1 text-[11px] text-[#1C2224] dark:text-[#E8EDED]">
         <div class="flex items-center gap-2">
           <span class="w-4 h-4 rounded-full bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center text-[10px] font-bold shrink-0">✓</span>
           <span>Pembahasan dalil shahih dari Al-Qur'an dan As-Sunnah</span>
@@ -381,7 +427,7 @@
           <span id="modalFollowLabel" class="truncate">Ikuti Majelis</span>
         </button>
       </div>
-      <p class="text-[10px] text-center text-[#607072]">
+      <p class="text-[10px] text-center text-[#607072] dark:text-[#9BA8A9]">
         Kajian tersimpan di agenda pribadi dan majelis tercatat diikuti di profil.
       </p>
     </div>
@@ -390,7 +436,7 @@
 
 <!-- Modal: Filter Kajian -->
 <div id="filterModal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
-  <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 space-y-4">
+  <div class="bg-white dark:bg-[#162526] w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 space-y-4">
     <div class="flex items-center justify-between border-b border-slate-100 pb-2">
       <h3 class="text-sm font-bold text-slate-900">Filter Jadwal Kajian</h3>
       <button onclick="closeFilterModal()" class="text-slate-400 hover:text-slate-600 p-1" aria-label="Tutup Filter">
@@ -438,7 +484,7 @@
 
 <!-- Modal: Pilih Kota / Lokasi Geospasial -->
 <div id="locationModal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
-  <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 space-y-4 max-h-[85vh] overflow-y-auto no-scrollbar">
+  <div class="bg-white dark:bg-[#162526] w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 space-y-4 max-h-[85vh] overflow-y-auto no-scrollbar">
     <div class="flex items-center justify-between border-b border-slate-100 pb-2">
       <h3 class="text-sm font-bold text-slate-900">Pilih Lokasi Wilayah</h3>
       <button onclick="closeLocationModal()" class="text-slate-400 hover:text-slate-600 p-1" aria-label="Tutup Lokasi">
@@ -475,18 +521,18 @@
 
 <!-- Modal: Formulir Ajukan Jadwal Kajian Baru -->
 <div id="submitModal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
-  <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-6 space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar border border-[#E5ECEB] shadow-xl">
+  <div class="bg-white dark:bg-[#162526] w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-6 space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar border border-[#E5ECEB] shadow-xl">
     <div class="flex items-center justify-between border-b border-[#E5ECEB] pb-3">
       <div class="flex items-center gap-2.5">
         <div class="w-8 h-8 rounded-full bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
         </div>
         <div>
-          <h3 class="text-sm font-bold text-[#1C2224]">Ajukan Info Kajian Baru</h3>
-          <p class="text-[11px] text-[#607072]">Bantu sebarkan majelis ilmu sunnah di sekitar Anda.</p>
+          <h3 class="text-sm font-bold text-[#1C2224] dark:text-[#E8EDED]">Ajukan Info Kajian Baru</h3>
+          <p class="text-[11px] text-[#607072] dark:text-[#9BA8A9]">Bantu sebarkan majelis ilmu sunnah di sekitar Anda.</p>
         </div>
       </div>
-      <button onclick="closeSubmitModal()" class="w-8 h-8 rounded-full bg-[#F8FAF9] text-[#607072] hover:text-[#1C2224] flex items-center justify-center transition" aria-label="Tutup Pengajuan">
+      <button onclick="closeSubmitModal()" class="w-8 h-8 rounded-full bg-[#F8FAF9] text-[#607072] dark:text-[#9BA8A9] hover:text-[#1C2224] dark:text-[#E8EDED] flex items-center justify-center transition" aria-label="Tutup Pengajuan">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
         </svg>
@@ -501,18 +547,18 @@
         <input type="text" name="website_trap" tabindex="-1" autocomplete="off" value="">
       </div>
       <div>
-        <label class="block font-bold text-[#1C2224] mb-1">Judul / Tema Kajian *</label>
-        <input type="text" name="title" required placeholder="Contoh: Kajian Kitab Riyadhus Shalihin" class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
+        <label class="block font-bold text-[#1C2224] dark:text-[#E8EDED] mb-1">Judul / Tema Kajian *</label>
+        <input type="text" name="title" required placeholder="Contoh: Kajian Kitab Riyadhus Shalihin" class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] dark:text-[#E8EDED] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
       </div>
 
       <div class="grid grid-cols-2 gap-2.5">
         <div>
-          <label class="block font-bold text-[#1C2224] mb-1">Nama Pemateri / Ustadz *</label>
-          <input type="text" name="ustadz" required placeholder="Ustadz..." class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
+          <label class="block font-bold text-[#1C2224] dark:text-[#E8EDED] mb-1">Nama Pemateri / Ustadz *</label>
+          <input type="text" name="ustadz" required placeholder="Ustadz..." class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] dark:text-[#E8EDED] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
         </div>
         <div>
-          <label class="block font-bold text-[#1C2224] mb-1">Kategori *</label>
-          <select name="category" required class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
+          <label class="block font-bold text-[#1C2224] dark:text-[#E8EDED] mb-1">Kategori *</label>
+          <select name="category" required class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] dark:text-[#E8EDED] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
             <option value="Tazkiyatun Nufus">Tazkiyatun Nufus</option>
             <option value="Fiqih">Fiqih</option>
             <option value="Aqidah">Aqidah</option>
@@ -525,12 +571,12 @@
 
       <div class="grid grid-cols-2 gap-2.5">
         <div>
-          <label class="block font-bold text-[#1C2224] mb-1">Nama Masjid *</label>
-          <input type="text" name="masjid" required placeholder="Masjid..." class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
+          <label class="block font-bold text-[#1C2224] dark:text-[#E8EDED] mb-1">Nama Masjid *</label>
+          <input type="text" name="masjid" required placeholder="Masjid..." class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] dark:text-[#E8EDED] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
         </div>
         <div>
-          <label class="block font-bold text-[#1C2224] mb-1">Peserta Jamaah *</label>
-          <select name="audience" required class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
+          <label class="block font-bold text-[#1C2224] dark:text-[#E8EDED] mb-1">Peserta Jamaah *</label>
+          <select name="audience" required class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] dark:text-[#E8EDED] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
             <option value="Umum">Umum (Ikhwan & Akhwat)</option>
             <option value="Ikhwan">Khusus Ikhwan</option>
             <option value="Akhwat">Khusus Akhwat</option>
@@ -539,14 +585,14 @@
       </div>
 
       <div>
-        <label class="block font-bold text-[#1C2224] mb-1">Alamat Lengkap Masjid *</label>
-        <textarea name="address" required rows="2" placeholder="Jl. Raya..." class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]"></textarea>
+        <label class="block font-bold text-[#1C2224] dark:text-[#E8EDED] mb-1">Alamat Lengkap Masjid *</label>
+        <textarea name="address" required rows="2" placeholder="Jl. Raya..." class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] dark:text-[#E8EDED] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]"></textarea>
       </div>
 
       <div class="grid grid-cols-2 gap-2.5">
         <div>
-          <label class="block font-bold text-[#1C2224] mb-1">Hari Rutin *</label>
-          <select name="day" required class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
+          <label class="block font-bold text-[#1C2224] dark:text-[#E8EDED] mb-1">Hari Rutin *</label>
+          <select name="day" required class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] dark:text-[#E8EDED] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
             <option value="Ahad">Ahad</option>
             <option value="Senin">Senin</option>
             <option value="Selasa">Selasa</option>
@@ -557,25 +603,25 @@
           </select>
         </div>
         <div>
-          <label class="block font-bold text-[#1C2224] mb-1">Waktu / Jam *</label>
-          <input type="text" name="time" required placeholder="09:00 WIB / Ba'da Maghrib" class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
+          <label class="block font-bold text-[#1C2224] dark:text-[#E8EDED] mb-1">Waktu / Jam *</label>
+          <input type="text" name="time" required placeholder="09:00 WIB / Ba'da Maghrib" class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] dark:text-[#E8EDED] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
         </div>
       </div>
 
       <div class="grid grid-cols-2 gap-2.5">
         <div>
-          <label class="block font-bold text-[#1C2224] mb-1">Latitude</label>
-          <input type="number" step="any" name="lat" id="submitLat" value="-6.2615" required class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
+          <label class="block font-bold text-[#1C2224] dark:text-[#E8EDED] mb-1">Latitude</label>
+          <input type="number" step="any" name="lat" id="submitLat" value="-6.2615" required class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] dark:text-[#E8EDED] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
         </div>
         <div>
-          <label class="block font-bold text-[#1C2224] mb-1">Longitude</label>
-          <input type="number" step="any" name="lon" id="submitLon" value="106.8106" required class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
+          <label class="block font-bold text-[#1C2224] dark:text-[#E8EDED] mb-1">Longitude</label>
+          <input type="number" step="any" name="lon" id="submitLon" value="106.8106" required class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] dark:text-[#E8EDED] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]">
         </div>
       </div>
 
       <div>
-        <label class="block font-bold text-[#1C2224] mb-1">Deskripsi & Keterangan Tambahan</label>
-        <textarea name="description" rows="2" placeholder="Catatan adab, parkir, streaming YouTube..." class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]"></textarea>
+        <label class="block font-bold text-[#1C2224] dark:text-[#E8EDED] mb-1">Deskripsi & Keterangan Tambahan</label>
+        <textarea name="description" rows="2" placeholder="Catatan adab, parkir, streaming YouTube..." class="w-full bg-[#F8FAF9] border border-[#E5ECEB] rounded-2xl p-2.5 text-xs text-[#1C2224] dark:text-[#E8EDED] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]"></textarea>
       </div>
 
       <button type="submit" class="w-full py-3 bg-[#1D4D4F] hover:bg-[#143839] text-white text-xs font-bold rounded-full shadow-sm active:scale-98 transition touch-btn">
@@ -623,7 +669,122 @@
   let activeRadius = 25; // km
   let activeDay = 'Semua';
   let activeAudience = 'Semua';
+  let activeFavUstadz = false; // filter hanya ustadz favorit
+  let viewMode = 'list'; // 'list' atau 'agenda'
   let currentDetailEvent = null;
+
+  // Ustadz Favorit (localStorage)
+  function getFavUstadz() {
+    try { return JSON.parse(localStorage.getItem('majelisku_fav_ustadz') || '[]'); }
+    catch (e) { return []; }
+  }
+  function isFavUstadz(name) {
+    if (!name) return false;
+    return getFavUstadz().includes(name.trim());
+  }
+  function toggleFavUstadz(name) {
+    if (!name) return;
+    name = name.trim();
+    let list = getFavUstadz();
+    if (list.includes(name)) {
+      list = list.filter(n => n !== name);
+    } else {
+      list.push(name);
+    }
+    try { localStorage.setItem('majelisku_fav_ustadz', JSON.stringify(list)); } catch (e) {}
+    renderKajianFeed();
+  }
+
+  function toggleFavUstadzFilter() {
+    activeFavUstadz = !activeFavUstadz;
+    const btn = document.getElementById('favUstadzToggle');
+    if (btn) {
+      if (activeFavUstadz) {
+        btn.className = 'px-2.5 py-1 rounded-xl border border-amber-500 bg-amber-50 text-amber-700 font-bold flex items-center gap-1 transition';
+        btn.querySelector('svg').setAttribute('fill', 'currentColor');
+      } else {
+        btn.className = 'px-2.5 py-1 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-amber-500 flex items-center gap-1 transition';
+        btn.querySelector('svg').setAttribute('fill', 'none');
+      }
+    }
+    renderKajianFeed();
+  }
+
+  function toggleViewMode() {
+    viewMode = viewMode === 'list' ? 'agenda' : 'list';
+    const label = document.getElementById('viewModeLabel');
+    if (label) label.innerText = viewMode === 'list' ? 'Kalender' : 'List';
+    renderKajianFeed();
+  }
+
+  // Render agenda: grup berdasarkan tanggal
+  function renderAgendaView(container, items) {
+    const groups = {};
+    items.forEach(ev => {
+      const key = ev.event_date || 'rutin';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(ev);
+    });
+
+    const sortedKeys = Object.keys(groups).sort((a, b) => {
+      if (a === 'rutin') return 1;
+      if (b === 'rutin') return -1;
+      return a.localeCompare(b);
+    });
+
+    const today = new Date().toISOString().split('T')[0];
+
+    sortedKeys.forEach(key => {
+      const list = groups[key];
+      const header = document.createElement('div');
+      header.className = 'sticky top-0 z-10 py-2';
+
+      let label = 'Kajian Rutin';
+      let badge = '';
+      if (key !== 'rutin') {
+        const d = new Date(key + 'T00:00:00');
+        const days = ['Ahad', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        label = `${days[d.getDay()]}, ${formatTanggalIndo(key)}`;
+        if (key === today) badge = '<span class="ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700">HARI INI</span>';
+        else {
+          const diff = Math.round((d - new Date(today + 'T00:00:00')) / 86400000);
+          if (diff === 1) badge = '<span class="ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">BESOK</span>';
+          else if (diff > 1 && diff <= 7) badge = `<span class="ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">${diff} HARI LAGI</span>`;
+        }
+      }
+
+      header.innerHTML = `
+        <div class="flex items-center gap-2 bg-[#E6F4F1] dark:bg-[#1E2E2F] rounded-xl px-3 py-2">
+          <span class="text-xs font-extrabold text-[#1D4D4F] dark:text-[#7FC4BC] uppercase tracking-wide">${label}</span>
+          ${badge}
+          <span class="ml-auto text-[11px] font-medium text-[#607072] dark:text-[#9BA8A9]">${list.length} kajian</span>
+        </div>
+      `;
+      container.appendChild(header);
+
+      list.forEach(ev => {
+        const row = document.createElement('div');
+        row.className = 'bg-white dark:bg-[#162526] rounded-xl p-3 mb-2 border border-[#E5ECEB] dark:border-[#1E2E2F] flex items-center gap-3 cursor-pointer hover:border-[#1D4D4F]/50 transition' + (ev.is_cancelled ? ' opacity-60' : '');
+        row.onclick = () => openDetailModalWithId(ev.id);
+        const timeShort = (ev.time || '').split('-')[0].split(' ')[0] || '';
+        row.innerHTML = `
+          <div class="text-center shrink-0 w-14">
+            <div class="text-sm font-extrabold text-[#1D4D4F] dark:text-[#7FC4BC]">${escapeHtml(timeShort)}</div>
+            <div class="text-[10px] text-[#607072] dark:text-[#9BA8A9]">WIB</div>
+          </div>
+          <div class="w-px self-stretch bg-[#E5ECEB] dark:bg-[#1E2E2F]"></div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[13px] font-bold text-[#1C2224] dark:text-[#E8EDED] truncate">${escapeHtml(ev.title)}${ev.is_cancelled ? ' <span class="text-red-600 text-[10px] font-extrabold">BATAL</span>' : ''}</div>
+            <div class="text-[11px] text-[#607072] dark:text-[#9BA8A9] truncate">${escapeHtml(ev.ustadz)} • ${escapeHtml(ev.masjid)}</div>
+          </div>
+          <svg class="w-4 h-4 text-[#607072] dark:text-[#9BA8A9] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+        `;
+        container.appendChild(row);
+      });
+    });
+  }
 
   // Helper: format tanggal YYYY-MM-DD menjadi "19 Okt 2026"
   function formatTanggalIndo(dateStr) {
@@ -667,6 +828,23 @@
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+  }
+
+  // Supabase Image Transform beneran untuk thumbnail (hemat bandwidth)
+  // Ubah /storage/v1/object/public/... jadi /storage/v1/render/image/public/...?width=..&quality=..
+  function supabaseThumb(url, width) {
+    if (!url) return url;
+    try {
+      const u = new URL(url);
+      if (u.hostname.includes('supabase.co') && u.pathname.includes('/storage/v1/object/public/')) {
+        u.pathname = u.pathname.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
+        u.searchParams.set('width', width || 200);
+        u.searchParams.set('quality', 70);
+        u.searchParams.set('resize', 'cover');
+        return u.toString();
+      }
+    } catch (e) {}
+    return url;
   }
 
   // 1. Rumus Haversine Presisi
@@ -815,6 +993,7 @@
       if (activeCategory !== 'Semua' && item.category !== activeCategory) return false;
       if (activeDay !== 'Semua' && item.day !== activeDay) return false;
       if (activeAudience !== 'Semua' && item.audience !== activeAudience) return false;
+      if (activeFavUstadz && !isFavUstadz(item.ustadz)) return false;
       if (activeRadius < 900 && item.distance > activeRadius) return false;
       if (activeSearch) {
         const q = activeSearch.toLowerCase();
@@ -829,50 +1008,93 @@
 
     countDisplay.innerText = filtered.length;
 
-    // Spotlight pada item terdekat jika ada (Figma Screen 1)
+    // Spotlight carousel: 3 teratas, bisa swipe + auto-advance
     if (filtered.length > 0 && !activeSearch) {
-      const top = filtered[0];
-      heroSpotlight.classList.remove('hidden');
-      document.getElementById('spotlightTitle').innerText = top.title;
-      document.getElementById('spotlightMasjid').innerHTML = `
-        <svg class="w-3.5 h-3.5 text-[#E6F4F1] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
-        <span>${top.masjid} • ${top.address ? top.address.split(',')[0] : 'Lokasi belum tersedia'}</span>
-      `;
-      document.getElementById('spotlightTimePill').innerText = `${top.day.toUpperCase()}${top.event_date ? ', ' + formatTanggalIndo(top.event_date) : ''} • ${top.time}`;
-      document.getElementById('spotlightDistance').innerText = `${top.distance.toFixed(1)} km`;
-      if (top.poster_url) {
-        document.getElementById('spotlightHeroImg').src = top.poster_url;
-      }
-      document.getElementById('spotlightDetailBtn').onclick = () => openDetailModalWithEvent(top);
+      const spotlightItems = filtered.slice(0, 3);
+      let spotlightIdx = 0;
 
-      // Stempel DIBATALKAN di hero spotlight
-      const spotlightStamp = document.getElementById('spotlightCancelledStamp');
-      if (spotlightStamp) {
-        if (top.is_cancelled) {
-          spotlightStamp.classList.remove('hidden');
-          spotlightStamp.classList.add('flex');
-        } else {
-          spotlightStamp.classList.add('hidden');
-          spotlightStamp.classList.remove('flex');
-        }
-      }
-      
-      const isTopSaved = userBookmarkIds.has(Number(top.id));
-      const topBookmarkBtn = document.getElementById('spotlightBookmarkBtn');
-      if (topBookmarkBtn) {
-        topBookmarkBtn.setAttribute('data-kajian-id', top.id);
-        topBookmarkBtn.innerHTML = `
-          <svg class="w-4 h-4" fill="${isTopSaved ? '#FCD34D' : 'none'}" stroke="${isTopSaved ? '#FCD34D' : 'currentColor'}" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
-          </svg>
+      const renderSpotlight = (idx) => {
+        const top = spotlightItems[idx];
+        if (!top) return;
+        heroSpotlight.classList.remove('hidden');
+        document.getElementById('spotlightTitle').innerText = top.title;
+        document.getElementById('spotlightMasjid').innerHTML = `
+          <svg class="w-3.5 h-3.5 text-[#E6F4F1] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+          <span>${top.masjid} • ${top.address ? top.address.split(',')[0] : 'Lokasi belum tersedia'}</span>
         `;
-        topBookmarkBtn.onclick = (e) => {
-          e.stopPropagation();
-          toggleBookmarkAction(top.id, topBookmarkBtn);
-        };
+        document.getElementById('spotlightTimePill').innerText = `${top.day.toUpperCase()}${top.event_date ? ', ' + formatTanggalIndo(top.event_date) : ''} • ${top.time}`;
+        document.getElementById('spotlightDistance').innerText = `${top.distance.toFixed(1)} km`;
+        if (top.poster_url) {
+          document.getElementById('spotlightHeroImg').src = top.poster_url;
+        }
+        document.getElementById('spotlightDetailBtn').onclick = () => openDetailModalWithEvent(top);
+
+        // Stempel DIBATALKAN di hero spotlight
+        const spotlightStamp = document.getElementById('spotlightCancelledStamp');
+        if (spotlightStamp) {
+          if (top.is_cancelled) {
+            spotlightStamp.classList.remove('hidden');
+            spotlightStamp.classList.add('flex');
+          } else {
+            spotlightStamp.classList.add('hidden');
+            spotlightStamp.classList.remove('flex');
+          }
+        }
+
+        const isTopSaved = userBookmarkIds.has(Number(top.id));
+        const topBookmarkBtn = document.getElementById('spotlightBookmarkBtn');
+        if (topBookmarkBtn) {
+          topBookmarkBtn.setAttribute('data-kajian-id', top.id);
+          topBookmarkBtn.innerHTML = `
+            <svg class="w-4 h-4" fill="${isTopSaved ? '#FCD34D' : 'none'}" stroke="${isTopSaved ? '#FCD34D' : 'currentColor'}" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+            </svg>
+          `;
+          topBookmarkBtn.onclick = (e) => {
+            e.stopPropagation();
+            toggleBookmarkAction(top.id, topBookmarkBtn);
+          };
+        }
+
+        // Dots indicator
+        const dotsContainer = document.getElementById('spotlightDots');
+        if (dotsContainer) {
+          dotsContainer.innerHTML = spotlightItems.map((_, i) =>
+            `<button onclick="event.stopPropagation();window.__spotlightGo(${i})" aria-label="Slide ${i+1}"
+              style="width:${i===idx?'20px':'8px'};height:8px;border-radius:99px;background:${i===idx?'#FCD34D':'rgba(255,255,255,0.4)'};transition:all .3s;border:none;cursor:pointer;"></button>`
+          ).join('');
+        }
+      };
+
+      window.__spotlightGo = (i) => {
+        spotlightIdx = (i + spotlightItems.length) % spotlightItems.length;
+        renderSpotlight(spotlightIdx);
+      };
+
+      // Swipe support
+      const spotEl = heroSpotlight.querySelector('.relative');
+      if (spotEl && !spotEl.dataset.swipeBound) {
+        spotEl.dataset.swipeBound = '1';
+        let touchStartX = 0;
+        spotEl.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
+        spotEl.addEventListener('touchend', (e) => {
+          const dx = e.changedTouches[0].clientX - touchStartX;
+          if (Math.abs(dx) > 40) window.__spotlightGo(spotlightIdx + (dx < 0 ? 1 : -1));
+        }, { passive: true });
       }
+
+      // Auto-advance tiap 6 detik
+      if (window.__spotlightTimer) clearInterval(window.__spotlightTimer);
+      if (spotlightItems.length > 1) {
+        window.__spotlightTimer = setInterval(() => {
+          if (!document.hidden) window.__spotlightGo(spotlightIdx + 1);
+        }, 6000);
+      }
+
+      renderSpotlight(0);
     } else {
       heroSpotlight.classList.add('hidden');
+      if (window.__spotlightTimer) clearInterval(window.__spotlightTimer);
     }
 
     if (filtered.length === 0) {
@@ -884,6 +1106,12 @@
     emptyState.classList.add('hidden');
     container.innerHTML = '';
 
+    // Mode agenda: grup per tanggal
+    if (viewMode === 'agenda') {
+      renderAgendaView(container, filtered);
+      return;
+    }
+
     // Pagination: tampilkan 12 dulu, load more jika ada
     const displayLimit = window.kajianDisplayLimit || 12;
     const toShow = filtered.slice(0, displayLimit);
@@ -892,9 +1120,8 @@
       const isSaved = userBookmarkIds.has(ev.id);
       const srcMeta = SOURCE_META[ev.source] || SOURCE_META.facebook;
       const hasSource = ev.source_url && ev.source_url !== '#';
-      const thumbUrl = ev.poster_url
-        ? ev.poster_url + (ev.poster_url.includes('?') ? '&' : '?') + 'width=200&quality=70'
-        : null;
+      // Supabase Image Transform beneran (bukan query string palsu)
+      const thumbUrl = ev.poster_url ? supabaseThumb(ev.poster_url, 200) : null;
       const flyerThumb = thumbUrl
         ? `<div class="w-16 h-16 rounded-2xl overflow-hidden shrink-0 bg-slate-100 border border-[#E5ECEB] shadow-xs">
              <img src="${thumbUrl}" alt="Flyer" class="w-full h-full object-cover" loading="lazy" decoding="async" onerror="this.parentElement.style.display='none'">
@@ -904,7 +1131,7 @@
            </div>`;
       
       const card = document.createElement('article');
-      card.className = 'bg-white rounded-2xl p-3.5 border border-[#E5ECEB] shadow-xs hover:border-[#1D4D4F]/50 transition-all cursor-pointer' + (ev.is_cancelled ? ' !border-red-300' : '');
+      card.className = 'bg-white dark:bg-[#162526] rounded-2xl p-3.5 border border-[#E5ECEB] dark:border-[#1E2E2F] shadow-xs hover:border-[#1D4D4F]/50 transition-all cursor-pointer' + (ev.is_cancelled ? ' !border-red-300' : '');
       card.style.position = 'relative';
       card.style.overflow = 'hidden';
       card.onclick = () => openDetailModalWithId(ev.id);
@@ -933,16 +1160,16 @@
               </div>
             </div>
             
-            <h3 class="text-xs sm:text-sm font-bold text-[#1C2224] leading-snug line-clamp-2 hover:text-[#1D4D4F]">
+            <h3 class="text-xs sm:text-sm font-bold text-[#1C2224] dark:text-[#E8EDED] leading-snug line-clamp-2 hover:text-[#1D4D4F]">
               ${escapeHtml(ev.title)}
             </h3>
             
-            <p class="text-[11px] text-[#607072] mt-0.5 truncate">
+            <p class="text-[11px] text-[#607072] dark:text-[#9BA8A9] mt-0.5 truncate">
               ${escapeHtml(ev.ustadz)} • ${escapeHtml(ev.masjid)}
             </p>
             
             <div class="flex items-center gap-1.5 mt-2 flex-wrap" onclick="event.stopPropagation();">
-              <span class="text-[9px] font-medium text-[#607072] bg-[#F8FAF9] border border-[#E5ECEB] px-2 py-0.5 rounded-md">
+              <span class="text-[9px] font-medium text-[#607072] dark:text-[#9BA8A9] bg-[#F8FAF9] border border-[#E5ECEB] px-2 py-0.5 rounded-md">
                 ${escapeHtml(ev.category || 'Umum')}
               </span>
               ${hasSource ? `
@@ -956,12 +1183,17 @@
           </div>
           
           <div class="self-center flex flex-col items-center gap-2 pl-1">
-            <button data-kajian-id="${ev.id}" onclick="event.stopPropagation(); toggleBookmarkAction(${ev.id}, this)" class="bookmark-btn p-1.5 rounded-full ${isSaved ? 'text-amber-500 bg-amber-50' : 'text-[#607072] hover:text-[#1D4D4F]'} transition touch-btn" aria-label="Simpan">
+            <button data-kajian-id="${ev.id}" onclick="event.stopPropagation(); toggleBookmarkAction(${ev.id}, this)" class="bookmark-btn p-1.5 rounded-full ${isSaved ? 'text-amber-500 bg-amber-50' : 'text-[#607072] dark:text-[#9BA8A9] hover:text-[#1D4D4F]'} transition touch-btn" aria-label="Simpan">
               <svg class="w-4 h-4" fill="${isSaved ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
               </svg>
             </button>
-            <svg class="w-4 h-4 text-[#607072]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button onclick="event.stopPropagation(); toggleFavUstadz('${(ev.ustadz || '').replace(/'/g, "\\'")}')" class="p-1.5 rounded-full ${isFavUstadz(ev.ustadz) ? 'text-amber-500 bg-amber-50' : 'text-[#607072] dark:text-[#9BA8A9] hover:text-amber-500'} transition touch-btn" aria-label="Ustadz favorit" title="Tandai ustadz favorit">
+              <svg class="w-4 h-4" fill="${isFavUstadz(ev.ustadz) ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+              </svg>
+            </button>
+            <svg class="w-4 h-4 text-[#607072] dark:text-[#9BA8A9]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
             </svg>
           </div>
@@ -1183,7 +1415,7 @@
       if (btn.getAttribute('data-cat') === cat) {
         btn.className = 'category-chip whitespace-nowrap px-4 py-2 rounded-full font-bold transition-all bg-[#1D4D4F] text-white shadow-xs';
       } else {
-        btn.className = 'category-chip whitespace-nowrap px-4 py-2 rounded-full font-medium transition-all bg-white text-[#607072] border border-[#E5ECEB] hover:border-[#1D4D4F] hover:text-[#1D4D4F]';
+        btn.className = 'category-chip whitespace-nowrap px-4 py-2 rounded-full font-medium transition-all bg-white text-[#607072] dark:text-[#9BA8A9] border border-[#E5ECEB] hover:border-[#1D4D4F] hover:text-[#1D4D4F]';
       }
     });
     renderKajianFeed();
@@ -1433,18 +1665,18 @@
         const svg = btnEl.querySelector('svg');
         if (svg) svg.setAttribute('fill', 'currentColor');
       } else {
-        btnEl.className = 'w-9 h-9 rounded-full bg-[#F8FAF9] hover:bg-[#E6F4F1] border border-[#E5ECEB] text-[#607072] flex items-center justify-center touch-btn transition';
+        btnEl.className = 'w-9 h-9 rounded-full bg-[#F8FAF9] hover:bg-[#E6F4F1] border border-[#E5ECEB] text-[#607072] dark:text-[#9BA8A9] flex items-center justify-center touch-btn transition';
         const svg = btnEl.querySelector('svg');
         if (svg) svg.setAttribute('fill', 'none');
       }
     } else {
       if (saved) {
-        btnEl.classList.remove('text-[#607072]');
+        btnEl.classList.remove('text-[#607072] dark:text-[#9BA8A9]');
         btnEl.classList.add('text-amber-500', 'bg-amber-50');
         const svg = btnEl.querySelector('svg');
         if (svg) svg.setAttribute('fill', 'currentColor');
       } else {
-        btnEl.classList.add('text-[#607072]');
+        btnEl.classList.add('text-[#607072] dark:text-[#9BA8A9]');
         btnEl.classList.remove('text-amber-500', 'bg-amber-50');
         const svg = btnEl.querySelector('svg');
         if (svg) svg.setAttribute('fill', 'none');

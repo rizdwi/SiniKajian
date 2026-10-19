@@ -43,6 +43,9 @@ class KajianController extends Controller
 
         $categories = $service->getCategories();
 
+        // JSON untuk peta (semua, tanpa filter/pagination) — dari hasil yang sama, tanpa API call ke-2
+        $mapJson = $collection->toJson();
+
         // Filter
         if ($request->filled('kategori') && $request->kategori !== 'Semua') {
             $collection = $collection->where('category', $request->kategori);
@@ -76,10 +79,6 @@ class KajianController extends Controller
             'path' => $request->url(),
             'query' => $request->query(),
         ]);
-
-        // JSON untuk peta (semua, tanpa pagination)
-        $allForMap = SupabaseKajianService::toCollection($service->getActiveKajians());
-        $mapJson = $allForMap->toJson();
 
         $userBookmarks = [];
         if (Auth::check()) {

@@ -3,6 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <script>
+    // Dark mode: terapkan sebelum render untuk hindari flash
+    (function() {
+      try {
+        var t = localStorage.getItem('majelisku-theme');
+        if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {}
+    })();
+    function toggleTheme() {
+      var el = document.documentElement;
+      var dark = el.classList.toggle('dark');
+      try { localStorage.setItem('majelisku-theme', dark ? 'dark' : 'light'); } catch (e) {}
+      return dark;
+    }
+  </script>
   <title>@yield('title', 'Majelisku | Temukan Majelis Ilmu Terdekat')</title>
   
   <meta name="description" content="@yield('meta_description', 'Aplikasi pencari majelis ilmu kajian sunnah terdekat, jadwal sholat astronomis presisi, dan penunjuk arah kiblat.')">
@@ -34,11 +51,11 @@
   <link rel="manifest" href="{{ asset('manifest.json') }}">
   <meta name="csrf-token" content="{{ csrf_token() }}">
 
-  <!-- Tailwind CSS CDN & Font Plus Jakarta Sans + Amiri -->
+  <!-- Tailwind CSS CDN & Font Plus Jakarta Sans -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   @stack('styles')
 
   <script>
@@ -131,7 +148,7 @@
   </style>
   @yield('styles')
 </head>
-<body class="bg-[#F8FAF9] text-[#1C2224] font-sans antialiased min-h-screen flex flex-col justify-between selection:bg-[#E6F4F1] safe-top">
+<body class="bg-[#F8FAF9] dark:bg-[#0F1B1C] text-[#1C2224] dark:text-[#E8EDED] font-sans antialiased min-h-screen flex flex-col justify-between selection:bg-[#E6F4F1] safe-top">
 
   <!-- Status Bar Offline Notice -->
   <div id="offlineNotice" class="hidden bg-amber-600 text-white text-xs font-semibold py-1.5 px-4 text-center sticky top-0 z-50">
@@ -192,7 +209,7 @@
   </main>
 
   <!-- Bottom Navigation Bar Native PWA (4 Destinasi sesuai Desain Figma) -->
-  <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E5ECEB] safe-bottom shadow-lg" aria-label="Navigasi Utama">
+  <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#0F1B1C]/95 backdrop-blur-md border-t border-[#E5ECEB] dark:border-[#1E2E2F] safe-bottom shadow-lg" aria-label="Navigasi Utama">
     <div class="max-w-md mx-auto grid grid-cols-4 h-16">
       
       <!-- Tab 1: Dashboard / Beranda -->
@@ -271,9 +288,20 @@
   </script>
 
   <!-- Zero-Click Auto Geolocation & Sensor Engine -->
-  <script src="{{ asset('js/geo-engine.js') }}"></script>
+  <script src="{{ asset('js/geo-engine.js') }}" defer></script>
 
   @yield('scripts')
+
+  <!-- Dark Mode Toggle (floating) -->
+  <button onclick="toggleTheme()" aria-label="Mode gelap/terang"
+    class="fixed bottom-20 right-4 z-40 w-11 h-11 rounded-full bg-white dark:bg-[#1E2E2F] border border-[#E5ECEB] dark:border-[#2A3F40] shadow-lg flex items-center justify-center text-[#1D4D4F] dark:text-[#FCD34D] touch-btn">
+    <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+    </svg>
+    <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.002 9.002 0 0012 21a9.002 9.002 0 008.354-5.646z"></path>
+    </svg>
+  </button>
 
   <!-- PWA Install Prompt -->
   <div id="pwaInstallBanner" style="display:none; position:fixed; bottom:20px; left:16px; right:16px; z-index:9999; background:#1D4D4F; color:#fff; border-radius:16px; padding:16px; box-shadow:0 8px 24px rgba(0,0,0,.25); align-items:center; gap:12px;">
