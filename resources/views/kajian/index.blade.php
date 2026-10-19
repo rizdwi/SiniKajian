@@ -859,8 +859,9 @@
   }
 
   // Tambah ke kalender user langsung (tanpa download):
-  // Buka Google Calendar dengan event terisi otomatis.
-  // Di iPhone: buka aplikasi Google Calendar langsung jika terinstal.
+  // - iPhone: navigasi ke blob text/calendar → iOS langsung buka preview
+  //   "Add to Calendar" Apple Calendar bawaan
+  // - Android/Desktop: buka Google Calendar dengan event terisi
   function downloadICS(kajianId) {
     const ev = (typeof rawKajians !== 'undefined' ? rawKajians : []).find(k => k.id === kajianId);
     if (!ev || !ev.event_date) return;
@@ -875,14 +876,42 @@
     const title = ev.title || 'Kajian';
     const desc = `${ev.ustadz || ''} - majelisku.web.id`;
     const loc = ((ev.masjid || '') + ' ' + (ev.address || '')).substring(0, 120);
-    const dates = `${dateStr}T${timeStart}/${dateStr}T${timeEnd}`;
-    const url = 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
-      `&text=${encodeURIComponent(title)}` +
-      `&dates=${dates}` +
-      `&ctz=Asia/Jakarta` +
-      `&details=${encodeURIComponent(desc)}` +
-      `&location=${encodeURIComponent(loc)}`;
-    window.open(url, '_blank');
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+    if (isIOS) {
+      // Apple Calendar bawaan: iOS kenali text/calendar → tampilkan "Add to Calendar"
+      const esc = (s) => String(s || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+      const fold = (line) => {
+        let out = '';
+        while (line.length > 73) { out += line.slice(0, 73) + '\r\n '; line = line.slice(73); }
+        return out + line;
+      };
+      const dtstamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      const ics = [
+        'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Majelisku//Kajian//ID', 'METHOD:PUBLISH',
+        'BEGIN:VEVENT',
+        `UID:kajian-${ev.id}-${Date.now()}@majelisku.web.id`,
+        `DTSTAMP:${dtstamp}`,
+        `DTSTART;TZID=Asia/Jakarta:${dateStr}T${timeStart}`,
+        `DTEND;TZID=Asia/Jakarta:${dateStr}T${timeEnd}`,
+        fold(`SUMMARY:${esc(title)}`),
+        fold(`DESCRIPTION:${esc(desc)}`),
+        fold(`LOCATION:${esc(loc)}`),
+        'END:VEVENT', 'END:VCALENDAR'
+      ].join('\r\n');
+      const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+      // Navigasi langsung (bukan download) → iOS buka Apple Calendar
+      window.location.href = URL.createObjectURL(blob);
+    } else {
+      const dates = `${dateStr}T${timeStart}/${dateStr}T${timeEnd}`;
+      const url = 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
+        `&text=${encodeURIComponent(title)}` +
+        `&dates=${dates}` +
+        `&ctz=Asia/Jakarta` +
+        `&details=${encodeURIComponent(desc)}` +
+        `&location=${encodeURIComponent(loc)}`;
+      window.open(url, '_blank');
+    }
   }
 
   // Render agenda: grup berdasarkan tanggal
