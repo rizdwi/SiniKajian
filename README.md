@@ -79,12 +79,6 @@ php artisan serve
 
 ---
 
-## Kredensial Default Pengujian (Seeded)
-
-- **Email:** `jamaah@sinikajian.id`
-- **Kata Sandi:** `sunnah12345`
-*(Atau buat akun baru secara instan melalui menu Akun)*
-
 ---
 
 <p align="center">
