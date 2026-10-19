@@ -106,6 +106,9 @@ $mailFrom = getenv('MAIL_FROM_ADDRESS') ?: ($_ENV['MAIL_FROM_ADDRESS'] ?? 'norep
 $mailFromName = getenv('MAIL_FROM_NAME') ?: ($_ENV['MAIL_FROM_NAME'] ?? 'Majelisku');
 $resendKey = getenv('RESEND_API_KEY') ?: ($_ENV['RESEND_API_KEY'] ?? ($_SERVER['RESEND_API_KEY'] ?? ''));
 
+$supabaseUrl = getenv('SUPABASE_URL') ?: ($_ENV['SUPABASE_URL'] ?? ($_SERVER['SUPABASE_URL'] ?? 'https://hhcopgprjdjvgfcuqdyf.supabase.co'));
+$supabaseKey = getenv('SUPABASE_SERVICE_KEY') ?: ($_ENV['SUPABASE_SERVICE_KEY'] ?? ($_SERVER['SUPABASE_SERVICE_KEY'] ?? (getenv('SUPABASE_KEY') ?: ($_ENV['SUPABASE_KEY'] ?? ''))));
+
 putenv('APP_NAME=' . $appName);
 putenv('APP_DEBUG=' . $appDebug);
 putenv('APP_URL=' . $appUrl);
@@ -119,6 +122,12 @@ putenv('MAIL_FROM_ADDRESS=' . $mailFrom);
 putenv('MAIL_FROM_NAME=' . $mailFromName);
 if (!empty($resendKey)) {
     putenv('RESEND_API_KEY=' . $resendKey);
+}
+if (!empty($supabaseUrl)) {
+    putenv('SUPABASE_URL=' . $supabaseUrl);
+}
+if (!empty($supabaseKey)) {
+    putenv('SUPABASE_SERVICE_KEY=' . $supabaseKey);
 }
 
 $_ENV['APP_NAME'] = $appName;
@@ -135,6 +144,12 @@ $_ENV['MAIL_FROM_NAME'] = $mailFromName;
 if (!empty($resendKey)) {
     $_ENV['RESEND_API_KEY'] = $resendKey;
 }
+if (!empty($supabaseUrl)) {
+    $_ENV['SUPABASE_URL'] = $supabaseUrl;
+}
+if (!empty($supabaseKey)) {
+    $_ENV['SUPABASE_SERVICE_KEY'] = $supabaseKey;
+}
 
 $_SERVER['APP_NAME'] = $appName;
 $_SERVER['APP_DEBUG'] = $appDebug;
@@ -149,6 +164,12 @@ $_SERVER['MAIL_FROM_ADDRESS'] = $mailFrom;
 $_SERVER['MAIL_FROM_NAME'] = $mailFromName;
 if (!empty($resendKey)) {
     $_SERVER['RESEND_API_KEY'] = $resendKey;
+}
+if (!empty($supabaseUrl)) {
+    $_SERVER['SUPABASE_URL'] = $supabaseUrl;
+}
+if (!empty($supabaseKey)) {
+    $_SERVER['SUPABASE_SERVICE_KEY'] = $supabaseKey;
 }
 $_SERVER['SCRIPT_NAME'] = '/index.php';
 $_SERVER['PHP_SELF'] = '/index.php';

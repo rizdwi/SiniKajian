@@ -36,8 +36,8 @@ return [
     ],
 
     'supabase' => [
-        'url' => env('SUPABASE_URL'),
-        'service_key' => env('SUPABASE_SERVICE_KEY'),
+        'url' => env('SUPABASE_URL', 'https://hhcopgprjdjvgfcuqdyf.supabase.co'),
+        'service_key' => env('SUPABASE_SERVICE_KEY', env('SUPABASE_KEY')),
     ],
 
     'google' => [

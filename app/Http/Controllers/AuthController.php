@@ -55,6 +55,29 @@ class AuthController extends Controller
                 ->with('success', 'Selamat datang kembali, ' . Auth::user()->name . '!');
         }
 
+        // Fallback: Autentikasi via Supabase jika instance Vercel ter-reset
+        $sbSvc = new \App\Services\SupabaseUserService();
+        if ($sbSvc->enabled()) {
+            $sbUser = $sbSvc->findByEmail($credentials['email']);
+            if ($sbUser && !empty($sbUser['password']) && \Illuminate\Support\Facades\Hash::check($credentials['password'], $sbUser['password'])) {
+                $user = User::updateOrCreate(
+                    ['email' => strtolower($sbUser['email'])],
+                    [
+                        'name' => $sbUser['name'] ?? 'Jamaah',
+                        'password' => $sbUser['password'],
+                        'avatar' => $sbUser['avatar'] ?? null,
+                        'email_verified_at' => $sbUser['email_verified_at'] ?? now(),
+                    ]
+                );
+                Auth::login($user, $remember);
+                \Illuminate\Support\Facades\RateLimiter::clear($throttleKey);
+                $request->session()->regenerate();
+
+                return redirect()->intended(route('profile'))
+                    ->with('success', 'Selamat datang kembali, ' . $user->name . '!');
+            }
+        }
+
         \Illuminate\Support\Facades\RateLimiter::hit($throttleKey, 60);
 
         return back()->withErrors([
@@ -104,6 +127,22 @@ class AuthController extends Controller
         \Illuminate\Support\Facades\RateLimiter::hit($emailKey, 120); // 2 menit
 
         $user = User::whereRaw('LOWER(email) = ?', [$email])->first();
+        if (!$user) {
+            $sbSvc = new \App\Services\SupabaseUserService();
+            if ($sbSvc->enabled()) {
+                $sbUser = $sbSvc->findByEmail($email);
+                if ($sbUser) {
+                    $user = User::create([
+                        'name' => $sbUser['name'] ?? 'Jamaah',
+                        'email' => strtolower($sbUser['email']),
+                        'password' => $sbUser['password'] ?? \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(16)),
+                        'avatar' => $sbUser['avatar'] ?? null,
+                        'email_verified_at' => $sbUser['email_verified_at'] ?? now(),
+                    ]);
+                }
+            }
+        }
+
         if (!$user) {
             return back()->withErrors([
                 'email' => 'Alamat email (' . $email . ') belum terdaftar di Majelisku. Silakan periksa kembali atau buat akun baru terlebih dahulu.',
@@ -249,6 +288,20 @@ class AuthController extends Controller
             'email' => strtolower(trim($validated['email'])),
             'password' => Hash::make($validated['password']),
         ]);
+
+        // Sinkronisasi otomatis ke Supabase agar persisten lintas restart Vercel
+        try {
+            $sbSvc = new \App\Services\SupabaseUserService();
+            if ($sbSvc->enabled()) {
+                $sbSvc->findOrCreate([
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'password' => $user->password,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Supabase sync user register gagal: ' . $e->getMessage());
+        }
 
         Auth::login($user);
 

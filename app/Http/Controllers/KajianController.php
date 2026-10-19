@@ -198,6 +198,26 @@ class KajianController extends Controller
             $isBookmarked = Bookmark::where('user_id', Auth::id())
                 ->where('kajian_id', $kajian->id)
                 ->exists();
+
+            if (!$isBookmarked) {
+                $supabaseUrl = config('services.supabase.url');
+                $supabaseKey = config('services.supabase.service_key');
+                if ($supabaseUrl && $supabaseKey) {
+                    try {
+                        $sbRes = \Illuminate\Support\Facades\Http::withHeaders([
+                            'apikey' => $supabaseKey,
+                            'Authorization' => 'Bearer ' . $supabaseKey,
+                        ])->timeout(5)->get("{$supabaseUrl}/rest/v1/bookmarks", [
+                            'user_id' => 'eq.' . Auth::id(),
+                            'kajian_id' => 'eq.' . $kajian->id,
+                            'select' => 'id',
+                        ]);
+                        $isBookmarked = !empty($sbRes->json());
+                    } catch (\Throwable $e) {
+                        // ignore
+                    }
+                }
+            }
         }
 
         return view('kajian.show', [
@@ -317,8 +337,16 @@ class KajianController extends Controller
                         'select' => 'kajian_id',
                     ]);
                 $rows = $res->json();
-                $ids = array_column($rows ?? [], 'kajian_id');
+                $ids = array_map('intval', array_column($rows ?? [], 'kajian_id'));
                 if (!empty($ids)) {
+                    $sbKajianSvc = new SupabaseKajianService();
+                    if ($sbKajianSvc->isConfigured()) {
+                        $allActive = $sbKajianSvc->getActiveKajians();
+                        $matched = array_values(array_filter($allActive, fn($k) => in_array((int)($k['id'] ?? 0), $ids, true)));
+                        if (!empty($matched)) {
+                            return SupabaseKajianService::toCollection($matched);
+                        }
+                    }
                     return Kajian::whereIn('id', $ids)->get();
                 }
                 return collect();

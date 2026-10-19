@@ -12,8 +12,14 @@ class SupabaseUserService
 
     public function __construct()
     {
-        $this->url = config('services.supabase.url');
-        $this->key = config('services.supabase.service_key');
+        $this->url = config('services.supabase.url') ?: env('SUPABASE_URL') ?: getenv('SUPABASE_URL') ?: null;
+        $this->key = config('services.supabase.service_key')
+            ?: config('services.supabase.service_role_key')
+            ?: config('services.supabase.key')
+            ?: env('SUPABASE_SERVICE_KEY')
+            ?: env('SUPABASE_KEY')
+            ?: getenv('SUPABASE_SERVICE_KEY')
+            ?: null;
     }
 
     public function enabled(): bool
@@ -146,6 +152,30 @@ class SupabaseUserService
             return $rows[0] ?? null;
         } catch (\Exception $e) {
             Log::warning('Supabase find user gagal: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Ambil user by Email (case-insensitive).
+     */
+    public function findByEmail(string $email): ?array
+    {
+        if (!$this->enabled()) return null;
+
+        try {
+            $cleanEmail = strtolower(trim($email));
+            $res = Http::withHeaders($this->headers())
+                ->timeout(10)
+                ->get("{$this->url}/rest/v1/app_users", [
+                    'email' => 'ilike.' . $cleanEmail,
+                    'select' => '*',
+                ]);
+
+            $rows = $res->json();
+            return $rows[0] ?? null;
+        } catch (\Exception $e) {
+            Log::warning('Supabase findByEmail gagal: ' . $e->getMessage());
             return null;
         }
     }
