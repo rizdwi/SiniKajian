@@ -623,6 +623,20 @@
     return `${day} ${month} ${parts[0]}`;
   }
 
+  // Helper: badge "X hari lagi" untuk kejelasan jadwal
+  function hariLagiBadge(dateStr) {
+    if (!dateStr) return '';
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const target = new Date(String(dateStr).split('T')[0]);
+    target.setHours(0,0,0,0);
+    const diff = Math.round((target - today) / 86400000);
+    if (diff < 0) return '';
+    let label = diff === 0 ? 'Hari ini' : diff === 1 ? 'Besok' : diff + ' hari lagi';
+    let bg = diff <= 1 ? '#DC2626' : diff <= 7 ? '#F4A300' : '#1D4D4F';
+    return `<span style="background:${bg};color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:9999px;margin-left:6px;">${label}</span>`;
+  }
+
   // Helper: validasi URL aman (cegah javascript: dll)
   function safeUrl(url) {
     if (!url) return '#';
@@ -864,7 +878,7 @@
           <div class="min-w-0 flex-1">
             <div class="flex items-center justify-between gap-1 mb-1">
               <span class="text-[10px] font-bold text-[#1D4D4F] bg-[#E6F4F1] px-2 py-0.5 rounded-full">
-                ${ev.day}${ev.event_date ? ', ' + formatTanggalIndo(ev.event_date) : ''} • ${ev.time}
+                ${ev.day}${ev.event_date ? ', ' + formatTanggalIndo(ev.event_date) : ''} • ${ev.time}${hariLagiBadge(ev.event_date)}
               </span>
               <div class="flex items-center gap-1 text-[11px] font-bold text-[#1D4D4F]">
                 <svg class="w-3 h-3 text-[#1D4D4F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
