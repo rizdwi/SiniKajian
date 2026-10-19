@@ -179,4 +179,70 @@ class SupabaseUserService
             return null;
         }
     }
+
+    /**
+     * Simpan atau update push subscription.
+     */
+    public function upsertPushSubscription(array $data): bool
+    {
+        if (!$this->enabled()) return false;
+
+        try {
+            $res = Http::withHeaders($this->headers())
+                ->timeout(10)
+                ->post("{$this->url}/rest/v1/push_subscriptions", array_merge($data, ['_upsert' => true]));
+
+            // Gunakan upsert via POST dengan Prefer header
+            $res = Http::withHeaders(array_merge($this->headers(), ['Prefer' => 'resolution=merge-duplicates']))
+                ->timeout(10)
+                ->post("{$this->url}/rest/v1/push_subscriptions", $data);
+
+            return $res->successful();
+        } catch (\Exception $e) {
+            Log::warning('Supabase upsertPushSubscription gagal: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Hapus push subscription by endpoint.
+     */
+    public function deletePushSubscription(string $endpoint): bool
+    {
+        if (!$this->enabled()) return false;
+
+        try {
+            $res = Http::withHeaders($this->headers())
+                ->timeout(10)
+                ->delete("{$this->url}/rest/v1/push_subscriptions", [
+                    'endpoint' => 'eq.' . $endpoint,
+                ]);
+
+            return $res->successful();
+        } catch (\Exception $e) {
+            Log::warning('Supabase deletePushSubscription gagal: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Ambil semua push subscriptions.
+     */
+    public function getPushSubscriptions(): array
+    {
+        if (!$this->enabled()) return [];
+
+        try {
+            $res = Http::withHeaders($this->headers())
+                ->timeout(15)
+                ->get("{$this->url}/rest/v1/push_subscriptions", [
+                    'select' => 'endpoint,p256dh,auth',
+                ]);
+
+            return $res->json() ?? [];
+        } catch (\Exception $e) {
+            Log::warning('Supabase getPushSubscriptions gagal: ' . $e->getMessage());
+            return [];
+        }
+    }
 }

@@ -702,6 +702,88 @@
     if (e.target === privacyModal) closePrivacyModal();
     if (e.target === locationModal) closeLocationModal();
   });
+
+  // Web Push Notification untuk pengingat kajian
+  const VAPID_PUBLIC_KEY = '{{ config("services.vapid.public_key") }}';
+  const reminderToggle = document.getElementById('reminderToggle');
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+  }
+
+  async function subscribePush() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      alert('Browser tidak mendukung notifikasi push.');
+      return false;
+    }
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        alert('Izin notifikasi ditolak.');
+        return false;
+      }
+      const reg = await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+        });
+      }
+      const res = await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+        body: JSON.stringify(sub.toJSON())
+      });
+      return res.ok;
+    } catch (e) {
+      console.error('Push subscribe gagal:', e);
+      return false;
+    }
+  }
+
+  async function unsubscribePush() {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await fetch('/api/push/unsubscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+          body: JSON.stringify({ endpoint: sub.endpoint })
+        });
+        await sub.unsubscribe();
+      }
+      return true;
+    } catch (e) {
+      console.error('Push unsubscribe gagal:', e);
+      return false;
+    }
+  }
+
+  if (reminderToggle) {
+    // Cek status langganan saat ini
+    (async () => {
+      if ('serviceWorker' in navigator && 'PushManager' in window) {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        reminderToggle.checked = !!sub;
+      }
+    })();
+
+    reminderToggle.addEventListener('change', async () => {
+      if (reminderToggle.checked) {
+        const ok = await subscribePush();
+        if (!ok) reminderToggle.checked = false;
+        else alert('Pengingat kajian aktif! Anda akan diberi tahu 30 menit sebelum kajian dimulai.');
+      } else {
+        await unsubscribePush();
+      }
+    });
+  }
 </script>
 @endif
 @endsection
