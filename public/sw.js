@@ -1,5 +1,5 @@
 // SiniKajian Service Worker - Version 14.0 (Laravel PWA)
-const CACHE_NAME = 'sinikajian-v14.0';
+const CACHE_NAME = 'sinikajian-v14.1';
 
 const STATIC_ASSETS = [
   '/',
