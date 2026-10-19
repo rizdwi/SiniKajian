@@ -366,20 +366,33 @@
   }
 
   function showActivateButton() {
+    // Tidak tampilkan tombol terpisah; seluruh area kompas bisa diketuk
+    // Tambahkan hint halus di pill
     const pill = document.getElementById('sensorGuidancePill');
-    if (pill && !document.getElementById('btnActivateCompass')) {
-      const btn = document.createElement('button');
-      btn.id = 'btnActivateCompass';
-      btn.className = 'mt-2 px-6 py-2.5 rounded-full bg-[#1D4D4F] text-white text-xs font-bold shadow-md active:scale-95 transition';
-      btn.textContent = '📱 Ketuk untuk Aktifkan Kompas';
-      btn.onclick = activateCompassManually;
-      pill.parentElement.appendChild(btn);
+    if (pill && !pill.dataset.hintAdded) {
+      pill.dataset.hintAdded = '1';
+      const hint = document.createElement('div');
+      hint.id = 'compassHint';
+      hint.className = 'text-[10px] text-[#607072] mt-1';
+      hint.textContent = 'Ketuk kompas untuk aktifkan sensor arah';
+      pill.parentElement.appendChild(hint);
+    }
+    // Buat area kompas bisa diketuk untuk aktivasi
+    const compassArea = document.getElementById('compassTouchContainer');
+    if (compassArea && !compassArea.dataset.tapBound) {
+      compassArea.dataset.tapBound = '1';
+      compassArea.style.cursor = 'pointer';
+      compassArea.addEventListener('click', activateCompassManually);
     }
   }
 
   function hideActivateButton() {
-    const btn = document.getElementById('btnActivateCompass');
-    if (btn) btn.remove();
+    const hint = document.getElementById('compassHint');
+    if (hint) hint.remove();
+    const compassArea = document.getElementById('compassTouchContainer');
+    if (compassArea) {
+      compassArea.style.cursor = 'default';
+    }
   }
 
   function activateCompassManually() {
