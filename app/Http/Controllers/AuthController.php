@@ -433,14 +433,17 @@ class AuthController extends Controller
         $user->name = $request->name;
         $user->email = $request->email;
 
-        // Simpan avatar sebagai base64 data URI di SQLite agar persisten di serverless
+        // Upload avatar ke Supabase Storage (bucket avatars)
+        $avatarUrl = null;
         if ($request->filled('avatar_data') && str_starts_with($request->avatar_data, 'data:image')) {
-            $user->avatar = $request->avatar_data;
+            $avatarUrl = $this->uploadAvatarToStorage($request->input('avatar_data'), $user->id);
         } elseif ($request->hasFile('avatar') && $request->file('avatar')->isValid()) {
             $file = $request->file('avatar');
-            $mime = $file->getMimeType();
-            $base64 = base64_encode(file_get_contents($file->getRealPath()));
-            $user->avatar = 'data:' . $mime . ';base64,' . $base64;
+            $dataUri = 'data:' . $file->getMimeType() . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
+            $avatarUrl = $this->uploadAvatarToStorage($dataUri, $user->id);
+        }
+        if ($avatarUrl) {
+            $user->avatar = $avatarUrl;
         }
 
         $user->save();
@@ -583,6 +586,58 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             \Log::warning('Turnstile verification gagal: ' . $e->getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Upload avatar ke Supabase Storage bucket avatars.
+     * Return public URL atau null jika gagal.
+     */
+    private function uploadAvatarToStorage(string $dataUri, $userId): ?string
+    {
+        try {
+            // Parse data URI
+            if (!preg_match('/^data:(image\/\w+);base64,(.+)$/', $dataUri, $m)) {
+                return null;
+            }
+            $mime = $m[1];
+            $data = base64_decode($m[2]);
+            if (!$data) return null;
+
+            $ext = match($mime) {
+                'image/jpeg' => 'jpg',
+                'image/png' => 'png',
+                'image/webp' => 'webp',
+                'image/gif' => 'gif',
+                default => 'jpg',
+            };
+
+            $svc = new \App\Services\SupabaseUserService();
+            if (!$svc->enabled()) return null;
+
+            $filename = "avatar_{$userId}_" . time() . ".{$ext}";
+
+            $url = $svc->getSupabaseUrl();
+            $key = $svc->getServiceKey();
+
+            $res = \Illuminate\Support\Facades\Http::withHeaders([
+                    'apikey' => $key,
+                    'Authorization' => 'Bearer ' . $key,
+                    'Content-Type' => $mime,
+                ])
+                ->timeout(30)
+                ->withBody($data, $mime)
+                ->post("{$url}/storage/v1/object/avatars/{$filename}");
+
+            if ($res->successful()) {
+                return "{$url}/storage/v1/object/public/avatars/{$filename}";
+            }
+
+            \Log::warning('Upload avatar gagal: ' . $res->body());
+            return null;
+        } catch (\Exception $e) {
+            \Log::warning('Upload avatar exception: ' . $e->getMessage());
+            return null;
         }
     }
 }

@@ -27,6 +27,16 @@ class SupabaseUserService
         return !empty($this->url) && !empty($this->key);
     }
 
+    public function getSupabaseUrl(): ?string
+    {
+        return $this->url;
+    }
+
+    public function getServiceKey(): ?string
+    {
+        return $this->key;
+    }
+
     private function headers(): array
     {
         return [
