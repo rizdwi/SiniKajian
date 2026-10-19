@@ -115,7 +115,7 @@
         Untukmu
       </button>
       @foreach($categories as $cat)
-      @if(!in_array($cat, ['Kajian', 'Kajian Akhir Pekan', 'Kajian Akhir Pekan & Bazar', 'Bazar']))
+      @if(!preg_match('/^kajian/i', trim($cat)))
       <button onclick="setCategoryFilter('{{ $cat }}')" class="category-chip whitespace-nowrap px-4 py-2 rounded-full font-medium transition-all bg-white dark:bg-[#162526] text-[#607072] dark:text-[#9BA8A9] border border-[#E5ECEB] hover:border-[#1D4D4F] hover:text-[#1D4D4F]" data-cat="{{ $cat }}">
         {{ $cat }}
       </button>
@@ -124,8 +124,8 @@
     </div>
 
     <!-- Quick Chips: Radius Jarak & Hari -->
-    <div class="flex items-center justify-between text-xs text-[#607072] dark:text-[#9BA8A9] pt-0.5 gap-2">
-      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar shrink-0">
+    <div class="flex items-center gap-2 text-xs text-[#607072] dark:text-[#9BA8A9] pt-0.5 overflow-x-auto no-scrollbar">
+      <div class="flex items-center gap-2 shrink-0">
         <span class="text-[11px] font-medium text-[#607072] dark:text-[#9BA8A9] whitespace-nowrap">Radius:</span>
         <button onclick="setRadiusFilter(5)" class="radius-chip px-3.5 py-1.5 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] whitespace-nowrap" data-radius="5">5 km</button>
         <button onclick="setRadiusFilter(15)" class="radius-chip px-3.5 py-1.5 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] whitespace-nowrap" data-radius="15">15 km</button>
@@ -133,7 +133,7 @@
         <button onclick="setRadiusFilter(999)" class="radius-chip px-3.5 py-1.5 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] whitespace-nowrap" data-radius="999">Semua</button>
       </div>
 
-      <div class="flex items-center space-x-1">
+      <div class="flex items-center gap-1.5 shrink-0 ml-auto">
         <button id="viewModeToggle" onclick="openCalendarModal()" class="px-2.5 py-1 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] flex items-center gap-1 transition" title="Buka kalender">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
