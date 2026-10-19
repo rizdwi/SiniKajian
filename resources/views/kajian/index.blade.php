@@ -624,6 +624,7 @@
   }
 
   // Helper: badge "X hari lagi" untuk kejelasan jadwal
+  // Hari ini (merah), Besok (kuning), 2+ hari (hijau)
   function hariLagiBadge(dateStr) {
     if (!dateStr) return '';
     const today = new Date();
@@ -633,8 +634,8 @@
     const diff = Math.round((target - today) / 86400000);
     if (diff < 0) return '';
     let label = diff === 0 ? 'Hari ini' : diff === 1 ? 'Besok' : diff + ' hari lagi';
-    let bg = diff <= 1 ? '#DC2626' : diff <= 7 ? '#F4A300' : '#1D4D4F';
-    return `<span style="background:${bg};color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:9999px;margin-left:6px;">${label}</span>`;
+    let bg = diff === 0 ? '#DC2626' : diff === 1 ? '#EAB308' : '#16A34A';
+    return `<span style="background:${bg};color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:9999px;white-space:nowrap;flex-shrink:0;">${label}</span>`;
   }
 
   // Helper: validasi URL aman (cegah javascript: dll)
@@ -877,9 +878,12 @@
           ${flyerThumb}
           <div class="min-w-0 flex-1">
             <div class="flex items-center justify-between gap-1 mb-1">
-              <span class="text-[10px] font-bold text-[#1D4D4F] bg-[#E6F4F1] px-2 py-0.5 rounded-full">
-                ${ev.day}${ev.event_date ? ', ' + formatTanggalIndo(ev.event_date) : ''} • ${ev.time}${hariLagiBadge(ev.event_date)}
-              </span>
+              <div class="flex items-center gap-1 flex-wrap">
+                <span class="text-[10px] font-bold text-[#1D4D4F] bg-[#E6F4F1] px-2 py-0.5 rounded-full whitespace-nowrap">
+                  ${ev.day}${ev.event_date ? ', ' + formatTanggalIndo(ev.event_date) : ''} • ${ev.time}
+                </span>
+                ${hariLagiBadge(ev.event_date)}
+              </div>
               <div class="flex items-center gap-1 text-[11px] font-bold text-[#1D4D4F]">
                 <svg class="w-3 h-3 text-[#1D4D4F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
