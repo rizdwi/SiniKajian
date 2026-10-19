@@ -847,8 +847,10 @@
     itemsWrap.innerHTML = '';
     items.forEach(ev => {
       const row = document.createElement('div');
+      row.setAttribute('data-kajian-id', ev.id);
       row.className = 'bg-[#F8FAF9] dark:bg-[#1E2E2F] rounded-xl p-3 flex items-center gap-2 cursor-pointer hover:border hover:border-[#1D4D4F]/40 transition';
-      row.addEventListener('click', () => {
+      row.addEventListener('click', (e) => {
+        if (e.target.closest('button')) return;
         try { closeCalendarModal(); openDetailModalWithEvent(ev); } catch (err) { console.error('Gagal buka detail:', err); }
       });
       const timeShort = (ev.time || '').split('-')[0] || '';
@@ -976,10 +978,8 @@
 
       list.forEach(ev => {
         const row = document.createElement('div');
-        row.className = 'bg-white dark:bg-[#162526] rounded-xl p-3 mb-2 border border-[#E5ECEB] dark:border-[#1E2E2F] flex items-center gap-3 cursor-pointer hover:border-[#1D4D4F]/50 transition' + (ev.is_cancelled ? ' opacity-60' : '');
-        row.addEventListener('click', () => {
-          try { openDetailModalWithEvent(ev); } catch (err) { console.error('Gagal buka detail:', err); }
-        });
+        row.setAttribute('data-kajian-id', ev.id);
+        row.className = 'kajian-row bg-white dark:bg-[#162526] rounded-xl p-3 mb-2 border border-[#E5ECEB] dark:border-[#1E2E2F] flex items-center gap-3 cursor-pointer hover:border-[#1D4D4F]/50 transition' + (ev.is_cancelled ? ' opacity-60' : '');
         const timeShort = (ev.time || '').split('-')[0].split(' ')[0] || '';
         row.innerHTML = `
           <div class="text-center shrink-0 w-14">
@@ -1178,6 +1178,25 @@
   };
 
   // 3. Render Daftar Kajian
+  // Event delegation: satu listener untuk semua kartu (lebih robust)
+  (function initCardClickDelegation() {
+    const container = document.getElementById('kajianCardsList');
+    if (!container || container.dataset.delegated) return;
+    container.dataset.delegated = '1';
+    container.addEventListener('click', (e) => {
+      // Abaikan jika klik tombol di dalam kartu (bookmark, dll)
+      if (e.target.closest('button') || e.target.closest('a')) return;
+      const card = e.target.closest('article[data-kajian-id], div[data-kajian-id]');
+      if (card) {
+        const id = card.getAttribute('data-kajian-id');
+        const ev = (typeof rawKajians !== 'undefined' ? rawKajians : []).find(k => String(k.id) === String(id));
+        if (ev) {
+          try { openDetailModalWithEvent(ev); } catch (err) { console.error('Gagal buka detail:', err); }
+        }
+      }
+    });
+  })();
+
   function renderKajianFeed() {
     const container = document.getElementById('kajianCardsList');
     const emptyState = document.getElementById('emptyStateContainer');
@@ -1345,16 +1364,10 @@
            </div>`;
       
       const card = document.createElement('article');
+      card.setAttribute('data-kajian-id', ev.id);
       card.className = 'bg-white dark:bg-[#162526] rounded-2xl p-3.5 border border-[#E5ECEB] dark:border-[#1E2E2F] shadow-xs hover:border-[#1D4D4F]/50 transition-all cursor-pointer' + (ev.is_cancelled ? ' !border-red-300' : '');
       card.style.position = 'relative';
       card.style.overflow = 'hidden';
-      card.addEventListener('click', () => {
-        try {
-          openDetailModalWithEvent(ev);
-        } catch (err) {
-          console.error('Gagal buka detail:', err);
-        }
-      });
       const cancelledStamp = ev.is_cancelled ? `
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:10;">
           <span style="border:4px solid #dc2626;color:#dc2626;font-weight:900;font-size:28px;letter-spacing:4px;padding:6px 20px;border-radius:8px;transform:rotate(-12deg);background:rgba(255,255,255,0.75);text-transform:uppercase;font-family:system-ui;">Dibatalkan</span>
