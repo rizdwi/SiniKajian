@@ -903,14 +903,21 @@
       // Navigasi langsung (bukan download) → iOS buka Apple Calendar
       window.location.href = URL.createObjectURL(blob);
     } else {
+      // Android: intent langsung buka aplikasi Google Calendar
+      // Desktop: buka Google Calendar web
       const dates = `${dateStr}T${timeStart}/${dateStr}T${timeEnd}`;
-      const url = 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
+      const params = `action=TEMPLATE` +
         `&text=${encodeURIComponent(title)}` +
         `&dates=${dates}` +
         `&ctz=Asia/Jakarta` +
         `&details=${encodeURIComponent(desc)}` +
         `&location=${encodeURIComponent(loc)}`;
-      window.open(url, '_blank');
+      const isAndroid = /Android/.test(navigator.userAgent);
+      if (isAndroid) {
+        window.location.href = `intent://calendar.google.com/calendar/render?${params}#Intent;scheme=https;package=com.google.android.calendar;S.browser_fallback_url=${encodeURIComponent('https://calendar.google.com/calendar/render?' + params)};end`;
+      } else {
+        window.open('https://calendar.google.com/calendar/render?' + params, '_blank');
+      }
     }
   }
 
