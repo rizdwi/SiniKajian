@@ -147,6 +147,21 @@
     </div>
   </div>
 
+  <!-- Ustadz Favorit -->
+  <div class="space-y-2">
+    <div class="px-1 flex items-center justify-between">
+      <h3 class="text-sm font-bold text-[#1C2224]">Ustadz Favorit</h3>
+      <span id="favUstadzCount" class="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">0</span>
+    </div>
+    <div id="favUstadzList" class="space-y-2"></div>
+    <div id="emptyFavUstadz" class="p-4 rounded-2xl bg-white border border-[#E5ECEB] text-center space-y-2">
+      <p class="text-xs text-[#607072]">Belum ada ustadz favorit. Tandai bintang di detail kajian untuk menambah.</p>
+      <a href="{{ route('kajian.index') }}" class="inline-block px-4 py-2 rounded-xl bg-[#1D4D4F] text-white text-xs font-bold shadow-2xs hover:bg-[#153A3B] transition">
+        Jelajahi Kajian
+      </a>
+    </div>
+  </div>
+
   <!-- 4. Akun & Preferensi Grouped Card (Figma Screen 5) -->
   <div class="space-y-2">
     <div class="px-1">
@@ -776,6 +791,46 @@
         await unsubscribePush();
       }
     });
+  }
+
+  // Render daftar ustadz favorit
+  (function renderFavUstadz() {
+    const listEl = document.getElementById('favUstadzList');
+    const emptyEl = document.getElementById('emptyFavUstadz');
+    const countEl = document.getElementById('favUstadzCount');
+    if (!listEl) return;
+    let favs = [];
+    try { favs = JSON.parse(localStorage.getItem('majelisku_fav_ustadz') || '[]'); } catch (e) {}
+    if (countEl) countEl.innerText = favs.length;
+    if (!favs.length) {
+      listEl.innerHTML = '';
+      if (emptyEl) emptyEl.classList.remove('hidden');
+      return;
+    }
+    if (emptyEl) emptyEl.classList.add('hidden');
+    listEl.innerHTML = favs.map(name => {
+      const safe = name.replace(/'/g, "\\'");
+      const initial = name.replace(/^Ustadz\s+/i, '').charAt(0) || 'U';
+      return `
+      <div class="p-3 rounded-2xl bg-white border border-[#E5ECEB] flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-xs shrink-0">${initial}</div>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs font-bold text-[#1C2224] truncate">${name.replace(/</g, '&lt;')}</p>
+          <a href="/?q=${encodeURIComponent(name)}" class="text-[11px] text-[#1D4D4F] font-medium hover:underline">Lihat kajiannya →</a>
+        </div>
+        <button onclick="removeFavUstadz('${safe}')" class="p-2 rounded-full text-[#607072] hover:text-red-600 transition" aria-label="Hapus favorit">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+        </button>
+      </div>`;
+    }).join('');
+  })();
+
+  function removeFavUstadz(name) {
+    let favs = [];
+    try { favs = JSON.parse(localStorage.getItem('majelisku_fav_ustadz') || '[]'); } catch (e) {}
+    favs = favs.filter(n => n !== name);
+    try { localStorage.setItem('majelisku_fav_ustadz', JSON.stringify(favs)); } catch (e) {}
+    location.reload();
   }
 </script>
 @endif

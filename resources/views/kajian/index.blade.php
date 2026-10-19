@@ -373,6 +373,11 @@
           <p id="modalSpeaker" class="text-xs font-bold text-[#1C2224] dark:text-[#E8EDED] mt-0.5 truncate">Ustadz</p>
           <p class="text-[10px] text-[#607072] dark:text-[#9BA8A9]">Pengasuh Kajian Sunnah</p>
         </div>
+        <button id="modalFavUstadzBtn" onclick="if(currentDetailEvent) toggleFavUstadz(currentDetailEvent.ustadz)" class="p-2 rounded-full text-[#607072] dark:text-[#9BA8A9] hover:text-amber-500 transition touch-btn shrink-0" aria-label="Ustadz favorit" title="Tandai ustadz favorit">
+          <svg id="modalFavUstadzIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+          </svg>
+        </button>
       </div>
     </div>
 
@@ -1360,18 +1365,11 @@
         <div class="flex items-start gap-3"${cancelledDim}>
           ${flyerThumb}
           <div class="min-w-0 flex-1">
-            <div class="flex items-center justify-between gap-1 mb-1">
-              <div class="flex items-center gap-1 flex-wrap">
+            <div class="flex items-center gap-1 flex-wrap">
                 <span class="text-[10px] font-bold text-[#1D4D4F] bg-[#E6F4F1] px-2 py-0.5 rounded-full whitespace-nowrap">
                   ${ev.day}${ev.event_date ? ', ' + formatTanggalIndo(ev.event_date) : ''} • ${ev.time}
                 </span>
                 ${hariLagiBadge(ev.event_date)}
-              </div>
-              <div class="flex items-center gap-1 text-[11px] font-bold text-[#1D4D4F]">
-                <svg class="w-3 h-3 text-[#1D4D4F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                </svg>
-                <span>${ev.distance.toFixed(1)} km</span>
               </div>
             </div>
             
@@ -1397,17 +1395,13 @@
             </div>
           </div>
           
-          <div class="self-center flex flex-col items-center gap-2 pl-1">
+          <div class="self-center flex flex-col items-center gap-1.5 pl-1 shrink-0">
             <button data-kajian-id="${ev.id}" onclick="event.stopPropagation(); toggleBookmarkAction(${ev.id}, this)" class="bookmark-btn p-1.5 rounded-full ${isSaved ? 'text-amber-500 bg-amber-50' : 'text-[#607072] dark:text-[#9BA8A9] hover:text-[#1D4D4F]'} transition touch-btn" aria-label="Simpan">
               <svg class="w-4 h-4" fill="${isSaved ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
               </svg>
             </button>
-            <button onclick="event.stopPropagation(); toggleFavUstadz('${(ev.ustadz || '').replace(/'/g, "\\'")}')" class="p-1.5 rounded-full ${isFavUstadz(ev.ustadz) ? 'text-amber-500 bg-amber-50' : 'text-[#607072] dark:text-[#9BA8A9] hover:text-amber-500'} transition touch-btn" aria-label="Ustadz favorit" title="Tandai ustadz favorit">
-              <svg class="w-4 h-4" fill="${isFavUstadz(ev.ustadz) ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
-              </svg>
-            </button>
+            <span class="text-[10px] font-bold text-[#1D4D4F] dark:text-[#7FC4BC] whitespace-nowrap">${ev.distance.toFixed(1)} km</span>
             <svg class="w-4 h-4 text-[#607072] dark:text-[#9BA8A9]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
             </svg>
@@ -1480,10 +1474,18 @@
       flyerWrapper.classList.add('hidden');
     }
 
+    // Status favorit ustadz di modal
+    const favBtn = document.getElementById('modalFavUstadzBtn');
+    const favIcon = document.getElementById('modalFavUstadzIcon');
+    if (favBtn && favIcon) {
+      const fav = isFavUstadz(ev.ustadz);
+      favIcon.setAttribute('fill', fav ? 'currentColor' : 'none');
+      favBtn.classList.toggle('text-amber-500', fav);
+    }
+
     // Stempel DIBATALKAN
     const cancelledStamp = document.getElementById('modalCancelledStamp');
-    if (cancelledStamp) {
-      if (ev.is_cancelled) {
+    if (cancelledStamp) {      if (ev.is_cancelled) {
         cancelledStamp.classList.remove('hidden');
         cancelledStamp.classList.add('flex');
       } else {
