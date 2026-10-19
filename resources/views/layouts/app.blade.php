@@ -182,7 +182,11 @@
         <div style="font-size:24px; margin-bottom:8px;">🤲</div>
         <div style="font-weight:700; font-size:16px; margin-bottom:6px;">Dukung Majelisku Tetap Berjalan</div>
         <div style="font-size:13px; opacity:.9; margin-bottom:14px; line-height:1.5;">Infaq Anda membantu kami menjaga layanan tetap gratis dan terus berkembang menyebarkan info kajian sunnah.</div>
-        <a href="https://wa.me/6281380622197?text=Assalamu%27alaikum%2C%20saya%20ingin%20berinfaq%20untuk%20Majelisku" target="_blank" style="display:inline-block; background:#F4A300; color:#1D4D4F; font-weight:700; padding:10px 28px; border-radius:10px; text-decoration:none; font-size:14px;">Berinfaq Sekarang</a>
+        <div style="background:rgba(255,255,255,.15); border-radius:10px; padding:12px; margin-bottom:12px;">
+          <div style="font-size:12px; opacity:.8; margin-bottom:4px;">Bank Jago</div>
+          <div style="font-size:20px; font-weight:700; letter-spacing:1px; font-family:monospace;">106429900520</div>
+          <div style="font-size:11px; opacity:.7; margin-top:4px;">a.n. Majelisku</div>
+        </div>
         <div style="font-size:11px; opacity:.7; margin-top:10px;">"Perumpamaan orang yang menginfakkan hartanya di jalan Allah seperti sebutir biji yang menumbuhkan tujuh tangkai" (QS. Al-Baqarah: 261)</div>
       </div>
     </div>
