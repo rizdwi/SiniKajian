@@ -88,7 +88,7 @@ class PushController extends Controller
     }
 
     /**
-     * Kirim satu web push menggunakan VAPID.
+     * Kirim satu web push menggunakan VAPID (minishlink/web-push).
      */
     private function sendWebPush(array $sub, array $payload): bool
     {
@@ -98,38 +98,33 @@ class PushController extends Controller
 
         if (!$publicKey || !$privateKey) return false;
 
-        // Gunakan library minishlink/web-push jika tersedia, fallback ke implementasi manual
         try {
-            $payloadJson = json_encode($payload);
-
-            // VAPID JWT
-            $header = json_encode(['typ' => 'JWT', 'alg' => 'ES256']);
-            $now = time();
-            $jwtPayload = json_encode([
-                'aud' => parse_url($sub['endpoint'], PHP_URL_SCHEME) . '://' . parse_url($sub['endpoint'], PHP_URL_HOST),
-                'exp' => $now + 43200,
-                'sub' => $subject,
-            ]);
-
-            // Untuk implementasi penuh perlu openssl EC; gunakan web-push library via composer jika ada
-            // Fallback: kirim tanpa enkripsi payload (hanya untuk endpoint yang mendukung)
-            $ch = curl_init($sub['endpoint']);
-            curl_setopt_array($ch, [
-                CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => $payloadJson,
-                CURLOPT_HTTPHEADER => [
-                    'Content-Type: application/json',
-                    'TTL: 86400',
+            $auth = [
+                'VAPID' => [
+                    'subject' => $subject,
+                    'publicKey' => $publicKey,
+                    'privateKey' => $privateKey,
                 ],
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT => 10,
-            ]);
-            $result = curl_exec($ch);
-            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
+            ];
 
-            return $code >= 200 && $code < 300;
+            $webPush = new \Minishlink\WebPush\WebPush($auth);
+
+            $subscription = \Minishlink\WebPush\Subscription::create([
+                'endpoint' => $sub['endpoint'],
+                'keys' => [
+                    'p256dh' => $sub['p256dh'],
+                    'auth' => $sub['auth'],
+                ],
+            ]);
+
+            $report = $webPush->sendOneNotification(
+                $subscription,
+                json_encode($payload)
+            );
+
+            return $report->isSuccess();
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('WebPush gagal: ' . $e->getMessage());
             return false;
         }
     }
