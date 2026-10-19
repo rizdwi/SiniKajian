@@ -12,15 +12,19 @@ use Illuminate\Support\Facades\Log;
  */
 class SupabaseKajianService
 {
-    protected string $url;
-    protected string $key;
+    protected ?string $url = null;
+    protected ?string $key = null;
 
     public function __construct()
     {
-        $this->url = config('services.supabase.url');
+        $this->url = config('services.supabase.url') ?: env('SUPABASE_URL') ?: getenv('SUPABASE_URL') ?: null;
         $this->key = config('services.supabase.service_key')
             ?: config('services.supabase.service_role_key')
-            ?: config('services.supabase.key');
+            ?: config('services.supabase.key')
+            ?: env('SUPABASE_SERVICE_KEY')
+            ?: env('SUPABASE_KEY')
+            ?: getenv('SUPABASE_SERVICE_KEY')
+            ?: null;
     }
 
     public function isConfigured(): bool

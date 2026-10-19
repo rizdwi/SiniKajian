@@ -253,8 +253,8 @@ class SiniKajianTest extends TestCase
         $response = $this->post('/daftar', [
             'name' => 'Fulan Baru',
             'email' => $regEmail,
-            'password' => 'aman12345',
-            'password_confirmation' => 'aman12345',
+            'password' => 'Aman12345!',
+            'password_confirmation' => 'Aman12345!',
         ]);
 
         $response->assertRedirect(route('verification.notice'));
@@ -510,14 +510,14 @@ class SiniKajianTest extends TestCase
         $updateRes = $this->post('/reset-sandi', [
             'token' => $plainToken,
             'email' => $email,
-            'password' => 'newpassword456',
-            'password_confirmation' => 'newpassword456',
+            'password' => 'NewPass123!',
+            'password_confirmation' => 'NewPass123!',
         ]);
         $updateRes->assertRedirect(route('login'));
 
         // Pastikan password baru terpasang di database
         $user->refresh();
-        $this->assertTrue(Hash::check('newpassword456', $user->password));
+        $this->assertTrue(Hash::check('NewPass123!', $user->password));
 
         // Pastikan token terhapus
         $this->assertDatabaseMissing('password_reset_tokens', ['email' => $email]);
@@ -613,8 +613,8 @@ class SiniKajianTest extends TestCase
         $response = $this->post('/daftar', [
             'name' => 'Jamaah Baru',
             'email' => $email,
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
         ]);
 
         $response->assertStatus(302);
