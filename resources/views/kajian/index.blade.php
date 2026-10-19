@@ -123,32 +123,33 @@
       @endforeach
     </div>
 
-    <!-- Quick Chips: Radius Jarak & Hari -->
+    <!-- Quick Chips: Radius Jarak -->
     <div class="flex items-center gap-2 text-xs text-[#607072] dark:text-[#9BA8A9] pt-0.5 overflow-x-auto no-scrollbar">
-      <div class="flex items-center gap-2 shrink-0">
-        <span class="text-[11px] font-medium text-[#607072] dark:text-[#9BA8A9] whitespace-nowrap">Radius:</span>
-        <button onclick="setRadiusFilter(5)" class="radius-chip px-3.5 py-1.5 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] whitespace-nowrap" data-radius="5">5 km</button>
-        <button onclick="setRadiusFilter(15)" class="radius-chip px-3.5 py-1.5 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] whitespace-nowrap" data-radius="15">15 km</button>
-        <button onclick="setRadiusFilter(25)" class="radius-chip px-3.5 py-1.5 rounded-xl border border-[#1D4D4F] bg-[#E6F4F1] text-[#1D4D4F] font-bold whitespace-nowrap" data-radius="25">25 km</button>
-        <button onclick="setRadiusFilter(999)" class="radius-chip px-3.5 py-1.5 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] whitespace-nowrap" data-radius="999">Semua</button>
-      </div>
+      <span class="text-[11px] font-medium text-[#607072] dark:text-[#9BA8A9] whitespace-nowrap shrink-0">Radius:</span>
+      <button onclick="setRadiusFilter(5)" class="radius-chip px-3.5 py-1.5 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] whitespace-nowrap shrink-0" data-radius="5">5 km</button>
+      <button onclick="setRadiusFilter(15)" class="radius-chip px-3.5 py-1.5 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] whitespace-nowrap shrink-0" data-radius="15">15 km</button>
+      <button onclick="setRadiusFilter(25)" class="radius-chip px-3.5 py-1.5 rounded-xl border border-[#1D4D4F] bg-[#E6F4F1] text-[#1D4D4F] font-bold whitespace-nowrap shrink-0" data-radius="25">25 km</button>
+      <button onclick="setRadiusFilter(999)" class="radius-chip px-3.5 py-1.5 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] whitespace-nowrap shrink-0" data-radius="999">Semua</button>
+    </div>
 
-      <div class="flex items-center gap-1.5 shrink-0 ml-auto">
-        <button id="viewModeToggle" onclick="openCalendarModal()" class="px-2.5 py-1 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] flex items-center gap-1 transition" title="Buka kalender">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-          </svg>
-          <span class="text-[11px]" id="viewModeLabel">Kalender</span>
-        </button>
-        <button id="favUstadzToggle" onclick="toggleFavUstadzFilter()" class="px-2.5 py-1 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-amber-500 flex items-center gap-1 transition" title="Hanya ustadz favorit">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
-          </svg>
-          <span class="text-[11px]">Favorit</span>
-        </button>
+    <!-- Baris aksi: Kalender, Favorit, Jumlah -->
+    <div class="flex items-center gap-2 text-xs pt-1">
+      <button id="viewModeToggle" onclick="openCalendarModal()" class="px-3 py-1.5 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] flex items-center gap-1.5 transition" title="Buka kalender">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+        </svg>
+        <span class="text-[11px]" id="viewModeLabel">Kalender</span>
+      </button>
+      <button id="favUstadzToggle" onclick="toggleFavUstadzFilter()" class="px-3 py-1.5 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-amber-500 flex items-center gap-1.5 transition" title="Hanya ustadz favorit">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+        </svg>
+        <span class="text-[11px]">Favorit</span>
+      </button>
+      <span class="ml-auto flex items-center gap-1">
         <span id="filteredCountBadge" class="font-bold text-[#1D4D4F] bg-[#E6F4F1] px-2 py-0.5 rounded-full">{{ $kajians->count() }}</span>
-        <span class="text-[11px]">Kajian</span>
-      </div>
+        <span class="text-[11px] text-[#607072] dark:text-[#9BA8A9]">Kajian</span>
+      </span>
     </div>
   </section>
 
