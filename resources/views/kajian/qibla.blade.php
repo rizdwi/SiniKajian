@@ -212,9 +212,35 @@
     // 2. Langsung mulai dengarkan sensor kompas otomatis tanpa perlu klik tombol
     autoStartCompass();
 
+    // 2b. Untuk iOS: tampilkan modal izin kompas langsung saat halaman dibuka
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      showCompassPermissionModal();
+    }
+
     // 3. Tambahkan touch / drag listener agar bisa diputar halus secara interaktif
     setupInteractiveDrag();
   });
+
+  // Modal izin kompas untuk iOS - muncul otomatis saat halaman dibuka
+  function showCompassPermissionModal() {
+    if (document.getElementById('compassPermissionModal')) return;
+    const modal = document.createElement('div');
+    modal.id = 'compassPermissionModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    modal.innerHTML = `
+      <div style="background:#fff;border-radius:16px;padding:24px;max-width:320px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.2);">
+        <div style="font-size:40px;margin-bottom:12px;">🧭</div>
+        <div style="font-weight:700;font-size:16px;margin-bottom:8px;color:#1D4D4F;">Aktifkan Kompas</div>
+        <div style="font-size:13px;color:#607072;margin-bottom:16px;line-height:1.5;">Aplikasi membutuhkan akses sensor kompas untuk menunjukkan arah kiblat sesuai arah hadap ponsel Anda.</div>
+        <button id="btnAllowCompass" style="background:#1D4D4F;color:#fff;font-weight:700;padding:12px 32px;border-radius:12px;border:none;font-size:14px;cursor:pointer;width:100%;">Izinkan Akses Kompas</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    document.getElementById('btnAllowCompass').addEventListener('click', () => {
+      modal.remove();
+      activateCompassManually();
+    });
+  }
 
   // Dengarkan pembaruan GPS otomatis dari background
   window.addEventListener('sk:location-updated', (e) => {
