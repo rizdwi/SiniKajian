@@ -210,8 +210,9 @@
       const accuracy = pos.coords.accuracy;
 
       // Cek apakah lokasi berubah signifikan (> 100 meter) atau inisial
+      // JANGAN override jika user sudah pilih manual (isGps=false)
       const dist = haversine(this.current.lat, this.current.lon, lat, lon);
-      if (isInitial || dist > 0.1 || !this.current.isGps) {
+      if (isInitial || (this.current.isGps && dist > 0.1)) {
         this.current.lat = lat;
         this.current.lon = lon;
         this.current.accuracy = accuracy;
