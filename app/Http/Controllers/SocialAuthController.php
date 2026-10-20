@@ -104,8 +104,16 @@ class SocialAuthController extends Controller
             $sbSvc = new SupabaseUserService();
             $sbUser = $sbSvc->enabled() ? $sbSvc->findByEmail($email) : null;
 
+            // PENTING: cocokkan provider_id DAN email sekaligus. Dulu cukup
+            // provider_id saja — dan file SQLite yang ter-commit memuat user
+            // TES dari pengujian API 18 Okt yang kebetulan membawa
+            // provider_id Google milik user asli, sehingga login user asli
+            // selalu mendarat di akun "OAuth User Test" (terjadi berulang
+            // 19 & 20 Okt). Dengan email ikut dicocokkan, baris basi seperti
+            // itu tidak akan pernah bisa membajak login lagi.
             $user = User::where('provider', $provider)
                 ->where('provider_id', $providerId)
+                ->where('email', $email)
                 ->first();
 
             if (!$user && $email) {
