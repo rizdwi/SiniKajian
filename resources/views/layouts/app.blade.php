@@ -192,7 +192,8 @@
   <main class="flex-1 pb-24">
     @yield('content')
 
-    <!-- Banner Infaq -->
+    <!-- Banner Infaq: hanya untuk user yang sudah login (perintah user 2026-10-20) -->
+    @auth
     <div class="max-w-md mx-auto px-4 mt-6 mb-4">
       <div style="background:linear-gradient(135deg,#1D4D4F 0%,#2A6B6E 100%); border-radius:16px; padding:20px; color:#fff; text-align:center; box-shadow:0 4px 16px rgba(29,77,79,.2);">
         <div style="font-size:24px; margin-bottom:8px;">🤲</div>
@@ -206,6 +207,7 @@
         <div style="font-size:11px; opacity:.7; margin-top:10px;">"Perumpamaan orang yang menginfakkan hartanya di jalan Allah seperti sebutir biji yang menumbuhkan tujuh tangkai" (QS. Al-Baqarah: 261)</div>
       </div>
     </div>
+    @endauth
   </main>
 
   <!-- Bottom Navigation Bar Native PWA (4 Destinasi sesuai Desain Figma) -->

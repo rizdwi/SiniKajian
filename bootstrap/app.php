@@ -16,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo('/masuk');
         $middleware->validateCsrfTokens(except: ['webhook/*', 'api/push/*']);
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+        // Hidupkan ulang login di instance Vercel mana pun dari identitas
+        // yang tersimpan di sesi cookie (SQLite lokal tiap instance berbeda).
+        $middleware->appendToGroup('web', \App\Http\Middleware\RehydrateAuth::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

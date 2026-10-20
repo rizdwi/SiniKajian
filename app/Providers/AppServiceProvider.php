@@ -26,6 +26,35 @@ class AppServiceProvider extends ServiceProvider
     {
         \Carbon\Carbon::setLocale('id');
 
+        // Simpan identitas login di sesi (driver cookie) agar sesi tetap
+        // dikenali di SEMUA instance Vercel. Tanpa ini, Auth hanya membawa
+        // ID baris SQLite lokal — dan tiap instance punya salinan SQLite
+        // sendiri (lihat App\Http\Middleware\RehydrateAuth). Email adalah
+        // kunci stabilnya. Listener ini menangkap SEMUA jalur login
+        // (Google OAuth, email+sandi, register) di satu titik.
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Auth\Events\Login::class, function ($event) {
+            try {
+                if (request()->hasSession() && $event->user) {
+                    session(['auth_identity' => [
+                        'email' => $event->user->email,
+                        'name' => $event->user->name,
+                        'provider' => $event->user->provider ?? null,
+                        'provider_id' => $event->user->provider_id ?? null,
+                    ]]);
+                }
+            } catch (\Throwable $e) {
+                // Jangan pernah menggagalkan login hanya karena ini gagal.
+            }
+        });
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Auth\Events\Logout::class, function ($event) {
+            try {
+                if (request()->hasSession()) {
+                    session()->forget('auth_identity');
+                }
+            } catch (\Throwable $e) {
+            }
+        });
+
         if (config('app.env') === 'production' || isset($_SERVER['VERCEL']) || isset($_ENV['VERCEL']) || env('VERCEL') || app()->environment('production')) {
             URL::forceScheme('https');
             URL::forceRootUrl('https://majelisku.web.id');
