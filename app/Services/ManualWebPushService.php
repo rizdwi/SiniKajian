@@ -26,18 +26,31 @@ class ManualWebPushService
         }
 
         try {
-            $endpoint = $subscription['endpoint'];
-            $p256dh = $subscription['p256dh'];
-            $auth = $subscription['auth'];
+            $endpoint = $subscription['endpoint'] ?? null;
+            $p256dh = $subscription['p256dh'] ?? null;
+            $auth = $subscription['auth'] ?? null;
+            if (!$endpoint || !$p256dh || !$auth) {
+                return false;
+            }
 
             // 1. Enkripsi payload (aes128gcm)
-            $encrypted = $this->encryptPayload(json_encode($payload), $p256dh, $auth);
+            try {
+                $encrypted = $this->encryptPayload(json_encode($payload), $p256dh, $auth);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('WebPush enkripsi gagal: ' . $e->getMessage());
+                return false;
+            }
             if ($encrypted === null) return false;
 
             // 2. Buat VAPID JWT
-            $urlParts = parse_url($endpoint);
-            $audience = $urlParts['scheme'] . '://' . $urlParts['host'];
-            $jwt = $this->createVapidJwt($audience, $subject, $vapidPublic, $vapidPrivate);
+            try {
+                $urlParts = parse_url($endpoint);
+                $audience = ($urlParts['scheme'] ?? 'https') . '://' . ($urlParts['host'] ?? '');
+                $jwt = $this->createVapidJwt($audience, $subject, $vapidPublic, $vapidPrivate);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('WebPush VAPID gagal: ' . $e->getMessage());
+                return false;
+            }
             if ($jwt === null) return false;
 
             // 3. Kirim via HTTP POST
@@ -103,10 +116,11 @@ class ManualWebPushService
         // HKDF steps (RFC 8291)
         $prk = $this->hkdf($authSecret, $sharedSecret, 'Content-Encoding: auth' . "\x00", 32);
 
-        // Context: label + lengths + keys
-        $context = 'P-256' . "\x00"
-            . $this->encodeLen(strlen($p256dh)) . $p256dh)
-            . $this->encodeLen(strlen($ephemeralPub)) . $ephemeralPub;
+        // Context: "P-256" + 0x00 + len(peer pub) + peer pub + len(ephem pub) + ephem pub
+        // (masing-masing len = 2 bytes big-endian)
+        $context = "P-256\x00"
+            . pack('n', strlen($p256dh)) . $p256dh
+            . pack('n', strlen($ephemeralPub)) . $ephemeralPub;
 
         $cekInfo = 'Content-Encoding: aes128gcm' . "\x00" . $context;
         $nonceInfo = 'Content-Encoding: nonce' . "\x00" . $context;
@@ -123,11 +137,6 @@ class ManualWebPushService
 
         // Header: salt(16) + rs(4, =4096) + idlen(1) + keylen(1=65) + pubkey(65)
         return $salt . pack('N', 4096) . chr(strlen($ephemeralPub)) . $ephemeralPub . $ciphertext . $tag;
-    }
-
-    private function encodeLen(string $data): string
-    {
-        return pack('n', strlen($data)) . $data;
     }
 
     /**

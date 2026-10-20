@@ -76,7 +76,12 @@ class PushController extends Controller
         $sent = 0;
         $failed = 0;
         foreach ($subs as $sub) {
-            $result = $this->sendWebPush($sub, $request->only(['title', 'body', 'url']));
+            try {
+                $result = $this->sendWebPush($sub, $request->only(['title', 'body', 'url']));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('PushController send error: ' . $e->getMessage());
+                $result = false;
+            }
             if ($result === true) {
                 $sent++;
             } else {
