@@ -256,6 +256,30 @@ class KajianController extends Controller
     /**
      * Tampilkan peta interaktif sebaran majelis ilmu.
      */
+    /**
+     * Halaman khusus ustadz: rangkuman seluruh kajian dari satu ustadz.
+     */
+    public function ustadz(string $name): View
+    {
+        $name = urldecode($name);
+        $service = new SupabaseKajianService();
+        $kajians = collect();
+
+        if ($service->isConfigured()) {
+            $rows = $service->getActiveKajians();
+            $kajians = collect($rows)
+                ->filter(fn($r) => strcasecmp(trim($r['ustadz'] ?? ''), trim($name)) === 0)
+                ->map(fn($r) => SupabaseKajianService::toObject($r))
+                ->sortBy('event_datetime')
+                ->values();
+        }
+
+        return view('kajian.ustadz', [
+            'ustadzName' => $name,
+            'kajians' => $kajians,
+        ]);
+    }
+
     public function map(): View
     {
         $service = new SupabaseKajianService();

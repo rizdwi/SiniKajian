@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 // Beranda & Modul Utama
 Route::get('/', [KajianController::class, 'index'])->name('kajian.index');
 Route::get('/kajian/{kajian}', [KajianController::class, 'show'])->name('kajian.show');
+Route::get('/ustadz/{name}', [KajianController::class, 'ustadz'])->name('kajian.ustadz');
 Route::get('/peta', [KajianController::class, 'map'])->name('kajian.map');
 Route::get('/kiblat', [KajianController::class, 'qibla'])->name('kajian.qibla');
 Route::get('/tersimpan', [KajianController::class, 'saved'])->name('kajian.saved');
