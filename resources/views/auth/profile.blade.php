@@ -89,19 +89,30 @@
     <div id="agendaListContainer" class="space-y-2">
     @php
       $allAgendaKajians = collect();
+      // Sumber masuknya tiap kajian ke agenda, agar label di kartu jujur:
+      // dulu SEMUA kartu berlabel "Tersimpan di Agenda" termasuk yang
+      // masuk karena catatan kehadiran — user mengira simpannya gagal
+      // terhapus (keluhan 2026-10-20). Prioritas label: hadir > simpan >
+      // ikuti (urutan push di bawah, penulis pertama menang).
+      $agendaSources = [];
       if(isset($attendances)) {
         foreach($attendances as $att) {
-          if($att->kajian) $allAgendaKajians->push($att->kajian);
+          if($att->kajian) {
+            $allAgendaKajians->push($att->kajian);
+            $agendaSources[$att->kajian->id] = 'Dicatat hadir';
+          }
         }
       }
       if(isset($savedKajians)) {
         foreach($savedKajians as $sk) {
           $allAgendaKajians->push($sk);
+          if(!isset($agendaSources[$sk->id])) $agendaSources[$sk->id] = 'Tersimpan di Agenda';
         }
       }
       if(isset($followedKajians)) {
         foreach($followedKajians as $fk) {
           $allAgendaKajians->push($fk);
+          if(!isset($agendaSources[$fk->id])) $agendaSources[$fk->id] = 'Dari majelis diikuti';
         }
       }
       $allAgendaKajians = $allAgendaKajians->unique('id')->sortBy('event_datetime')->take(3);
@@ -131,7 +142,7 @@
               </p>
               <div class="inline-flex items-center gap-1 text-[9px] font-bold text-[#1D4D4F] bg-[#E8F5F2] px-2 py-0.5 rounded-full mt-1">
                 <span class="w-1.5 h-1.5 rounded-full bg-[#1D4D4F]"></span>
-                <span>Tersimpan di Agenda</span>
+                <span>{{ $agendaSources[$agenda->id] ?? 'Tersimpan di Agenda' }}</span>
               </div>
             </div>
 
