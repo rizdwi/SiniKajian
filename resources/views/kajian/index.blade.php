@@ -885,7 +885,9 @@
         `&location=${encodeURIComponent(loc)}`;
       const isAndroid = /Android/.test(navigator.userAgent);
       if (isAndroid) {
-        window.location.href = `intent://calendar.google.com/calendar/render?${params}#Intent;scheme=https;package=com.google.android.calendar;S.browser_fallback_url=${encodeURIComponent('https://calendar.google.com/calendar/render?' + params)};end`;
+        // Android: buka Google Calendar langsung via HTTPS (lebih andal daripada intent://
+        // yang sering jatuh jadi download di Chrome). Chrome akan tawarkan buka di aplikasi.
+        window.location.href = 'https://calendar.google.com/calendar/render?' + params;
       } else {
         window.open('https://calendar.google.com/calendar/render?' + params, '_blank');
       }
