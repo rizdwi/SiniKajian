@@ -152,8 +152,8 @@
   <!-- Hero Spotlight: Majelis Pilihan Terdekat (Figma Screen 1: KAJIAN PILIHAN) -->
   <!-- Banner carousel: berdiri sendiri sebagai track horizontal, bisa di-swipe -->
   <section id="heroSpotlightContainer" class="hidden">
-    <div id="spotlightViewport" class="overflow-hidden rounded-3xl">
-      <div id="spotlightTrack" class="flex will-change-transform" style="touch-action:pan-y;"></div>
+    <div id="spotlightViewport" class="overflow-hidden rounded-3xl" style="touch-action:pan-y;">
+      <div id="spotlightTrack" class="flex will-change-transform"></div>
     </div>
   </section>
 
@@ -1285,56 +1285,71 @@
         });
       };
 
-      // Drag/swipe: track mengikuti jari secara real-time
+      // Drag/swipe: track mengikuti jari secara real-time.
+      // Handler disimpan di window agar render ulang feed tidak memakai closure lama.
+      window.__spotDrag = { startX: 0, startY: 0, dx: 0, tracking: false, horiz: false };
+      window.__spotContext = () => ({
+        idx: spotlightIdx,
+        items: spotlightItems,
+        apply: applyTrack,
+        go: window.__spotlightGo,
+      });
       if (viewport && !viewport.dataset.swipeBound) {
         viewport.dataset.swipeBound = '1';
-        let startX = 0, startY = 0, dragDx = 0, tracking = false, horiz = false;
+        const D = window.__spotDrag;
 
         viewport.addEventListener('touchstart', (e) => {
-          startX = e.touches[0].clientX;
-          startY = e.touches[0].clientY;
-          dragDx = 0; tracking = true; horiz = false;
+          D.startX = e.touches[0].clientX;
+          D.startY = e.touches[0].clientY;
+          D.dx = 0; D.tracking = true; D.horiz = false;
           window.__spotlightJustSwiped = false;
-          track.style.transition = 'none';
+          const t = document.getElementById('spotlightTrack');
+          if (t) t.style.transition = 'none';
         }, { passive: true });
 
         viewport.addEventListener('touchmove', (e) => {
-          if (!tracking) return;
-          const dx = e.touches[0].clientX - startX;
-          const dy = e.touches[0].clientY - startY;
-          if (!horiz) {
+          if (!D.tracking) return;
+          const dx = e.touches[0].clientX - D.startX;
+          const dy = e.touches[0].clientY - D.startY;
+          if (!D.horiz) {
             if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
-            if (Math.abs(dy) > Math.abs(dx)) { tracking = false; return; }
-            horiz = true;
+            if (Math.abs(dy) > Math.abs(dx)) { D.tracking = false; return; }
+            D.horiz = true;
           }
-          dragDx = dx;
+          D.dx = dx;
+          const t = document.getElementById('spotlightTrack');
+          if (!t) return;
+          const ctx = window.__spotContext();
           const w = viewport.clientWidth || 1;
-          const base = -spotlightIdx * w;
-          // Redaman di ujung pertama/terakhir
+          const base = -ctx.idx * w;
           let pos = base + dx;
-          const minPos = -(spotlightItems.length - 1) * w;
+          const minPos = -(ctx.items.length - 1) * w;
           if (pos > 0) pos = pos * 0.35;
           if (pos < minPos) pos = minPos + (pos - minPos) * 0.35;
-          track.style.transform = `translateX(${pos}px)`;
+          t.style.transform = `translateX(${pos}px)`;
         }, { passive: true });
 
         const finishDrag = () => {
-          if (!tracking && !horiz) return;
-          const wasHoriz = horiz;
-          tracking = false; horiz = false;
-          if (wasHoriz && Math.abs(dragDx) > 45) {
+          if (!D.tracking && !D.horiz) return;
+          const wasHoriz = D.horiz;
+          D.tracking = false; D.horiz = false;
+          const ctx = window.__spotContext();
+          if (wasHoriz && Math.abs(D.dx) > 45) {
             window.__spotlightJustSwiped = true;
-            window.__spotlightGo(spotlightIdx + (dragDx < 0 ? 1 : -1));
+            ctx.go(ctx.idx + (D.dx < 0 ? 1 : -1));
             if (window.__spotlightTimer) {
               clearInterval(window.__spotlightTimer);
               window.__spotlightTimer = setInterval(() => {
-                if (!document.hidden) window.__spotlightGo(spotlightIdx + 1);
+                if (!document.hidden) {
+                  const c = window.__spotContext();
+                  c.go(c.idx + 1);
+                }
               }, 6000);
             }
           } else {
-            applyTrack(true);
+            ctx.apply(true);
           }
-          dragDx = 0;
+          D.dx = 0;
         };
         viewport.addEventListener('touchend', finishDrag, { passive: true });
         viewport.addEventListener('touchcancel', finishDrag, { passive: true });
@@ -1344,7 +1359,10 @@
       if (window.__spotlightTimer) clearInterval(window.__spotlightTimer);
       if (spotlightItems.length > 1) {
         window.__spotlightTimer = setInterval(() => {
-          if (!document.hidden) window.__spotlightGo(spotlightIdx + 1);
+          if (!document.hidden) {
+            const c = window.__spotContext();
+            c.go(c.idx + 1);
+          }
         }, 6000);
       }
 
