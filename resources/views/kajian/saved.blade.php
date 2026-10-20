@@ -298,7 +298,8 @@
     .then(r => r.json())
     .then(data => {
       if (data && data.status === 'auth_required') { window.location.href = '{{ route('login') }}'; return; }
-      if (data && data.status === 'success' && data.bookmarked === false) {
+      const newState = (typeof data.saved === 'boolean') ? data.saved : data.bookmarked;
+      if (data && data.status === 'success' && newState === false) {
         removeBookmarkFromLocalStorage(id);
         const card = btn.closest('.saved-kajian-card');
         if (card) card.remove();
