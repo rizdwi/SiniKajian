@@ -16,7 +16,6 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
-    protected $fillable = ['name', 'email', 'password', 'provider', 'provider_id', 'avatar'];
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 

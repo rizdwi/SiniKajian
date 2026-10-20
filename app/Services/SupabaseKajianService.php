@@ -114,6 +114,7 @@ class SupabaseKajianService
                 ->timeout(10)
                 ->get("{$this->url}/rest/v1/kajian", [
                     'id' => "eq.{$id}",
+                    'verified' => 'eq.true',
                     'select' => 'id,title,ustadz,category,audience,masjid,address,lat,lon,day,time,description,verified,source,source_url,flyer_url,event_date,is_cancelled',
                 ]);
             $rows = $res->json() ?? [];
@@ -149,7 +150,7 @@ class SupabaseKajianService
     public static function toObject(array $row): object
     {
         return (object)[
-            'id' => $row['id'],
+            'id' => $row['id'] ?? 0,
             'title' => $row['title'] ?? '',
             'ustadz' => $row['ustadz'] ?? '',
             'category' => $row['category'] ?? 'Kajian',

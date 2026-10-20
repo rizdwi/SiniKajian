@@ -512,7 +512,7 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email,' . $user->id,
             'avatar' => 'nullable|image|max:5120',
-            'avatar_data' => 'nullable|string',
+            'avatar_data' => 'nullable|string|max:2800000',
         ]);
 
         $user->name = $request->name;

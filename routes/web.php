@@ -161,4 +161,4 @@ Route::post('/webhook/sync-kajian', function (\Illuminate\Http\Request $request)
 // Web Push Notifications
 Route::post('/api/push/subscribe', [App\Http\Controllers\PushController::class, 'subscribe'])->middleware('throttle:10,1');
 Route::post('/api/push/unsubscribe', [App\Http\Controllers\PushController::class, 'unsubscribe'])->middleware('throttle:10,1');
-Route::post('/api/push/send', [App\Http\Controllers\PushController::class, 'send']);
+Route::post('/api/push/send', [App\Http\Controllers\PushController::class, 'send'])->middleware('throttle:60,1');
