@@ -768,8 +768,20 @@
   }
 
   async function subscribePush() {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      alert('Browser tidak mendukung notifikasi push.');
+      // iOS: Push hanya jalan dari PWA yang di-install (Add to Home Screen)
+      if (isIOS) {
+        alert('Di iPhone, notifikasi hanya bisa aktif dari aplikasi yang dipasang.\n\nCara: buka majelisku.web.id di Safari → Bagikan → "Tambah ke Layar Utama" → buka dari ikonnya, lalu aktifkan Pengingat Kajian di sini.');
+      } else {
+        alert('Browser tidak mendukung notifikasi push.');
+      }
+      return false;
+    }
+    // iOS tapi dibuka dari browser biasa (bukan dari ikon Home Screen)
+    if (isIOS && !isStandalone) {
+      alert('Di iPhone, notifikasi hanya bisa aktif dari aplikasi yang dipasang.\n\nCara: buka majelisku.web.id di Safari → Bagikan → "Tambah ke Layar Utama" → buka dari ikonnya, lalu aktifkan Pengingat Kajian di sini.');
       return false;
     }
     try {
