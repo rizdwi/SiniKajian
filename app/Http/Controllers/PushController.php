@@ -68,10 +68,24 @@ class PushController extends Controller
             'title' => 'required|string|max:100',
             'body' => 'required|string|max:200',
             'url' => 'nullable|string|max:500',
+            'kajian_id' => 'nullable|integer',
         ]);
 
         $svc = new \App\Services\SupabaseUserService();
         $subs = $svc->enabled() ? $svc->getPushSubscriptions() : [];
+
+        // Jika kajian_id diberikan, hanya kirim ke user yang mem-bookmark kajian ini
+        $kajianId = $request->input('kajian_id');
+        if ($kajianId && $svc->enabled()) {
+            $bookmarkedUserIds = $svc->getBookmarkUserIds((int) $kajianId);
+            if (!empty($bookmarkedUserIds)) {
+                $subs = array_values(array_filter($subs, function ($sub) use ($bookmarkedUserIds) {
+                    return isset($sub['user_id']) && in_array((int) $sub['user_id'], $bookmarkedUserIds, true);
+                }));
+            } else {
+                $subs = []; // tidak ada yang bookmark → tidak ada notif
+            }
+        }
 
         $sent = 0;
         $failed = 0;

@@ -243,12 +243,35 @@ class SupabaseUserService
             $res = Http::withHeaders($this->headers())
                 ->timeout(15)
                 ->get("{$this->url}/rest/v1/push_subscriptions", [
-                    'select' => 'endpoint,p256dh,auth',
+                    'select' => 'endpoint,p256dh,auth,user_id',
                 ]);
 
             return $res->json() ?? [];
         } catch (\Exception $e) {
             Log::warning('Supabase getPushSubscriptions gagal: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Ambil daftar user_id yang mem-bookmark kajian tertentu.
+     */
+    public function getBookmarkUserIds(int $kajianId): array
+    {
+        if (!$this->enabled()) return [];
+
+        try {
+            $res = Http::withHeaders($this->headers())
+                ->timeout(15)
+                ->get("{$this->url}/rest/v1/bookmarks", [
+                    'select' => 'user_id',
+                    'kajian_id' => 'eq.' . $kajianId,
+                ]);
+
+            $rows = $res->json() ?? [];
+            return array_values(array_unique(array_map(fn ($r) => (int) ($r['user_id'] ?? 0), $rows)));
+        } catch (\Exception $e) {
+            Log::warning('Supabase getBookmarkUserIds gagal: ' . $e->getMessage());
             return [];
         }
     }
