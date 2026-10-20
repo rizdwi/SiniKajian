@@ -150,45 +150,10 @@
   </section>
 
   <!-- Hero Spotlight: Majelis Pilihan Terdekat (Figma Screen 1: KAJIAN PILIHAN) -->
+  <!-- Banner carousel: berdiri sendiri sebagai track horizontal, bisa di-swipe -->
   <section id="heroSpotlightContainer" class="hidden">
-    <div class="relative rounded-3xl overflow-hidden shadow-md border border-[#E5ECEB] bg-[#153A3B] group cursor-pointer" onclick="if(!window.__spotlightJustSwiped){document.getElementById('spotlightDetailBtn').click()}window.__spotlightJustSwiped=false;">
-      <!-- Hero Image / Flyer Background -->
-      <img id="spotlightHeroImg" src="https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=800&q=80" alt="Kajian Pilihan" class="w-full h-52 object-cover opacity-85 group-hover:scale-105 transition-transform duration-500">
-      <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/30"></div>
-
-      <!-- Top Badge & Bookmark Button -->
-      <div class="absolute top-3 inset-x-3 flex items-center justify-between">
-        <span class="px-3 py-1 rounded-full text-[10px] font-extrabold tracking-wider uppercase bg-[#E6F4F1] text-[#1D4D4F] shadow-xs">
-          KAJIAN PILIHAN
-        </span>
-        <button id="spotlightBookmarkBtn" type="button" class="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/60 transition touch-btn" onclick="event.stopPropagation();">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
-        </button>
-      </div>
-
-      <!-- Stempel DIBATALKAN -->
-      <div id="spotlightCancelledStamp" class="hidden absolute inset-0 items-center justify-center pointer-events-none" style="z-index:20;">
-        <span style="border:4px solid #dc2626;color:#dc2626;font-weight:900;font-size:30px;letter-spacing:4px;padding:6px 22px;border-radius:8px;transform:rotate(-12deg);background:rgba(255,255,255,0.78);text-transform:uppercase;">Dibatalkan</span>
-      </div>
-
-      <!-- Bottom Floating Glassmorphism Overlay Card -->
-      <div class="absolute bottom-3 inset-x-3 p-3.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-white shadow-sm">
-        <div class="flex items-center gap-2 mb-1">
-          <span id="spotlightTimePill" class="text-[10px] font-bold uppercase tracking-wider text-[#FCD34D]">Ahad • 09.00 WIB</span>
-          <span class="text-white/40">•</span>
-          <span id="spotlightDistance" class="text-[10px] text-white/90 font-medium">850 m</span>
-          <span class="flex-1"></span>
-          <span id="spotlightDots" class="flex items-center gap-1.5"></span>
-        </div>
-        <h2 id="spotlightTitle" class="text-sm sm:text-base font-bold text-white leading-snug line-clamp-1">
-          Menata Hati, Menemukan Tenang
-        </h2>
-        <p id="spotlightMasjid" class="text-xs text-white/85 mt-0.5 flex items-center gap-1 truncate">
-          <svg class="w-3.5 h-3.5 text-[#E6F4F1] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
-          <span>Masjid Terdekat di Sekitarmu</span>
-        </p>
-      </div>
-      <button id="spotlightDetailBtn" class="hidden"></button>
+    <div id="spotlightViewport" class="overflow-hidden rounded-3xl">
+      <div id="spotlightTrack" class="flex will-change-transform" style="touch-action:pan-y;"></div>
     </div>
   </section>
 
@@ -1237,122 +1202,142 @@
 
     countDisplay.innerText = filtered.length;
 
-    // Spotlight carousel: 3 teratas, bisa swipe + auto-advance
+    // Spotlight carousel: track horizontal berdiri sendiri, swipe menggeser track
     if (filtered.length > 0 && !activeSearch) {
       const spotlightItems = filtered.slice(0, 3);
       let spotlightIdx = 0;
+      const track = document.getElementById('spotlightTrack');
+      const viewport = document.getElementById('spotlightViewport');
+      heroSpotlight.classList.remove('hidden');
 
-      const renderSpotlight = (idx) => {
-        const top = spotlightItems[idx];
-        if (!top) return;
-        heroSpotlight.classList.remove('hidden');
-        document.getElementById('spotlightTitle').innerText = top.title;
-        document.getElementById('spotlightMasjid').innerHTML = `
-          <svg class="w-3.5 h-3.5 text-[#E6F4F1] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
-          <span>${top.masjid} • ${top.address ? top.address.split(',')[0] : 'Lokasi belum tersedia'}</span>
-        `;
-        document.getElementById('spotlightTimePill').innerText = `${top.day.toUpperCase()}${top.event_date ? ', ' + formatTanggalIndo(top.event_date) : ''} • ${top.time}`;
-        document.getElementById('spotlightDistance').innerText = `${top.distance.toFixed(1)} km`;
-        if (top.poster_url) {
-          document.getElementById('spotlightHeroImg').src = top.poster_url;
-        }
-        document.getElementById('spotlightDetailBtn').onclick = () => openDetailModalWithEvent(top);
+      const slideHTML = (item, i) => {
+        const saved = userBookmarkIds.has(Number(item.id));
+        const cancelStamp = item.is_cancelled ? `
+          <div class="absolute inset-0 flex items-center justify-center pointer-events-none" style="z-index:20;">
+            <span style="border:4px solid #dc2626;color:#dc2626;font-weight:900;font-size:30px;letter-spacing:4px;padding:6px 22px;border-radius:8px;transform:rotate(-12deg);background:rgba(255,255,255,0.78);text-transform:uppercase;">Dibatalkan</span>
+          </div>` : '';
+        const dots = spotlightItems.map((_, j) =>
+          `<span style="width:${j===i?'20px':'8px'};height:8px;border-radius:99px;background:${j===i?'#FCD34D':'rgba(255,255,255,0.4)'};display:inline-block;"></span>`
+        ).join('');
+        return `
+        <div class="spot-slide relative shrink-0 cursor-pointer overflow-hidden bg-[#153A3B]" style="width:100%;" data-slide-idx="${i}">
+          <img src="${item.poster_url || 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=800&q=80'}" alt="Kajian Pilihan" class="w-full h-52 object-cover opacity-85" draggable="false">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/30"></div>
+          <div class="absolute top-3 inset-x-3 flex items-center justify-between">
+            <span class="px-3 py-1 rounded-full text-[10px] font-extrabold tracking-wider uppercase bg-[#E6F4F1] text-[#1D4D4F] shadow-xs">KAJIAN PILIHAN</span>
+            <button type="button" class="spot-bm w-8 h-8 rounded-full bg-black/40 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/60 transition" data-kajian-id="${item.id}" aria-label="Simpan">
+              <svg class="w-4 h-4" fill="${saved ? '#FCD34D' : 'none'}" stroke="${saved ? '#FCD34D' : 'currentColor'}" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
+            </button>
+          </div>
+          ${cancelStamp}
+          <div class="absolute bottom-3 inset-x-3 p-3.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-white shadow-sm">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-[#FCD34D]">${(item.day || '').toUpperCase()}${item.event_date ? ', ' + formatTanggalIndo(item.event_date) : ''} • ${item.time || ''}</span>
+              <span class="text-white/40">•</span>
+              <span class="text-[10px] text-white/90 font-medium">${item.distance.toFixed(1)} km</span>
+              <span class="flex-1"></span>
+              <span class="flex items-center gap-1.5">${dots}</span>
+            </div>
+            <h2 class="text-sm sm:text-base font-bold text-white leading-snug line-clamp-1">${(item.title || '').replace(/</g, '&lt;')}</h2>
+            <p class="text-xs text-white/85 mt-0.5 flex items-center gap-1 truncate">
+              <svg class="w-3.5 h-3.5 text-[#E6F4F1] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+              <span>${(item.masjid || '').replace(/</g, '&lt;')} • ${item.address ? item.address.split(',')[0].replace(/</g, '&lt;') : 'Lokasi belum tersedia'}</span>
+            </p>
+          </div>
+        </div>`;
+      };
 
-        // Stempel DIBATALKAN di hero spotlight
-        const spotlightStamp = document.getElementById('spotlightCancelledStamp');
-        if (spotlightStamp) {
-          if (top.is_cancelled) {
-            spotlightStamp.classList.remove('hidden');
-            spotlightStamp.classList.add('flex');
-          } else {
-            spotlightStamp.classList.add('hidden');
-            spotlightStamp.classList.remove('flex');
-          }
-        }
+      track.innerHTML = spotlightItems.map(slideHTML).join('');
 
-        const isTopSaved = userBookmarkIds.has(Number(top.id));
-        const topBookmarkBtn = document.getElementById('spotlightBookmarkBtn');
-        if (topBookmarkBtn) {
-          topBookmarkBtn.setAttribute('data-kajian-id', top.id);
-          topBookmarkBtn.innerHTML = `
-            <svg class="w-4 h-4" fill="${isTopSaved ? '#FCD34D' : 'none'}" stroke="${isTopSaved ? '#FCD34D' : 'currentColor'}" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
-            </svg>
-          `;
-          topBookmarkBtn.onclick = (e) => {
-            e.stopPropagation();
-            toggleBookmarkAction(top.id, topBookmarkBtn);
-          };
-        }
+      // Klik slide -> detail (kecuali tombol bookmark)
+      track.querySelectorAll('.spot-slide').forEach(slide => {
+        slide.addEventListener('click', () => {
+          if (window.__spotlightJustSwiped) { window.__spotlightJustSwiped = false; return; }
+          const idx = Number(slide.dataset.slideIdx);
+          if (spotlightItems[idx]) openDetailModalWithEvent(spotlightItems[idx]);
+        });
+      });
+      track.querySelectorAll('.spot-bm').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleBookmarkAction(Number(btn.dataset.kajianId), btn);
+        });
+      });
 
-        // Dots indicator
-        const dotsContainer = document.getElementById('spotlightDots');
-        if (dotsContainer) {
-          dotsContainer.innerHTML = spotlightItems.map((_, i) =>
-            `<button onclick="event.stopPropagation();window.__spotlightGo(${i})" aria-label="Slide ${i+1}"
-              style="width:${i===idx?'20px':'8px'};height:8px;border-radius:99px;background:${i===idx?'#FCD34D':'rgba(255,255,255,0.4)'};transition:all .3s;border:none;cursor:pointer;"></button>`
-          ).join('');
-        }
+      const applyTrack = (animate) => {
+        track.style.transition = animate ? 'transform .32s cubic-bezier(.22,1,.36,1)' : 'none';
+        track.style.transform = `translateX(${-spotlightIdx * 100}%)`;
       };
 
       window.__spotlightGo = (i) => {
         spotlightIdx = (i + spotlightItems.length) % spotlightItems.length;
-        renderSpotlight(spotlightIdx);
+        applyTrack(true);
+        renderSpotlightDots();
       };
 
-      // Swipe support dengan drag visual real-time (responsif mengikuti jari)
-      const spotEl = heroSpotlight.querySelector('.relative');
-      if (spotEl && !spotEl.dataset.swipeBound) {
-        spotEl.dataset.swipeBound = '1';
-        spotEl.style.touchAction = 'pan-y';
-        let startX = 0, startY = 0, dragX = 0, dragging = false, locked = false;
+      const renderSpotlightDots = () => {
+        track.querySelectorAll('.spot-slide').forEach((slide, si) => {
+          const spans = slide.querySelectorAll('span[style*="border-radius:99px"]');
+          spans.forEach((sp, j) => {
+            sp.style.width = j === spotlightIdx ? '20px' : '8px';
+            sp.style.background = j === spotlightIdx ? '#FCD34D' : 'rgba(255,255,255,0.4)';
+          });
+        });
+      };
 
-        spotEl.addEventListener('touchstart', (e) => {
+      // Drag/swipe: track mengikuti jari secara real-time
+      if (viewport && !viewport.dataset.swipeBound) {
+        viewport.dataset.swipeBound = '1';
+        let startX = 0, startY = 0, dragDx = 0, tracking = false, horiz = false;
+
+        viewport.addEventListener('touchstart', (e) => {
           startX = e.touches[0].clientX;
           startY = e.touches[0].clientY;
-          dragX = 0; dragging = true; locked = false;
+          dragDx = 0; tracking = true; horiz = false;
           window.__spotlightJustSwiped = false;
-          spotEl.style.transition = 'none';
+          track.style.transition = 'none';
         }, { passive: true });
 
-        spotEl.addEventListener('touchmove', (e) => {
-          if (!dragging) return;
+        viewport.addEventListener('touchmove', (e) => {
+          if (!tracking) return;
           const dx = e.touches[0].clientX - startX;
           const dy = e.touches[0].clientY - startY;
-          // Kunci arah: hanya drag horizontal yang menggerakkan banner
-          if (!locked) {
-            if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
-            locked = true;
-            if (Math.abs(dy) > Math.abs(dx)) { dragging = false; spotEl.style.transform = ''; return; }
+          if (!horiz) {
+            if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+            if (Math.abs(dy) > Math.abs(dx)) { tracking = false; return; }
+            horiz = true;
           }
-          dragX = dx;
-          // Ikuti jari dengan redaman di tepi (rubber band)
-          const damped = dx * 0.85;
-          spotEl.style.transform = `translateX(${damped}px)`;
-          spotEl.style.opacity = String(1 - Math.min(Math.abs(dx) / 600, 0.35));
+          dragDx = dx;
+          const w = viewport.clientWidth || 1;
+          const base = -spotlightIdx * w;
+          // Redaman di ujung pertama/terakhir
+          let pos = base + dx;
+          const minPos = -(spotlightItems.length - 1) * w;
+          if (pos > 0) pos = pos * 0.35;
+          if (pos < minPos) pos = minPos + (pos - minPos) * 0.35;
+          track.style.transform = `translateX(${pos}px)`;
         }, { passive: true });
 
-        const endDrag = (e) => {
-          if (!dragging && !locked) return;
-          dragging = false;
-          const dx = dragX;
-          spotEl.style.transition = 'transform .28s cubic-bezier(.22,1,.36,1), opacity .28s';
-          spotEl.style.transform = '';
-          spotEl.style.opacity = '';
-          if (Math.abs(dx) > 45) {
+        const finishDrag = () => {
+          if (!tracking && !horiz) return;
+          const wasHoriz = horiz;
+          tracking = false; horiz = false;
+          if (wasHoriz && Math.abs(dragDx) > 45) {
             window.__spotlightJustSwiped = true;
-            window.__spotlightGo(spotlightIdx + (dx < 0 ? 1 : -1));
+            window.__spotlightGo(spotlightIdx + (dragDx < 0 ? 1 : -1));
             if (window.__spotlightTimer) {
               clearInterval(window.__spotlightTimer);
               window.__spotlightTimer = setInterval(() => {
-                window.__spotlightGo(spotlightIdx + 1);
+                if (!document.hidden) window.__spotlightGo(spotlightIdx + 1);
               }, 6000);
             }
+          } else {
+            applyTrack(true);
           }
-          dragX = 0;
+          dragDx = 0;
         };
-        spotEl.addEventListener('touchend', endDrag, { passive: true });
-        spotEl.addEventListener('touchcancel', endDrag, { passive: true });
+        viewport.addEventListener('touchend', finishDrag, { passive: true });
+        viewport.addEventListener('touchcancel', finishDrag, { passive: true });
       }
 
       // Auto-advance tiap 6 detik
@@ -1363,7 +1348,7 @@
         }, 6000);
       }
 
-      renderSpotlight(0);
+      applyTrack(false);
     } else {
       heroSpotlight.classList.add('hidden');
       if (window.__spotlightTimer) clearInterval(window.__spotlightTimer);
@@ -1899,10 +1884,14 @@
     document.querySelectorAll(`.bookmark-btn[data-kajian-id="${numericId}"]`).forEach(btn => {
       updateBookmarkBtn(btn, saved);
     });
-    const spotlightBtn = document.getElementById('spotlightBookmarkBtn');
-    if (spotlightBtn && spotlightBtn.getAttribute('data-kajian-id') == numericId) {
-      updateBookmarkBtn(spotlightBtn, saved);
-    }
+    // Tombol bookmark di banner carousel (class spot-bm)
+    document.querySelectorAll(`.spot-bm[data-kajian-id="${numericId}"]`).forEach(btn => {
+      const svg = btn.querySelector('svg');
+      if (svg) {
+        svg.setAttribute('fill', saved ? '#FCD34D' : 'none');
+        svg.setAttribute('stroke', saved ? '#FCD34D' : 'currentColor');
+      }
+    });
     if (currentDetailEvent && Number(currentDetailEvent.id) === numericId) {
       const modalBtn = document.getElementById('modalBookmarkBtn');
       if (modalBtn) updateBookmarkBtn(modalBtn, saved);
