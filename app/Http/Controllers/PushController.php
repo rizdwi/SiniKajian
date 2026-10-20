@@ -116,7 +116,12 @@ class PushController extends Controller
                 $sent++;
             } else {
                 $failed++;
-                $debug[] = 'result=' . var_export($result, true) . ' endpoint=' . substr($sub['endpoint'] ?? '', 0, 40);
+                $stageInfo = '';
+                if ($this->lastPushService) {
+                    $stageInfo = ' stage=' . ($this->lastPushService->lastStage ?? '-')
+                        . ' err=' . substr((string) ($this->lastPushService->lastError ?? ''), 0, 160);
+                }
+                $debug[] = 'result=' . var_export($result, true) . $stageInfo . ' endpoint=' . substr($sub['endpoint'] ?? '', 0, 40);
                 // Hapus subscription HANYA bila server push menyatakan gone/invalid (410/404).
                 // Jangan hapus pada error jaringan sementara agar subscription valid tidak hilang.
                 if ($result === 410 || $result === 404) {
@@ -139,9 +144,11 @@ class PushController extends Controller
      * Kirim satu web push menggunakan VAPID (implementasi manual, tanpa library eksternal).
      * Return: true jika sukses, int (HTTP status) jika gagal dengan status diketahui, false jika gagal tanpa status.
      */
+    private ?\App\Services\ManualWebPushService $lastPushService = null;
+
     private function sendWebPush(array $sub, array $payload): bool|int
     {
-        $svc = new \App\Services\ManualWebPushService();
-        return $svc->send($sub, $payload);
+        $this->lastPushService = new \App\Services\ManualWebPushService();
+        return $this->lastPushService->send($sub, $payload);
     }
 }

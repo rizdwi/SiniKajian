@@ -10,18 +10,33 @@ namespace App\Services;
  */
 class ManualWebPushService
 {
+    /** Tahap terakhir yang gagal (untuk diagnostik endpoint debug). */
+    public ?string $lastStage = null;
+    /** Detail error tahap terakhir (pesan exception / curl error / HTTP status). */
+    public ?string $lastError = null;
+
+    private function markStage(string $stage, string $error = ''): void
+    {
+        $this->lastStage = $stage;
+        $this->lastError = $error;
+    }
+
     /**
      * Kirim satu notifikasi push.
      * @return true jika sukses, int (HTTP status) jika gagal dengan status, false jika gagal tanpa status.
      */
     public function send(array $subscription, array $payload): bool|int
     {
-        $vapidPublic = config('services.vapid.public_key');
-        $vapidPrivate = config('services.vapid.private_key');
+        $this->lastStage = null;
+        $this->lastError = null;
+
+        $vapidPublic = trim((string) config('services.vapid.public_key'));
+        $vapidPrivate = trim((string) config('services.vapid.private_key'));
         $subject = config('services.vapid.subject', 'mailto:admin@majelisku.web.id');
 
         if (!$vapidPublic || !$vapidPrivate) {
             \Illuminate\Support\Facades\Log::warning('VAPID keys belum dikonfigurasi.');
+            $this->markStage('vapid_config');
             return false;
         }
 
@@ -30,6 +45,7 @@ class ManualWebPushService
             $p256dh = $subscription['p256dh'] ?? null;
             $auth = $subscription['auth'] ?? null;
             if (!$endpoint || !$p256dh || !$auth) {
+                $this->markStage('subscription_incomplete');
                 return false;
             }
 
@@ -38,9 +54,13 @@ class ManualWebPushService
                 $encrypted = $this->encryptPayload(json_encode($payload), $p256dh, $auth);
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::warning('WebPush enkripsi gagal: ' . $e->getMessage());
+                $this->markStage('encrypt_exception', $e->getMessage());
                 return false;
             }
-            if ($encrypted === null) return false;
+            if ($encrypted === null) {
+                if (!$this->lastStage) $this->markStage('encrypt');
+                return false;
+            }
 
             // 2. Buat VAPID JWT
             try {
@@ -49,9 +69,13 @@ class ManualWebPushService
                 $jwt = $this->createVapidJwt($audience, $subject, $vapidPublic, $vapidPrivate);
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::warning('WebPush VAPID gagal: ' . $e->getMessage());
+                $this->markStage('vapid_exception', $e->getMessage());
                 return false;
             }
-            if ($jwt === null) return false;
+            if ($jwt === null) {
+                if (!$this->lastStage) $this->markStage('vapid');
+                return false;
+            }
 
             // 3. Kirim via HTTP POST
             $headers = [
@@ -72,17 +96,21 @@ class ManualWebPushService
             curl_exec($ch);
             $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $curlErr = curl_error($ch);
+            $curlNo = curl_errno($ch);
             curl_close($ch);
 
             if ($curlErr) {
                 \Illuminate\Support\Facades\Log::warning('WebPush curl error: ' . $curlErr);
+                $this->markStage('curl', $curlNo . ': ' . $curlErr);
                 return false;
             }
 
+            $this->markStage('http', (string) $status);
             if ($status >= 200 && $status < 300) return true;
             return $status ?: false;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('ManualWebPush gagal: ' . $e->getMessage());
+            $this->markStage('exception', $e->getMessage());
             return false;
         }
     }
@@ -94,21 +122,38 @@ class ManualWebPushService
     {
         $p256dh = $this->b64urlDecode($p256dhB64);
         $authSecret = $this->b64urlDecode($authB64);
-        if ($p256dh === false || $authSecret === false) return null;
+        if ($p256dh === false || $authSecret === false) {
+            $this->markStage('encrypt_b64');
+            return null;
+        }
 
         // Generate ephemeral keypair (prime256v1)
         $ephemeral = openssl_pkey_new([
             'curve_name' => 'prime256v1',
             'private_key_type' => OPENSSL_KEYTYPE_EC,
         ]);
-        if (!$ephemeral) return null;
+        if (!$ephemeral) {
+            $this->markStage('encrypt_keygen', $this->opensslErrors());
+            return null;
+        }
 
         $details = openssl_pkey_get_details($ephemeral);
-        $ephemeralPub = "\x04" . $details['ec']['x'] . $details['ec']['y']; // uncompressed 65 bytes
+        if ($details === false || !isset($details['ec']['x'], $details['ec']['y'])) {
+            $this->markStage('encrypt_details', $this->opensslErrors());
+            return null;
+        }
+        // Koordinat EC bisa < 32 byte bila byte pertamanya 0x00 terpotong OpenSSL;
+        // WAJIB pad ke 32 byte agar titik selalu 65 byte (bug lama: sesekali korup).
+        $ephemeralPub = "\x04"
+            . str_pad($details['ec']['x'], 32, "\x00", STR_PAD_LEFT)
+            . str_pad($details['ec']['y'], 32, "\x00", STR_PAD_LEFT);
 
         // ECDH shared secret
         $sharedSecret = $this->ecdh($ephemeral, $p256dh);
-        if ($sharedSecret === null) return null;
+        if ($sharedSecret === null) {
+            $this->markStage('encrypt_ecdh', $this->opensslErrors());
+            return null;
+        }
 
         // Salt 16 bytes
         $salt = random_bytes(16);
@@ -128,12 +173,17 @@ class ManualWebPushService
         $cek = $this->hkdf($salt, $prk, $cekInfo, 16);
         $nonce = $this->hkdf($salt, $prk, $nonceInfo, 12);
 
-        // Pad plaintext: 2-byte big-endian pad length (0) + data + delimiter 0x02
-        $padded = "\x00\x00" . $plaintext . "\x02";
+        // Padding RFC 8188 (aes128gcm): data + delimiter 0x02 (record terakhir).
+        // Format lama "\x00\x00" . data . "\x02" adalah skema aesgcm usang — browser
+        // menolak/gagal parse payload sehingga notif tidak tampil walau terkirim.
+        $padded = $plaintext . "\x02";
 
         $tag = '';
         $ciphertext = openssl_encrypt($padded, 'aes-128-gcm', $cek, OPENSSL_RAW_DATA, $nonce, $tag);
-        if ($ciphertext === false) return null;
+        if ($ciphertext === false) {
+            $this->markStage('encrypt_aes', $this->opensslErrors());
+            return null;
+        }
 
         // Header: salt(16) + rs(4, =4096) + idlen(1) + keylen(1=65) + pubkey(65)
         return $salt . pack('N', 4096) . chr(strlen($ephemeralPub)) . $ephemeralPub . $ciphertext . $tag;
@@ -208,18 +258,30 @@ class ManualWebPushService
 
         // Private key: raw 32 bytes -> buat EC key
         $privRaw = $this->b64urlDecode($privB64);
-        if ($privRaw === false || strlen($privRaw) !== 32) return null;
+        if ($privRaw === false || strlen($privRaw) !== 32) {
+            $this->markStage('vapid_privlen');
+            return null;
+        }
 
         // Derive public key dari private
         $keyPair = $this->ecKeypairFromPrivate($privRaw);
-        if ($keyPair === null) return null;
+        if ($keyPair === null) {
+            $this->markStage('vapid_keypair', $this->opensslErrors());
+            return null;
+        }
 
         $sigDer = '';
-        if (!openssl_sign($data, $sigDer, $keyPair, OPENSSL_ALGO_SHA256)) return null;
+        if (!openssl_sign($data, $sigDer, $keyPair, OPENSSL_ALGO_SHA256)) {
+            $this->markStage('vapid_sign', $this->opensslErrors());
+            return null;
+        }
 
         // Convert DER -> raw R||S (64 bytes)
         $sigRaw = $this->derToRawEs256($sigDer);
-        if ($sigRaw === null) return null;
+        if ($sigRaw === null) {
+            $this->markStage('vapid_sigconv');
+            return null;
+        }
 
         return $data . '.' . $this->b64urlEncode($sigRaw);
     }
@@ -272,6 +334,16 @@ class ManualWebPushService
         for ($i = 1; $i <= $n; $i++) $len = ($len << 8) | ord($der[$pos + $i]);
         $next = $pos + 1 + $n;
         return $len;
+    }
+
+    /** Kumpulkan pesan error OpenSSL yang mengantre (untuk diagnostik tahap). */
+    private function opensslErrors(): string
+    {
+        $msgs = [];
+        while ($m = openssl_error_string()) {
+            $msgs[] = $m;
+        }
+        return implode(' | ', $msgs);
     }
 
     private function b64urlEncode(string $data): string

@@ -82,7 +82,9 @@ class KajianController extends Controller
 
         $userBookmarks = [];
         if (Auth::check()) {
-            $userBookmarks = Bookmark::where('user_id', Auth::id())->pluck('kajian_id')->toArray();
+            // Wajib dari Supabase: SQLite Vercel ephemeral selalu kosong/stale,
+            // sehingga status bookmark di feed selalu salah saat halaman dimuat.
+            $userBookmarks = $this->getUserBookmarkIds((int) Auth::id());
         }
 
         return view('kajian.index', [
@@ -341,6 +343,37 @@ class KajianController extends Controller
     }
 
     /**
+     * Ambil daftar kajian_id bookmark user dari Supabase (persisten);
+     * fallback ke SQLite lokal bila Supabase tak terkonfigurasi/gagal.
+     */
+    private function getUserBookmarkIds(int $userId): array
+    {
+        $supabaseUrl = config('services.supabase.url');
+        $supabaseKey = config('services.supabase.service_key');
+
+        if ($supabaseUrl && $supabaseKey) {
+            try {
+                $res = \Illuminate\Support\Facades\Http::withHeaders([
+                        'apikey' => $supabaseKey,
+                        'Authorization' => 'Bearer ' . $supabaseKey,
+                    ])
+                    ->timeout(10)
+                    ->get("{$supabaseUrl}/rest/v1/bookmarks", [
+                        'user_id' => "eq.{$userId}",
+                        'select' => 'kajian_id',
+                    ]);
+                if ($res->successful()) {
+                    return array_map('intval', array_column($res->json() ?? [], 'kajian_id'));
+                }
+            } catch (\Throwable $e) {
+                \Log::warning('Supabase get bookmark ids gagal: ' . $e->getMessage());
+            }
+        }
+
+        return Bookmark::where('user_id', $userId)->pluck('kajian_id')->map(fn ($v) => (int) $v)->toArray();
+    }
+
+    /**
      * Ambil bookmark user dari Supabase (persisten) dengan fallback lokal.
      */
     private function getUserBookmarks(int $userId)
@@ -503,8 +536,10 @@ class KajianController extends Controller
 
         $userId = Auth::id();
         $saved = false;
+        $supabaseDone = false;
 
-        // 1. Gunakan Supabase untuk persistensi jika dikonfigurasi (SQLite Vercel ephemeral)
+        // 1. Supabase adalah SUMBER KEBENARAN bookmark (SQLite Vercel ephemeral).
+        //    Hasil toggle Supabase-lah yang dikembalikan ke klien.
         $supabaseUrl = config('services.supabase.url');
         $supabaseKey = config('services.supabase.service_key');
 
@@ -523,44 +558,70 @@ class KajianController extends Controller
                         'kajian_id' => "eq.{$kajianId}",
                         'select' => 'id',
                     ]);
+                if (!$res->successful()) {
+                    throw new \Exception('Cek bookmark Supabase HTTP ' . $res->status());
+                }
                 $existing = $res->json();
 
                 if (!empty($existing)) {
-                    \Illuminate\Support\Facades\Http::withHeaders($headers)
+                    // Filter WAJIB di query string URL (PostgREST tidak membaca body DELETE)
+                    $del = \Illuminate\Support\Facades\Http::withHeaders($headers)
                         ->timeout(10)
-                        ->delete("{$supabaseUrl}/rest/v1/bookmarks", [
-                            'user_id' => "eq.{$userId}",
-                            'kajian_id' => "eq.{$kajianId}",
-                        ]);
+                        ->delete("{$supabaseUrl}/rest/v1/bookmarks?user_id=eq.{$userId}&kajian_id=eq.{$kajianId}");
+                    if (!$del->successful()) {
+                        throw new \Exception('Hapus bookmark Supabase HTTP ' . $del->status());
+                    }
                     $saved = false;
                 } else {
-                    \Illuminate\Support\Facades\Http::withHeaders(array_merge($headers, ['Prefer' => 'return=minimal', 'Content-Type' => 'application/json']))
+                    $ins = \Illuminate\Support\Facades\Http::withHeaders(array_merge($headers, ['Prefer' => 'return=minimal', 'Content-Type' => 'application/json']))
                         ->timeout(10)
                         ->post("{$supabaseUrl}/rest/v1/bookmarks", [
                             'user_id' => $userId,
                             'kajian_id' => $kajianId,
                         ]);
+                    if (!$ins->successful()) {
+                        throw new \Exception('Simpan bookmark Supabase HTTP ' . $ins->status());
+                    }
                     $saved = true;
                 }
-            } catch (\Exception $e) {
+                $supabaseDone = true;
+            } catch (\Throwable $e) {
                 \Log::warning('Supabase bookmark gagal, fallback ke lokal: ' . $e->getMessage());
             }
         }
 
-        // 2. Simpan juga di SQLite lokal (selalu tersinkron)
-        $existingLocal = Bookmark::where('user_id', $userId)
-            ->where('kajian_id', $kajianId)
-            ->first();
+        // 2. SQLite lokal: fallback (saat Supabase tak terkonfigurasi/gagal) atau
+        //    mirror pasif. TIDAK PERNAH menimpa hasil Supabase — bug lama di sini
+        //    membuat $saved selalu mengikuti SQLite ephemeral sehingga jawaban
+        //    server membatalkan klik user di klien (tombol terasa tidak bisa diklik).
+        try {
+            $existingLocal = Bookmark::where('user_id', $userId)
+                ->where('kajian_id', $kajianId)
+                ->first();
 
-        if ($existingLocal) {
-            $existingLocal->delete();
-            $saved = false;
-        } else {
-            Bookmark::create([
-                'user_id' => $userId,
-                'kajian_id' => $kajianId,
-            ]);
-            $saved = true;
+            if ($supabaseDone) {
+                if ($saved && !$existingLocal) {
+                    Bookmark::create([
+                        'user_id' => $userId,
+                        'kajian_id' => $kajianId,
+                    ]);
+                } elseif (!$saved && $existingLocal) {
+                    $existingLocal->delete();
+                }
+            } else {
+                if ($existingLocal) {
+                    $existingLocal->delete();
+                    $saved = false;
+                } else {
+                    Bookmark::create([
+                        'user_id' => $userId,
+                        'kajian_id' => $kajianId,
+                    ]);
+                    $saved = true;
+                }
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Bookmark lokal gagal (diabaikan): ' . $e->getMessage());
         }
 
         $msg = $saved ? 'Kajian berhasil disimpan.' : 'Kajian dihapus dari tersimpan.';

@@ -1887,10 +1887,20 @@
       })
       .then(res => res.json())
       .then(data => {
+        if (data && data.status === 'auth_required') {
+          // Belum login: batalkan update optimistis agar tampilan jujur
+          syncAllBookmarkButtons(numericId, wasSaved);
+          if (wasSaved) userBookmarkIds.add(numericId); else userBookmarkIds.delete(numericId);
+          try { localStorage.setItem('sinikajian_bookmarks', JSON.stringify(Array.from(userBookmarkIds))); } catch(e) {}
+          showBookmarkToast('Masuk dulu untuk menyimpan kajian');
+          return;
+        }
         if (data && typeof data.saved === 'boolean') {
           if (data.saved !== newSaved) {
             syncAllBookmarkButtons(numericId, data.saved);
             if (data.saved) userBookmarkIds.add(numericId); else userBookmarkIds.delete(numericId);
+            // Koreksi server WAJIB ikut tersimpan, agar Set & localStorage tidak berpisah lagi
+            try { localStorage.setItem('sinikajian_bookmarks', JSON.stringify(Array.from(userBookmarkIds))); } catch(e) {}
           }
         }
       })
