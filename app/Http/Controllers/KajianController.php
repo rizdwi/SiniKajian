@@ -328,14 +328,29 @@ class KajianController extends Controller
         $attendances = collect();
 
         $savedKajianIds = [];
+        $attendedKajianIds = [];
         if ($user) {
-            $allBookmarks = $this->getUserBookmarks($this->appUserId() ?? $user->id);
+            $appId = $this->appUserId() ?? $user->id;
+            $allBookmarks = $this->getUserBookmarks($appId);
             $savedKajianIds = $allBookmarks->pluck('id')->map(fn ($v) => (int) $v)->values()->all();
             $bookmarkedKajians = $allBookmarks
                 ->filter(function ($k) use ($cutoff) {
                     return $k->is_rutin || $k->event_datetime >= $cutoff;
                 });
-            $attendances = $user->attendances()->with('kajian')->latest()->get();
+            // Kehadiran dibaca dari SUPABASE (tempat logAttendance menulis).
+            // Cara lama membaca relasi SQLite lokal yang selalu kosong di
+            // instance Vercel -> "Riwayat Hadir (0)" selamanya padahal data
+            // tercatat (keluhan user 2026-10-20).
+            $attData = $this->fetchAttendances($appId);
+            if ($attData !== null) {
+                [$attendances, $attendedKajianIds] = $attData;
+            } else {
+                $attendances = $user->attendances()->with('kajian')->latest()->get();
+                $attendedKajianIds = $attendances
+                    ->filter(fn ($a) => ($a->attendance_date ?? null) === Carbon::now('Asia/Jakarta')->toDateString())
+                    ->map(fn ($a) => (int) $a->kajian_id)
+                    ->values()->all();
+            }
         }
 
         return view('kajian.saved', [
@@ -343,7 +358,74 @@ class KajianController extends Controller
             'bookmarkedKajians' => $bookmarkedKajians,
             'attendances' => $attendances,
             'savedKajianIds' => $savedKajianIds,
+            'attendedKajianIds' => $attendedKajianIds,
         ]);
+    }
+
+    /**
+     * Ambil riwayat kehadiran user dari Supabase (sumber kebenaran yang
+     * sama dengan tempat logAttendance menulis), lengkap dengan data
+     * kajian + daftar kajian_id yang sudah dihadiri HARI INI.
+     * Return [Collection $attendances, array $attendedTodayIds] atau
+     * null bila Supabase tak terkonfigurasi/gagal (pemanggil fallback).
+     */
+    private function fetchAttendances(int $userId): ?array
+    {
+        $supabaseUrl = config('services.supabase.url');
+        $supabaseKey = config('services.supabase.service_key');
+        if (!$supabaseUrl || !$supabaseKey) {
+            return null;
+        }
+        $headers = [
+            'apikey' => $supabaseKey,
+            'Authorization' => 'Bearer ' . $supabaseKey,
+        ];
+        try {
+            $res = \Illuminate\Support\Facades\Http::withHeaders($headers)
+                ->timeout(10)
+                ->get("{$supabaseUrl}/rest/v1/attendances", [
+                    'user_id' => "eq.{$userId}",
+                    'select' => 'kajian_id,attendance_date',
+                    'order' => 'attendance_date.desc',
+                ]);
+            if (!$res->successful()) {
+                return null;
+            }
+            $rows = $res->json() ?? [];
+            $ids = array_values(array_unique(array_map('intval', array_column($rows, 'kajian_id'))));
+            $kajianById = [];
+            if (!empty($ids)) {
+                $kres = \Illuminate\Support\Facades\Http::withHeaders($headers)
+                    ->timeout(10)
+                    ->get("{$supabaseUrl}/rest/v1/kajian", [
+                        'id' => 'in.(' . implode(',', $ids) . ')',
+                        'select' => '*',
+                    ]);
+                if ($kres->successful()) {
+                    foreach (SupabaseKajianService::toCollection($kres->json() ?? []) as $k) {
+                        $kajianById[(int) $k->id] = $k;
+                    }
+                }
+            }
+            $today = Carbon::now('Asia/Jakarta')->toDateString();
+            $atts = collect();
+            $todayIds = [];
+            foreach ($rows as $r) {
+                $kid = (int) $r['kajian_id'];
+                $atts->push((object) [
+                    'kajian' => $kajianById[$kid] ?? null,
+                    'kajian_id' => $kid,
+                    'attendance_date' => $r['attendance_date'] ?? null,
+                ]);
+                if (($r['attendance_date'] ?? null) === $today) {
+                    $todayIds[] = $kid;
+                }
+            }
+            return [$atts, $todayIds];
+        } catch (\Throwable $e) {
+            \Log::warning('Supabase fetch attendances gagal: ' . $e->getMessage());
+            return null;
+        }
     }
 
     /**
@@ -744,24 +826,28 @@ class KajianController extends Controller
                     ]);
 
                 if (!empty($res->json())) {
-                    // Batalkan kehadiran
-                    \Illuminate\Support\Facades\Http::withHeaders($headers)
+                    // Batalkan kehadiran. Filter WAJIB di query string URL:
+                    // PostgREST TIDAK membaca filter dari body DELETE —
+                    // pola lama berisiko menghapus baris tanpa filter.
+                    $del = \Illuminate\Support\Facades\Http::withHeaders($headers)
                         ->timeout(10)
-                        ->delete("{$supabaseUrl}/rest/v1/attendances", [
-                            'user_id' => "eq.{$userId}",
-                            'kajian_id' => "eq.{$kajianId}",
-                            'attendance_date' => "eq.{$today}",
-                        ]);
+                        ->delete("{$supabaseUrl}/rest/v1/attendances?user_id=eq.{$userId}&kajian_id=eq.{$kajianId}&attendance_date=eq.{$today}");
+                    if (!$del->successful()) {
+                        throw new \Exception('Hapus attendance Supabase HTTP ' . $del->status());
+                    }
                     $attended = false;
                 } else {
                     // Catat kehadiran
-                    \Illuminate\Support\Facades\Http::withHeaders(array_merge($headers, ['Prefer' => 'return=minimal', 'Content-Type' => 'application/json']))
+                    $ins = \Illuminate\Support\Facades\Http::withHeaders(array_merge($headers, ['Prefer' => 'return=minimal', 'Content-Type' => 'application/json']))
                         ->timeout(10)
                         ->post("{$supabaseUrl}/rest/v1/attendances", [
                             'user_id' => $userId,
                             'kajian_id' => $kajianId,
                             'attendance_date' => $today,
                         ]);
+                    if (!$ins->successful()) {
+                        throw new \Exception('Simpan attendance Supabase HTTP ' . $ins->status());
+                    }
                     // Otomatis bookmark juga
                     \Illuminate\Support\Facades\Http::withHeaders(array_merge($headers, ['Prefer' => 'resolution=ignore-duplicates', 'Content-Type' => 'application/json']))
                         ->timeout(10)

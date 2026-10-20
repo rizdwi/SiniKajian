@@ -645,26 +645,49 @@ class AuthController extends Controller
      */
     private function getUserAttendancesBySupabaseId(int $supabaseUserId)
     {
+        // Return koleksi objek kehadiran {kajian, kajian_id, attendance_date}
+        // dengan kajian diambil dari Supabase juga. Cara lama mengembalikan
+        // model Kajian dari SQLite lokal (kosong/stale di Vercel) sehingga
+        // profil membaca $att->kajian = null dan riwayat hadir tak tampil.
         $supabaseUrl = config('services.supabase.url');
         $supabaseKey = config('services.supabase.service_key');
 
         if (!$supabaseUrl || !$supabaseKey) return collect();
 
+        $headers = [
+            'apikey' => $supabaseKey,
+            'Authorization' => 'Bearer ' . $supabaseKey,
+        ];
         try {
-            $res = \Illuminate\Support\Facades\Http::withHeaders([
-                    'apikey' => $supabaseKey,
-                    'Authorization' => 'Bearer ' . $supabaseKey,
-                ])
+            $res = \Illuminate\Support\Facades\Http::withHeaders($headers)
                 ->timeout(10)
                 ->get("{$supabaseUrl}/rest/v1/attendances", [
                     'user_id' => "eq.{$supabaseUserId}",
-                    'select' => 'kajian_id',
+                    'select' => 'kajian_id,attendance_date',
+                    'order' => 'attendance_date.desc',
                 ]);
-            $rows = $res->json();
-            $ids = array_column($rows ?? [], 'kajian_id');
+            if (!$res->successful()) return collect();
+            $rows = $res->json() ?? [];
+            $ids = array_values(array_unique(array_column($rows, 'kajian_id')));
+            $kajianById = [];
             if (!empty($ids)) {
-                return \App\Models\Kajian::whereIn('id', $ids)->get();
+                $kres = \Illuminate\Support\Facades\Http::withHeaders($headers)
+                    ->timeout(10)
+                    ->get("{$supabaseUrl}/rest/v1/kajian", [
+                        'id' => 'in.(' . implode(',', array_map('intval', $ids)) . ')',
+                        'select' => '*',
+                    ]);
+                if ($kres->successful()) {
+                    foreach (\App\Services\SupabaseKajianService::toCollection($kres->json() ?? []) as $k) {
+                        $kajianById[(int) $k->id] = $k;
+                    }
+                }
             }
+            return collect($rows)->map(fn ($r) => (object) [
+                'kajian' => $kajianById[(int) $r['kajian_id']] ?? null,
+                'kajian_id' => (int) $r['kajian_id'],
+                'attendance_date' => $r['attendance_date'] ?? null,
+            ]);
         } catch (\Exception $e) {
             \Log::warning('Supabase get attendances gagal: ' . $e->getMessage());
         }
