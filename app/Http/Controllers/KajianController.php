@@ -898,6 +898,65 @@ class KajianController extends Controller
     }
 
     /**
+     * Bersihkan SELURUH riwayat kehadiran user (tombol "Bersihkan Riwayat
+     * Hadir" di tab Riwayat Hadir — perintah user 2026-10-20 agar ia bisa
+     * menghapus sendiri histori kajian yang sudah dihadiri).
+     * Supabase adalah sumber kebenaran; mirror SQLite lokal ikut
+     * dibersihkan best-effort. Gagal di Supabase = error jujur, bukan
+     * sukses palsu.
+     */
+    public function clearAttendances(Request $request): \Illuminate\Http\JsonResponse
+    {
+        if (!Auth::check()) {
+            return response()->json([
+                'status' => 'auth_required',
+                'message' => 'Silakan masuk untuk membersihkan riwayat kehadiran.',
+            ], 401);
+        }
+
+        $userId = $this->appUserId();
+        $cleared = 0;
+        $supabaseUrl = config('services.supabase.url');
+        $supabaseKey = config('services.supabase.service_key');
+
+        if ($supabaseUrl && $supabaseKey && $userId) {
+            try {
+                $res = \Illuminate\Support\Facades\Http::withHeaders([
+                        'apikey' => $supabaseKey,
+                        'Authorization' => 'Bearer ' . $supabaseKey,
+                        'Prefer' => 'return=representation',
+                    ])
+                    ->timeout(10)
+                    ->delete("{$supabaseUrl}/rest/v1/attendances?user_id=eq.{$userId}");
+                if (!$res->successful()) {
+                    throw new \Exception('Bersihkan attendance Supabase HTTP ' . $res->status());
+                }
+                $cleared = count($res->json() ?? []);
+            } catch (\Throwable $e) {
+                \Log::warning('Supabase clear attendances gagal: ' . $e->getMessage());
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Gagal membersihkan riwayat kehadiran di server.',
+                ], 500);
+            }
+        }
+
+        try {
+            Attendance::where('user_id', Auth::id())->delete();
+            if ($userId && (int) $userId !== (int) Auth::id()) {
+                Attendance::where('user_id', $userId)->delete();
+            }
+        } catch (\Throwable $e) {
+            // best effort saja
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'cleared' => $cleared,
+        ]);
+    }
+
+    /**
      * Ikuti atau berhenti mengikuti majelis taklim / masjid.
      */
     public function toggleFollowMajelis(Request $request): \Illuminate\Http\JsonResponse

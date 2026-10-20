@@ -103,6 +103,13 @@
 
   <!-- Tab 2: Attendance History -->
   <div id="tabAttendances" class="hidden space-y-3">
+    @if(count($attendances) > 0)
+      <div class="flex justify-end" id="attClearRow">
+        <button type="button" onclick="clearAttendanceHistory()" class="text-[11px] font-bold text-red-600 hover:text-red-700 bg-red-50 border border-red-100 px-3 py-1.5 rounded-full transition">
+          Bersihkan Riwayat Hadir
+        </button>
+      </div>
+    @endif
     @forelse($attendances as $att)
       <div data-att-card="{{ $att->kajian_id ?? ($att->kajian->id ?? '') }}" class="bg-white rounded-3xl p-4 shadow-xs border border-[#E5ECEB] flex items-center justify-between gap-3">
         <div class="flex items-center gap-3">
@@ -223,6 +230,40 @@
       showSavedToast(data.attended ? 'Kehadiran tercatat. Barakallahu fiik!' : 'Catatan kehadiran dibatalkan.');
     })
     .catch(() => { btn.disabled = false; showSavedToast('Gagal mencatat kehadiran, coba lagi'); });
+  }
+
+  // Bersihkan seluruh riwayat kehadiran (tombol perintah user 2026-10-20).
+  function clearAttendanceHistory() {
+    if (!confirm('Hapus semua riwayat kehadiran? Tindakan ini tidak bisa dibatalkan.')) return;
+    fetch('{{ route('attendance.clear') }}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({})
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.status === 'auth_required') { window.location.href = '{{ route('login') }}'; return; }
+      if (!data || data.status !== 'success') { showSavedToast('Gagal membersihkan riwayat, coba lagi'); return; }
+      attTotal = 0;
+      syncAttCounters();
+      document.querySelectorAll('#tabAttendances [data-att-card]').forEach(c => c.remove());
+      const row = document.getElementById('attClearRow');
+      if (row) row.remove();
+      if (!document.getElementById('attEmptyState')) {
+        const empty = document.createElement('div');
+        empty.id = 'attEmptyState';
+        empty.className = 'py-10 px-4 text-center bg-white rounded-3xl border border-[#E5ECEB]';
+        empty.innerHTML = '<p class="text-xs text-[#607072]">Belum ada riwayat kehadiran tercatat.</p>';
+        document.getElementById('tabAttendances').appendChild(empty);
+      }
+      document.querySelectorAll('[data-att-btn]').forEach(b => paintAttBtn(b, false));
+      showSavedToast('Riwayat kehadiran dibersihkan.');
+    })
+    .catch(() => showSavedToast('Gagal membersihkan riwayat, coba lagi'));
   }
 
   function switchSavedTab(tab) {
