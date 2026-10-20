@@ -227,7 +227,8 @@ class ManualWebPushService
     private function ecKeypairFromPrivate(string $privRaw): mixed
     {
         // Bangun PEM EC private key (SEC1) dari raw 32 bytes
-        $der = "\x30\x77\x02\x01\x01\x04\x20" . $privRaw
+        // Isi: version(3) + private OCTET STRING(34) + params(12) = 49 byte = 0x31
+        $der = "\x30\x31\x02\x01\x01\x04\x20" . $privRaw
             . "\xa0\x0a\x06\x08\x2a\x86\x48\xce\x3d\x03\x01\x07";
         $pem = "-----BEGIN EC PRIVATE KEY-----\n" . chunk_split(base64_encode($der), 64, "\n") . "-----END EC PRIVATE KEY-----\n";
         $key = openssl_pkey_get_private($pem);
