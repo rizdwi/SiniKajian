@@ -1979,7 +1979,6 @@
           headerInitial.classList.add('hidden');
         }
       }
-      @endguest
     } catch(e) {}
 
     updatePrayerDisplay();
