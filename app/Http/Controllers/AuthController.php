@@ -360,13 +360,19 @@ class AuthController extends Controller
                 \Log::warning('Ambil profil Supabase gagal: ' . $e->getMessage());
             }
 
-            $cutoff = \Carbon\Carbon::now('Asia/Jakarta')->subHours(3)->toDateTimeString();
+            // Filter berbasis TANGGAL: kajian tampil di agenda sepanjang
+            // hari tanggalnya. Perbandingan lama memakai event_datetime
+            // (yang isinya hanya tanggal, mis. "2026-10-20") melawan
+            // string tanggal+jam ("2026-10-20 16:51") — perbandingan teks
+            // membuat SEMUA kajian hari ini gugur dari agenda profil.
+            $todayStr = \Carbon\Carbon::now('Asia/Jakarta')->toDateString();
+            $cutoff = $todayStr;
             // Ambil kajian tersimpan dari Supabase (gunakan Supabase user ID, bukan local ID)
             $supabaseUserId = isset($sbUser) && isset($sbUser['id']) ? $sbUser['id'] : null;
             $allBookmarks = $supabaseUserId ? $this->getUserBookmarksBySupabaseId($supabaseUserId) : collect();
-            $bookmarkedKajians = $allBookmarks->filter(function ($k) use ($cutoff) {
-                if (empty($k->event_datetime)) return true;
-                return $k->event_datetime >= $cutoff;
+            $bookmarkedKajians = $allBookmarks->filter(function ($k) use ($todayStr) {
+                if (empty($k->event_date)) return true;
+                return $k->event_date >= $todayStr;
             });
 
             // Ambil kehadiran dari Supabase (gunakan Supabase user ID)
@@ -425,9 +431,9 @@ class AuthController extends Controller
                             fn ($k) => in_array($k['masjid'] ?? '', $followedMajelisNames, true)
                         ));
                         $followedKajians = \App\Services\SupabaseKajianService::toCollection($act)
-                            ->filter(function ($k) use ($cutoff) {
-                                if (empty($k->event_datetime)) return true;
-                                return $k->event_datetime >= $cutoff;
+                            ->filter(function ($k) use ($todayStr) {
+                                if (empty($k->event_date)) return true;
+                                return $k->event_date >= $todayStr;
                             });
                     }
                 } catch (\Throwable $e) {
@@ -630,9 +636,27 @@ class AuthController extends Controller
                     'select' => 'kajian_id',
                 ]);
             $rows = $res->json();
-            $ids = array_column($rows ?? [], 'kajian_id');
+            $ids = array_values(array_unique(array_map('intval', array_column($rows ?? [], 'kajian_id'))));
             if (!empty($ids)) {
-                return \App\Models\Kajian::whereIn('id', $ids)->get();
+                // Resolusi kajian dari SUPABASE juga. Cara lama memakai
+                // SQLite lokal (Kajian::whereIn) yang isinya salinan
+                // ter-commit basi — kajian baru hasil scrape hari ini
+                // tidak ada di sana, sehingga profil membaca bookmark
+                // "kosong" padahal barisnya ada (keluhan user 2026-10-20:
+                // simpan berhasil, agenda profil tetap kosong).
+                $kres = \Illuminate\Support\Facades\Http::withHeaders([
+                        'apikey' => $supabaseKey,
+                        'Authorization' => 'Bearer ' . $supabaseKey,
+                    ])
+                    ->timeout(10)
+                    ->get("{$supabaseUrl}/rest/v1/kajian", [
+                        'id' => 'in.(' . implode(',', $ids) . ')',
+                        'select' => '*',
+                    ]);
+                if ($kres->successful()) {
+                    return \App\Services\SupabaseKajianService::toCollection($kres->json() ?? []);
+                }
+                return collect();
             }
         } catch (\Exception $e) {
             \Log::warning('Supabase get bookmarks gagal: ' . $e->getMessage());

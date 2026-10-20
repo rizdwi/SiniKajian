@@ -333,9 +333,14 @@ class KajianController extends Controller
             $appId = $this->appUserId() ?? $user->id;
             $allBookmarks = $this->getUserBookmarks($appId);
             $savedKajianIds = $allBookmarks->pluck('id')->map(fn ($v) => (int) $v)->values()->all();
+            // Filter berbasis TANGGAL (selaras profil): kajian tersimpan
+            // tampil sepanjang hari tanggalnya. Perbandingan lama
+            // (event_datetime berisi tanggal saja vs cutoff jam) rapuh
+            // dan membuang kajian hari ini secara tak konsisten.
+            $todayStr = Carbon::now('Asia/Jakarta')->toDateString();
             $bookmarkedKajians = $allBookmarks
-                ->filter(function ($k) use ($cutoff) {
-                    return $k->is_rutin || $k->event_datetime >= $cutoff;
+                ->filter(function ($k) use ($todayStr) {
+                    return $k->is_rutin || empty($k->event_date) || $k->event_date >= $todayStr;
                 });
             // Kehadiran dibaca dari SUPABASE (tempat logAttendance menulis).
             // Cara lama membaca relasi SQLite lokal yang selalu kosong di
