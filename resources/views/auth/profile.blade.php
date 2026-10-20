@@ -153,7 +153,7 @@
       <h3 class="text-sm font-bold text-[#1C2224]">Ustadz Favorit</h3>
       <span id="favUstadzCount" class="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">0</span>
     </div>
-    <div id="favUstadzList" class="space-y-2"></div>
+    <div id="favUstadzList" class="space-y-2 max-h-56 overflow-y-auto pr-1 fav-scroll"></div>
     <div id="emptyFavUstadz" class="p-4 rounded-2xl bg-white border border-[#E5ECEB] text-center space-y-2">
       <p class="text-xs text-[#607072]">Belum ada ustadz favorit. Tandai bintang di detail kajian untuk menambah.</p>
       <a href="{{ route('kajian.index') }}" class="inline-block px-4 py-2 rounded-xl bg-[#1D4D4F] text-white text-xs font-bold shadow-2xs hover:bg-[#153A3B] transition">
@@ -812,14 +812,14 @@
       const safe = name.replace(/'/g, "\\'");
       const initial = name.replace(/^Ustadz\s+/i, '').charAt(0) || 'U';
       return `
-      <div class="p-3 rounded-2xl bg-white border border-[#E5ECEB] flex items-center gap-3">
-        <div class="w-9 h-9 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-xs shrink-0">${initial}</div>
+      <div class="py-2 px-3 rounded-xl bg-white border border-[#E5ECEB] flex items-center gap-2.5">
+        <div class="w-7 h-7 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-[10px] shrink-0">${initial}</div>
         <div class="flex-1 min-w-0">
           <p class="text-xs font-bold text-[#1C2224] truncate">${name.replace(/</g, '&lt;')}</p>
-          <a href="/?q=${encodeURIComponent(name)}" class="text-[11px] text-[#1D4D4F] font-medium hover:underline">Lihat kajiannya →</a>
+          <a href="/?q=${encodeURIComponent(name)}" class="text-[10px] text-[#1D4D4F] font-medium hover:underline">Lihat kajiannya →</a>
         </div>
-        <button onclick="removeFavUstadz('${safe}')" class="p-2 rounded-full text-[#607072] hover:text-red-600 transition" aria-label="Hapus favorit">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+        <button onclick="removeFavUstadz('${safe}')" class="p-1.5 rounded-full text-[#607072] hover:text-red-600 transition shrink-0" aria-label="Hapus favorit">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
         </button>
       </div>`;
     }).join('');
