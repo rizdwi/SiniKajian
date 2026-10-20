@@ -29,7 +29,9 @@ class AppServiceProvider extends ServiceProvider
         // Cache store bersama via Supabase (audit 2026-10-21, H3) — membuat
         // Cache::remember & RateLimiter berlaku lintas instance Vercel.
         \Illuminate\Support\Facades\Cache::extend('supabase', function ($app, array $config) {
-            return new \App\Cache\SupabaseStore();
+            // WAJIB Repository: RateLimiter & Cache::remember menuntut
+            // kontrak Repository — Store mentah membuat mereka TypeError.
+            return new \Illuminate\Cache\Repository(new \App\Cache\SupabaseStore());
         });
 
         // Simpan identitas login di sesi (driver cookie) agar sesi tetap

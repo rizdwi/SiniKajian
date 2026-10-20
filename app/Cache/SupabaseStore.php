@@ -58,6 +58,25 @@ class SupabaseStore implements Store
         if ($this->available === false) {
             return null;
         }
+        $row = $this->fetchRow($key);
+        if (!$row) return null;
+        if ((int) $row['expiration'] < time()) {
+            $this->forget($key);
+            return null;
+        }
+        $value = @unserialize((string) $row['value']);
+        return $value === false && $row['value'] !== serialize(false) ? null : $value;
+    }
+
+    /**
+     * Ambil baris mentah (value terse­rialisasi + expiration) atau null.
+     * Mengelola flag ketersediaan agar kegagalan tidak dibayar berulang.
+     */
+    private function fetchRow($key): ?array
+    {
+        if ($this->available === false) {
+            return null;
+        }
         try {
             $req = $this->request();
             if (!$req) return null;
@@ -70,18 +89,33 @@ class SupabaseStore implements Store
                 return null;
             }
             $this->available = true;
-            $row = $res->json()[0] ?? null;
-            if (!$row) return null;
-            if ((int) $row['expiration'] < time()) {
-                $this->forget($key);
-                return null;
-            }
-            $value = @unserialize((string) $row['value']);
-            return $value === false && $row['value'] !== serialize(false) ? null : $value;
+            return $res->json()[0] ?? null;
         } catch (\Throwable $e) {
             $this->available = false;
-            Log::warning('SupabaseStore get gagal: ' . $e->getMessage());
+            Log::warning('SupabaseStore fetchRow gagal: ' . $e->getMessage());
             return null;
+        }
+    }
+
+    /**
+     * Perpanjang masa hidup kunci yang sudah ada (kontrak Store Laravel 12).
+     */
+    public function touch($key, $seconds)
+    {
+        $row = $this->fetchRow($key);
+        if (!$row) return false;
+        if ((int) $row['expiration'] < time()) return false;
+        try {
+            $req = $this->request();
+            if (!$req) return false;
+            $res = $req->withHeaders(['Prefer' => 'return=minimal'])
+                ->patch($this->base() . '?key=eq.' . urlencode((string) $key), [
+                    'expiration' => time() + (int) $seconds,
+                ]);
+            return $res->successful();
+        } catch (\Throwable $e) {
+            Log::warning('SupabaseStore touch gagal: ' . $e->getMessage());
+            return false;
         }
     }
 
