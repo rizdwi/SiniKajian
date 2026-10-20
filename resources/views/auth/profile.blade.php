@@ -108,34 +108,60 @@
         $dateNum = $dt->format('d');
         $dateMonth = strtoupper($dt->translatedFormat('M'));
       @endphp
-      <a href="{{ route('kajian.show', $agenda->id) }}" class="block p-3 rounded-2xl bg-white border border-[#E5ECEB] hover:border-[#1D4D4F]/40 shadow-2xs transition group">
-        <div class="flex items-center gap-3">
-          <!-- Vertical Date Block -->
-          <div class="w-12 h-12 rounded-xl bg-[#EDF5F3] border border-[#D1ECE7] text-[#1D4D4F] flex flex-col items-center justify-center shrink-0">
-            <span class="text-base font-black leading-none">{{ $dateNum }}</span>
-            <span class="text-[9px] font-extrabold uppercase tracking-wider mt-0.5">{{ $dateMonth }}</span>
-          </div>
+      <div class="rounded-2xl bg-white border border-[#E5ECEB] shadow-2xs overflow-hidden">
+        <button type="button" onclick="toggleAgendaDetail({{ $agenda->id }})" class="block w-full p-3 text-left hover:bg-[#F8FAF9] transition group">
+          <div class="flex items-center gap-3">
+            <!-- Vertical Date Block -->
+            <div class="w-12 h-12 rounded-xl bg-[#EDF5F3] border border-[#D1ECE7] text-[#1D4D4F] flex flex-col items-center justify-center shrink-0">
+              <span class="text-base font-black leading-none">{{ $dateNum }}</span>
+              <span class="text-[9px] font-extrabold uppercase tracking-wider mt-0.5">{{ $dateMonth }}</span>
+            </div>
 
-          <div class="flex-1 min-w-0">
-            <h4 class="text-xs sm:text-sm font-bold text-[#1C2224] truncate group-hover:text-[#1D4D4F] transition">
-              {{ $agenda->title }}
-            </h4>
-            <p class="text-[11px] text-[#607072] mt-0.5 truncate">
-              {{ $agenda->time }} • {{ $agenda->masjid }}
-            </p>
-            <div class="inline-flex items-center gap-1 text-[9px] font-bold text-[#1D4D4F] bg-[#E8F5F2] px-2 py-0.5 rounded-full mt-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-[#1D4D4F]"></span>
-              <span>Tersimpan di Agenda</span>
+            <div class="flex-1 min-w-0">
+              <h4 class="text-xs sm:text-sm font-bold text-[#1C2224] truncate group-hover:text-[#1D4D4F] transition">
+                {{ $agenda->title }}
+              </h4>
+              <p class="text-[11px] text-[#607072] mt-0.5 truncate">
+                {{ $agenda->time }} • {{ $agenda->masjid }}
+              </p>
+              <div class="inline-flex items-center gap-1 text-[9px] font-bold text-[#1D4D4F] bg-[#E8F5F2] px-2 py-0.5 rounded-full mt-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#1D4D4F]"></span>
+                <span>Tersimpan di Agenda</span>
+              </div>
+            </div>
+
+            <div class="text-[#607072] group-hover:text-[#1D4D4F] transition pr-1">
+              <svg id="agendaChevron_{{ $agenda->id }}" class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
             </div>
           </div>
-
-          <div class="text-[#607072] group-hover:text-[#1D4D4F] transition pr-1">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-            </svg>
+        </button>
+        <!-- Detail ekspansi (terbuka langsung tanpa pindah halaman) -->
+        <div id="agendaDetail_{{ $agenda->id }}" class="hidden border-t border-[#E5ECEB] p-3 space-y-2 bg-[#F8FAF9]">
+          @if(!empty($agenda->poster_url))
+          <img src="{{ $agenda->poster_url }}" alt="Flyer" class="w-full rounded-xl object-cover max-h-64" loading="lazy">
+          @endif
+          <div class="space-y-1 text-[11px] text-[#40514F]">
+            <p><span class="font-bold text-[#1C2224]">Ustadz:</span> {{ $agenda->ustadz ?? '-' }}</p>
+            <p><span class="font-bold text-[#1C2224]">Tanggal:</span> {{ $dt->translatedFormat('l, d F Y') }}</p>
+            <p><span class="font-bold text-[#1C2224]">Waktu:</span> {{ $agenda->time ?? '-' }}</p>
+            <p><span class="font-bold text-[#1C2224]">Masjid:</span> {{ $agenda->masjid ?? '-' }}</p>
+            @if(!empty($agenda->address))
+            <p><span class="font-bold text-[#1C2224]">Alamat:</span> {{ $agenda->address }}</p>
+            @endif
+            @if(!empty($agenda->category))
+            <p><span class="font-bold text-[#1C2224]">Kategori:</span> {{ $agenda->category }}</p>
+            @endif
+          </div>
+          <div class="flex gap-2 pt-1">
+            @if(!empty($agenda->lat) && !empty($agenda->lon))
+            <a href="https://www.google.com/maps/search/?api=1&query={{ $agenda->lat }},{{ $agenda->lon }}" target="_blank" rel="noopener" class="flex-1 text-center px-3 py-2 rounded-xl bg-[#1D4D4F] text-white text-[11px] font-bold hover:bg-[#153A3B] transition">Petunjuk Arah</a>
+            @endif
+            <a href="{{ route('kajian.show', $agenda->id) }}" class="flex-1 text-center px-3 py-2 rounded-xl bg-white border border-[#E5ECEB] text-[#1D4D4F] text-[11px] font-bold hover:border-[#1D4D4F]/40 transition">Halaman Detail</a>
           </div>
         </div>
-      </a>
+      </div>
     @empty
       <div id="emptyAgendaCard" class="p-4 rounded-2xl bg-white border border-[#E5ECEB] text-center space-y-2">
         <p class="text-xs text-[#607072]">Belum ada agenda kajian yang tersimpan.</p>
@@ -718,6 +744,16 @@
     if (e.target === locationModal) closeLocationModal();
   });
 
+  // Toggle detail agenda (ekspansi langsung, tanpa pindah halaman)
+  window.toggleAgendaDetail = function(id) {
+    const el = document.getElementById('agendaDetail_' + id);
+    const chev = document.getElementById('agendaChevron_' + id);
+    if (!el) return;
+    const willOpen = el.classList.contains('hidden');
+    el.classList.toggle('hidden');
+    if (chev) chev.style.transform = willOpen ? 'rotate(180deg)' : '';
+  };
+
   // Web Push Notification untuk pengingat kajian
   const VAPID_PUBLIC_KEY = '{{ config("services.vapid.public_key") }}';
   const reminderToggle = document.getElementById('reminderToggle');
@@ -801,7 +837,7 @@
   }
 
   // Render daftar ustadz favorit
-  (function renderFavUstadz() {
+  window.renderFavUstadz = function() {
     const listEl = document.getElementById('favUstadzList');
     const emptyEl = document.getElementById('emptyFavUstadz');
     const countEl = document.getElementById('favUstadzCount');
@@ -812,6 +848,8 @@
     if (!favs.length) {
       listEl.innerHTML = '';
       if (emptyEl) emptyEl.classList.remove('hidden');
+      // Tampilkan kembali semua chip saran
+      document.querySelectorAll('.fav-chip').forEach(chip => chip.style.display = '');
       return;
     }
     if (emptyEl) emptyEl.classList.add('hidden');
@@ -830,14 +868,19 @@
         </button>
       </div>`;
     }).join('');
-  })();
+    // Sembunyikan chip saran yang sudah jadi favorit
+    document.querySelectorAll('.fav-chip').forEach(chip => {
+      chip.style.display = favs.includes(chip.getAttribute('data-ustadz')) ? 'none' : '';
+    });
+  };
+  window.renderFavUstadz();
 
   function removeFavUstadz(name) {
     let favs = [];
     try { favs = JSON.parse(localStorage.getItem('majelisku_fav_ustadz') || '[]'); } catch (e) {}
     favs = favs.filter(n => n !== name);
     try { localStorage.setItem('majelisku_fav_ustadz', JSON.stringify(favs)); } catch (e) {}
-    location.reload();
+    window.renderFavUstadz();
   }
 
   function addFavUstadz(name) {
@@ -847,17 +890,10 @@
       favs.push(name);
       try { localStorage.setItem('majelisku_fav_ustadz', JSON.stringify(favs)); } catch (e) {}
     }
-    location.reload();
+    window.renderFavUstadz();
   }
 
-  // Sembunyikan chip ustadz yang sudah jadi favorit
-  (function hideFavChips() {
-    let favs = [];
-    try { favs = JSON.parse(localStorage.getItem('majelisku_fav_ustadz') || '[]'); } catch (e) {}
-    document.querySelectorAll('.fav-chip').forEach(chip => {
-      if (favs.includes(chip.getAttribute('data-ustadz'))) chip.style.display = 'none';
-    });
-  })();
+  // Sembunyikan chip ustadz yang sudah jadi favorit (render awal ditangani renderFavUstadz)
 </script>
 @endif
 @endsection
