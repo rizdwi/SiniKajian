@@ -375,7 +375,12 @@ class AuthController extends Controller
             $submittedKajians = $user->submittedKajians()->latest()->get();
 
             $savedCount = $allBookmarks->count();
-            $agendaCount = $attendances->count();
+            // Angka Agenda = gabungan unik kajian hadir + kajian tersimpan
+            // (sama dengan yang dirender di daftar Agenda terdekat profil).
+            $agendaCount = count(array_unique(array_merge(
+                $attendances->map(fn ($a) => $a->kajian?->id)->filter()->all(),
+                $bookmarkedKajians->pluck('id')->all()
+            )));
             $savedKajianIds = $allBookmarks->pluck('id')->map(fn ($v) => (int) $v)->values()->all();
 
             // Majelis diikuti: HANYA dari Supabase majelis_follows dengan ID
@@ -406,6 +411,29 @@ class AuthController extends Controller
                     \Log::warning('Ambil majelis diikuti Supabase gagal: ' . $e->getMessage());
                 }
             }
+
+            // Kajian mendatang dari majelis yang diikuti -> ikut tampil di
+            // Agenda profil (perintah user 2026-10-20: ikuti/simpan kajian
+            // tercatat pada menu agenda profil masing-masing user).
+            $followedKajians = collect();
+            if (!empty($followedMajelisNames)) {
+                try {
+                    $svcFk = new \App\Services\SupabaseKajianService();
+                    if ($svcFk->isConfigured()) {
+                        $act = array_values(array_filter(
+                            $svcFk->getActiveKajians(),
+                            fn ($k) => in_array($k['masjid'] ?? '', $followedMajelisNames, true)
+                        ));
+                        $followedKajians = \App\Services\SupabaseKajianService::toCollection($act)
+                            ->filter(function ($k) use ($cutoff) {
+                                if (empty($k->event_datetime)) return true;
+                                return $k->event_datetime >= $cutoff;
+                            });
+                    }
+                } catch (\Throwable $e) {
+                    \Log::warning('Ambil kajian majelis diikuti gagal: ' . $e->getMessage());
+                }
+            }
         } else {
             $bookmarkedKajians = collect();
             $attendances = collect();
@@ -415,6 +443,7 @@ class AuthController extends Controller
             $majelisCount = 0;
             $savedKajianIds = [];
             $followedMajelisNames = [];
+            $followedKajians = collect();
         }
 
         // Ustadz paling sering muncul (top 8 by jumlah kajian aktif)
@@ -446,6 +475,7 @@ class AuthController extends Controller
             'majelisCount' => $majelisCount,
             'savedKajianIds' => $savedKajianIds,
             'followedMajelisNames' => $followedMajelisNames,
+            'followedKajians' => $followedKajians,
             'topUstadz' => $topUstadz,
         ]);
     }

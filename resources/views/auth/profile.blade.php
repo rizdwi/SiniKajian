@@ -99,6 +99,11 @@
           $allAgendaKajians->push($sk);
         }
       }
+      if(isset($followedKajians)) {
+        foreach($followedKajians as $fk) {
+          $allAgendaKajians->push($fk);
+        }
+      }
       $allAgendaKajians = $allAgendaKajians->unique('id')->sortBy('event_datetime')->take(3);
     @endphp
 

@@ -43,9 +43,6 @@
                 <p class="text-[10px] text-[#9BA8A9] truncate">{{ $kajian->address }}</p>
                 @endif
               </div>
-              <button type="button" onclick="event.preventDefault();event.stopPropagation();toggleUstadzBookmark({{ $kajian->id }}, this)" class="bm-btn w-8 h-8 rounded-full bg-[#F8FAF9] border border-[#E5ECEB] text-[#607072] flex items-center justify-center hover:border-[#1D4D4F]/40 transition shrink-0" data-kajian-id="{{ $kajian->id }}" aria-label="Simpan">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
-              </button>
             </div>
           </div>
         </a>
@@ -59,44 +56,4 @@
   </div>
 </div>
 
-<script>
-(function() {
-  // State bookmark dari localStorage (sinkron dengan beranda)
-  let saved = new Set();
-  try { saved = new Set(JSON.parse(localStorage.getItem('sinikajian_bookmarks') || '[]')); } catch(e) {}
-
-  function paintBtn(btn, on) {
-    const svg = btn.querySelector('svg');
-    if (on) {
-      btn.classList.add('text-[#1D4D4F]', 'border-[#1D4D4F]/40', 'bg-[#E6F4F1]');
-      if (svg) { svg.setAttribute('fill', '#1D4D4F'); svg.setAttribute('stroke', '#1D4D4F'); }
-    } else {
-      btn.classList.remove('text-[#1D4D4F]', 'border-[#1D4D4F]/40', 'bg-[#E6F4F1]');
-      if (svg) { svg.setAttribute('fill', 'none'); svg.setAttribute('stroke', 'currentColor'); }
-    }
-  }
-
-  document.querySelectorAll('.bm-btn').forEach(btn => {
-    paintBtn(btn, saved.has(Number(btn.dataset.kajianId)));
-  });
-
-  window.toggleUstadzBookmark = function(id, btn) {
-    id = Number(id);
-    const on = !saved.has(id);
-    if (on) saved.add(id); else saved.delete(id);
-    try { localStorage.setItem('sinikajian_bookmarks', JSON.stringify([...saved])); } catch(e) {}
-    paintBtn(btn, on);
-
-    // Sync ke server bila login
-    fetch('/kajian/' + id + '/bookmark', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
-      },
-      body: JSON.stringify({})
-    }).catch(() => {});
-  };
-})();
-</script>
 @endsection

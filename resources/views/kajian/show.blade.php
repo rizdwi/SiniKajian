@@ -382,6 +382,10 @@
   }
 
   function toggleBookmarkDetailPage(id) {
+    // Aturan user 2026-10-20: tamu yang mengetuk Simpan Kajian langsung
+    // diarahkan ke halaman login — tidak ada simpan lokal khusus tamu.
+    const isLoggedInBm = {{ Auth::check() ? 'true' : 'false' }};
+    if (!isLoggedInBm) { window.location.href = '{{ route('login') }}'; return; }
     const numericId = Number(id);
     let savedList = [];
     try { savedList = JSON.parse(localStorage.getItem('sinikajian_bookmarks') || '[]'); } catch(e) {}
@@ -393,8 +397,8 @@
     applyBookmarkState(newSaved, numericId);
     showToastNotification(newSaved ? 'Kajian berhasil disimpan!' : 'Kajian dihapus dari tersimpan.');
 
-    const isLoggedIn = {{ Auth::check() ? 'true' : 'false' }};
-    if (isLoggedIn) {
+    // Tamu sudah diarahkan ke login di atas; di sini pasti user login.
+    {
       fetch(`/kajian/${numericId}/bookmark`, {
         method: 'POST',
         headers: {
@@ -425,6 +429,9 @@
   }
 
   function toggleFollowDetailPage(masjid) {
+    // Tamu yang mengetuk Ikuti Majelis langsung diarahkan ke login.
+    const isLoggedInFl = {{ Auth::check() ? 'true' : 'false' }};
+    if (!isLoggedInFl) { window.location.href = '{{ route('login') }}'; return; }
     let list = [];
     try {
       list = JSON.parse(localStorage.getItem('sinikajian_followed_majelis') || '[]');

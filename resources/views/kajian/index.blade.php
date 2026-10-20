@@ -1234,9 +1234,6 @@
           <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/30"></div>
           <div class="absolute top-3 inset-x-3 flex items-center justify-between">
             <span class="px-3 py-1 rounded-full text-[10px] font-extrabold tracking-wider uppercase bg-[#E6F4F1] text-[#1D4D4F] shadow-xs">KAJIAN PILIHAN</span>
-            <button type="button" class="spot-bm w-8 h-8 rounded-full bg-black/40 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/60 transition" data-kajian-id="${item.id}" aria-label="Simpan">
-              <svg class="w-4 h-4" fill="${saved ? '#FCD34D' : 'none'}" stroke="${saved ? '#FCD34D' : 'currentColor'}" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
-            </button>
           </div>
           ${cancelStamp}
           <div class="absolute bottom-3 inset-x-3 p-3.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-white shadow-sm">
@@ -1266,13 +1263,6 @@
           if (spotlightItems[idx]) openDetailModalWithEvent(spotlightItems[idx]);
         });
       });
-      track.querySelectorAll('.spot-bm').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          toggleBookmarkAction(Number(btn.dataset.kajianId), btn);
-        });
-      });
-
       const applyTrack = (animate) => {
         track.style.transition = animate ? 'transform .32s cubic-bezier(.22,1,.36,1)' : 'none';
         track.style.transform = `translateX(${-spotlightIdx * 100}%)`;
@@ -1459,11 +1449,6 @@
           </div>
           
           <div class="self-center flex flex-col items-center gap-1.5 pl-1 shrink-0">
-            <button data-kajian-id="${ev.id}" onclick="event.stopPropagation(); toggleBookmarkAction(${ev.id}, this)" class="bookmark-btn p-1.5 rounded-full ${isSaved ? 'text-amber-500 bg-amber-50' : 'text-[#607072] dark:text-[#9BA8A9] hover:text-[#1D4D4F]'} transition touch-btn" aria-label="Simpan">
-              <svg class="w-4 h-4" fill="${isSaved ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
-              </svg>
-            </button>
             <span class="text-[10px] font-bold text-[#1D4D4F] dark:text-[#7FC4BC] whitespace-nowrap">${ev.distance.toFixed(1)} km</span>
             <svg class="w-4 h-4 text-[#607072] dark:text-[#9BA8A9]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -1630,6 +1615,9 @@
   }
 
   function toggleModalFollowAction() {
+    // Tamu yang mengetuk Ikuti Majelis langsung diarahkan ke login.
+    const isLoggedInFollow = {{ Auth::check() ? 'true' : 'false' }};
+    if (!isLoggedInFollow) { window.location.href = '{{ route('login') }}'; return; }
     if (!currentDetailEvent || !currentDetailEvent.masjid) return;
     const masjid = currentDetailEvent.masjid;
     let list = getFollowedMajelisList();
@@ -1866,6 +1854,11 @@
 
   // 8. Bookmark Interaktif (Offline-first & Cloud-synced)
   function toggleBookmarkAction(kajianId, btnEl) {
+    // Aturan user 2026-10-20: simpan kajian HANYA untuk user login.
+    // Tamu yang mengetuk Simpan langsung diarahkan ke halaman login —
+    // tidak ada lagi simpan lokal khusus tamu.
+    const isLoggedIn = {{ Auth::check() ? 'true' : 'false' }};
+    if (!isLoggedIn) { window.location.href = '{{ route('login') }}'; return; }
     const numericId = Number(kajianId);
     const wasSaved = userBookmarkIds.has(numericId);
     const newSaved = !wasSaved;
@@ -1886,9 +1879,8 @@
     syncAllBookmarkButtons(numericId, newSaved);
     showBookmarkToast(newSaved ? 'Kajian berhasil disimpan!' : 'Kajian dihapus dari tersimpan.');
 
-    // 4. Sinkronkan ke server jika pengguna sudah login
-    const isLoggedIn = {{ Auth::check() ? 'true' : 'false' }};
-    if (isLoggedIn) {
+    // 4. Sinkronkan ke server (tamu sudah diarahkan ke login di atas)
+    {
       fetch(`/kajian/${numericId}/bookmark`, {
         method: 'POST',
         headers: {
