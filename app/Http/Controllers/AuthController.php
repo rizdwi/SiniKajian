@@ -390,6 +390,24 @@ class AuthController extends Controller
             $majelisCount = 0;
         }
 
+        // Ustadz paling sering muncul (top 8 by jumlah kajian aktif)
+        $topUstadz = [];
+        try {
+            $svc = new \App\Services\SupabaseKajianService();
+            if ($svc->enabled()) {
+                $kajians = $svc->getActiveKajians();
+                $counts = [];
+                foreach ($kajians as $k) {
+                    $u = trim($k['ustadz'] ?? '');
+                    if ($u !== '') $counts[$u] = ($counts[$u] ?? 0) + 1;
+                }
+                arsort($counts);
+                $topUstadz = array_slice(array_keys($counts), 0, 8);
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Ambil top ustadz gagal: ' . $e->getMessage());
+        }
+
         return view('auth.profile', [
             'user' => $user,
             'savedKajians' => $bookmarkedKajians,
@@ -399,6 +417,7 @@ class AuthController extends Controller
             'savedCount' => $savedCount,
             'agendaCount' => $agendaCount,
             'majelisCount' => $majelisCount,
+            'topUstadz' => $topUstadz,
         ]);
     }
 

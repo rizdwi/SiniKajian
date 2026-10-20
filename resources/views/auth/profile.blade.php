@@ -156,6 +156,16 @@
       <div id="emptyFavUstadz" class="p-4 rounded-2xl bg-white border border-[#E5ECEB] text-center">
         <p class="text-xs text-[#607072]">Belum ada ustadz favorit. Tandai bintang di detail kajian untuk menambah.</p>
       </div>
+      @if(!empty($topUstadz))
+      <div class="pt-1">
+        <p class="px-1 text-[11px] font-bold text-[#607072] uppercase tracking-wide mb-1.5">Sering muncul di kajian</p>
+        <div class="flex flex-wrap gap-1.5">
+          @foreach($topUstadz as $tu)
+          <button onclick="addFavUstadz('{{ addslashes($tu) }}')" class="fav-chip px-2.5 py-1.5 rounded-full bg-[#F8FAF9] border border-[#E5ECEB] text-[11px] font-bold text-[#1D4D4F] hover:border-amber-500 hover:bg-amber-50 transition" data-ustadz="{{ $tu }}">+ {{ $tu }}</button>
+          @endforeach
+        </div>
+      </div>
+      @endif
     </div>
   </div>
 
@@ -829,6 +839,25 @@
     try { localStorage.setItem('majelisku_fav_ustadz', JSON.stringify(favs)); } catch (e) {}
     location.reload();
   }
+
+  function addFavUstadz(name) {
+    let favs = [];
+    try { favs = JSON.parse(localStorage.getItem('majelisku_fav_ustadz') || '[]'); } catch (e) {}
+    if (!favs.includes(name)) {
+      favs.push(name);
+      try { localStorage.setItem('majelisku_fav_ustadz', JSON.stringify(favs)); } catch (e) {}
+    }
+    location.reload();
+  }
+
+  // Sembunyikan chip ustadz yang sudah jadi favorit
+  (function hideFavChips() {
+    let favs = [];
+    try { favs = JSON.parse(localStorage.getItem('majelisku_fav_ustadz') || '[]'); } catch (e) {}
+    document.querySelectorAll('.fav-chip').forEach(chip => {
+      if (favs.includes(chip.getAttribute('data-ustadz'))) chip.style.display = 'none';
+    });
+  })();
 </script>
 @endif
 @endsection
