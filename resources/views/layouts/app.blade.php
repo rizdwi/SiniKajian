@@ -51,52 +51,14 @@
   <link rel="manifest" href="{{ asset('manifest.json') }}">
   <meta name="csrf-token" content="{{ csrf_token() }}">
 
-  <!-- Tailwind CSS CDN & Font Plus Jakarta Sans -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind CSS: build statis (public/css/app.css, dikompilasi dari
+       tailwind.config.js) menggantikan runtime CDN — browser tak lagi
+       mengompilasi utility di setiap halaman (upgrade kecepatan 2026-10-20) -->
+  <link rel="stylesheet" href="{{ asset('css/app.css') }}?v=20261020a">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   @stack('styles')
-
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-            arabic: ['Amiri', 'serif']
-          },
-          colors: {
-            primary: '#1D4D4F',
-            secondary: '#235B5E',
-            mint: '#E6F4F1',
-            'mint-dark': '#D1EAE5',
-            neutral: '#F8FAF9',
-            surface: '#FFFFFF',
-            'card-border': '#E5ECEB',
-            'text-primary': '#1C2224',
-            'text-secondary': '#607072',
-            'text-inverse': '#FFFFFF',
-            'gold-accent': '#FCD34D',
-            brand: {
-              50: '#F0F7F6',
-              100: '#E6F4F1',
-              200: '#D1EAE5',
-              300: '#A4D3CC',
-              400: '#5FABA2',
-              500: '#2E7A7D',
-              600: '#235B5E',
-              700: '#1D4D4F',
-              800: '#153A3B',
-              900: '#0F292A',
-              950: '#0A1B1C'
-            }
-          }
-        }
-      }
-    }
-  </script>
 
   <style>
     * {
@@ -338,6 +300,41 @@
     window.addEventListener('appinstalled', () => {
       document.getElementById('pwaInstallBanner').style.display = 'none';
     });
+  </script>
+  <script>
+    // Prefetch navigasi (upgrade kecepatan 2026-10-20): muat lebih dulu
+    // halaman tujuan saat jari/mouse menyentuh tautan, dan tujuan nav
+    // bawah saat browser menganggur. Service worker hanya menyajikan
+    // hasil prefetch bila <15 detik DAN tidak ada aksi simpan/hapus/
+    // login diantaranya — data tidak akan pernah basi karenanya.
+    (function () {
+      const done = new Set();
+      function prefetch(href) {
+        try {
+          const u = new URL(href, location.origin);
+          if (u.origin !== location.origin || u.pathname === location.pathname) return;
+          if (u.search) return;
+          if (/^\/(masuk|keluar|auth|login|logout)/.test(u.pathname)) return;
+          const key = u.pathname;
+          if (done.has(key)) return;
+          done.add(key);
+          fetch(u.pathname, { headers: { 'X-Prefetch': '1' }, credentials: 'same-origin' }).catch(() => {});
+        } catch (e) {}
+      }
+      document.addEventListener('touchstart', (e) => {
+        const a = e.target.closest('a[href]');
+        if (a) prefetch(a.getAttribute('href'));
+      }, { passive: true });
+      document.addEventListener('mouseover', (e) => {
+        const a = e.target.closest('a[href]');
+        if (a) prefetch(a.getAttribute('href'));
+      });
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          document.querySelectorAll('nav a[href]').forEach((a) => prefetch(a.getAttribute('href')));
+        }, 1500);
+      });
+    })();
   </script>
   @stack('scripts')
 </body>
