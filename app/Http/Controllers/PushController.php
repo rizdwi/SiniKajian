@@ -89,17 +89,20 @@ class PushController extends Controller
 
         $sent = 0;
         $failed = 0;
+        $debug = [];
         foreach ($subs as $sub) {
             try {
                 $result = $this->sendWebPush($sub, $request->only(['title', 'body', 'url']));
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::warning('PushController send error: ' . $e->getMessage());
                 $result = false;
+                $debug[] = 'exception: ' . $e->getMessage();
             }
             if ($result === true) {
                 $sent++;
             } else {
                 $failed++;
+                $debug[] = 'result=' . var_export($result, true) . ' endpoint=' . substr($sub['endpoint'] ?? '', 0, 40);
                 // Hapus subscription HANYA bila server push menyatakan gone/invalid (410/404).
                 // Jangan hapus pada error jaringan sementara agar subscription valid tidak hilang.
                 if ($result === 410 || $result === 404) {
@@ -108,7 +111,14 @@ class PushController extends Controller
             }
         }
 
-        return response()->json(['sent' => $sent, 'failed' => $failed, 'total' => count($subs)]);
+        $response = ['sent' => $sent, 'failed' => $failed, 'total' => count($subs)];
+        if ($request->input('debug')) {
+            $response['debug'] = $debug;
+            $response['vapid_configured'] = !empty(config('services.vapid.public_key')) && !empty(config('services.vapid.private_key'));
+            $response['vapid_pub_len'] = strlen((string) config('services.vapid.public_key'));
+            $response['vapid_priv_len'] = strlen((string) config('services.vapid.private_key'));
+        }
+        return response()->json($response);
     }
 
     /**
