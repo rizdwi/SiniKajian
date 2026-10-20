@@ -128,10 +128,23 @@ class ManualWebPushService
         }
 
         // Generate ephemeral keypair (prime256v1)
-        $ephemeral = openssl_pkey_new([
+        // PENTING (akar kegagalan push live di Vercel): runtime vercel-php
+        // tidak menyediakan openssl.cnf bawaan, sehingga openssl_pkey_new()
+        // membaca private_key_bits=0 dan gagal total ("Private key length
+        // must be at least 384 bits, configured to 0" — terbukti via debug
+        // stage=encrypt_exception 2026-10-20). Atasi: tentukan bits secara
+        // eksplisit, dan sediakan config minimal yang dibundel bersama kode
+        // sebagai fallback.
+        $keyConfig = [
             'curve_name' => 'prime256v1',
             'private_key_type' => OPENSSL_KEYTYPE_EC,
-        ]);
+            'private_key_bits' => 256,
+        ];
+        $ephemeral = $this->safePkeyNew($keyConfig);
+        if (!$ephemeral) {
+            $keyConfig['config'] = __DIR__ . '/openssl.cnf';
+            $ephemeral = $this->safePkeyNew($keyConfig);
+        }
         if (!$ephemeral) {
             $this->markStage('encrypt_keygen', $this->opensslErrors());
             return null;
@@ -334,6 +347,20 @@ class ManualWebPushService
         for ($i = 1; $i <= $n; $i++) $len = ($len << 8) | ord($der[$pos + $i]);
         $next = $pos + 1 + $n;
         return $len;
+    }
+
+    /**
+     * openssl_pkey_new() yang aman dari ErrorException Laravel
+     * (warning OpenSSL diubah jadi exception di Laravel).
+     */
+    private function safePkeyNew(array $config)
+    {
+        try {
+            $key = openssl_pkey_new($config);
+            return $key === false ? false : $key;
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     /** Kumpulkan pesan error OpenSSL yang mengantre (untuk diagnostik tahap). */

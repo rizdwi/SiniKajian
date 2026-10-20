@@ -1,0 +1,16 @@
+# Minimal OpenSSL config — dibundel untuk runtime tanpa openssl.cnf bawaan
+# (vercel-php di Vercel). Dipakai ManualWebPushService sebagai fallback
+# 'config' saat openssl_pkey_new() gagal membaca konfigurasi default
+# (gejala: "Private key length must be at least 384 bits, configured to 0").
+
+[ req ]
+default_bits = 2048
+default_md = sha256
+distinguished_name = dn
+prompt = no
+
+[ dn ]
+
+[ v3_req ]
+basicConstraints = CA:FALSE
+keyUsage = digitalSignature, keyEncipherment
