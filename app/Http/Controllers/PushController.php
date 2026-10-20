@@ -119,7 +119,7 @@ class PushController extends Controller
                 $stageInfo = '';
                 if ($this->lastPushService) {
                     $stageInfo = ' stage=' . ($this->lastPushService->lastStage ?? '-')
-                        . ' err=' . substr((string) ($this->lastPushService->lastError ?? ''), 0, 160);
+                        . ' err=' . substr((string) ($this->lastPushService->lastError ?? ''), 0, 700);
                 }
                 $debug[] = 'result=' . var_export($result, true) . $stageInfo . ' endpoint=' . substr($sub['endpoint'] ?? '', 0, 40);
                 // Hapus subscription HANYA bila server push menyatakan gone/invalid (410/404).

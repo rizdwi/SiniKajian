@@ -380,33 +380,36 @@ class ManualWebPushService
     private function generateEphemeralKey()
     {
         $this->keygenLog = [];
-        $base = [
+        // TEMUAN DEBUG LIVE 2026-10-20: build PHP vercel-php menolak
+        // private_key_bits < 384 untuk SEMUA tipe kunci ("must be at
+        // least 384 bits, configured to N") — termasuk EC, yang sebenarnya
+        // mengabaikan angka bits (ukuran ditentukan kurva). Tanpa bits
+        // sama sekali, nilai default dibaca dari config OpenSSL yang
+        // hilang di server itu (= 0, ikut ditolak). Jadi strategi yang
+        // benar: bits >= 384 (lolos gerbang, diabaikan EC), atau tanpa
+        // bits + config yang valid agar default-nya terbaca besar.
+        $ec = [
             'curve_name' => 'prime256v1',
             'private_key_type' => OPENSSL_KEYTYPE_EC,
-            'private_key_bits' => 256,
         ];
 
         $attempts = [];
-        $attempts['bits'] = $base;
+        $attempts['bits512'] = $ec + ['private_key_bits' => 512];
 
-        $cfg = $base;
-        $cfg['config'] = '';
-        $attempts['config_kosong'] = $cfg;
-
-        $cfg = $base;
+        $cfg = $ec;
         $cfg['config'] = __DIR__ . '/openssl.cnf';
-        $attempts['config_bundel'] = $cfg;
+        $attempts['nobits_bundel'] = $cfg;
 
         $tmpCnf = $this->writeTempOpensslConfig();
         if ($tmpCnf) {
-            $cfg = $base;
+            $cfg = $ec;
             $cfg['config'] = $tmpCnf;
-            $attempts['config_temp'] = $cfg;
+            $attempts['nobits_temp'] = $cfg;
 
             // Arahkan juga env OPENSSL_CONF (dibaca PHP saat config tak
-            // ditentukan) lalu coba tanpa key 'config'.
+            // ditentukan) lalu coba tanpa key 'config' dan tanpa bits.
             putenv('OPENSSL_CONF=' . $tmpCnf);
-            $attempts['env_temp'] = $base;
+            $attempts['nobits_env'] = $ec;
         }
 
         foreach ($attempts as $name => $cfg) {
