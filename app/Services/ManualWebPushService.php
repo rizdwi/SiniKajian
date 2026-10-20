@@ -170,20 +170,19 @@ class ManualWebPushService
         // Salt 16 bytes
         $salt = random_bytes(16);
 
-        // HKDF steps (RFC 8291)
-        $prk = $this->hkdf($authSecret, $sharedSecret, 'Content-Encoding: auth' . "\x00", 32);
+        // HKDF steps — RFC 8291 section 3.3 PERSIS (terverifikasi round-trip
+        // dengan dekriptor independen 2026-10-20). Skema lama ("Content-
+        // Encoding: auth" + konteks "P-256" ber-prefix panjang) adalah draf
+        // aesgcm usang: APNs tetap menjawab 201, tetapi browser gagal
+        // dekripsi (InvalidTag) dan membuang push diam-diam — notif tidak
+        // pernah tampil walau server melaporkan "sent".
+        $prkKey = $this->hkdfExtract($authSecret, $sharedSecret);
+        $keyInfo = 'WebPush: info' . "\x00" . $p256dh . $ephemeralPub;
+        $ikm = $this->hkdfExpand($prkKey, $keyInfo, 32);
 
-        // Context: "P-256" + 0x00 + len(peer pub) + peer pub + len(ephem pub) + ephem pub
-        // (masing-masing len = 2 bytes big-endian)
-        $context = "P-256\x00"
-            . pack('n', strlen($p256dh)) . $p256dh
-            . pack('n', strlen($ephemeralPub)) . $ephemeralPub;
-
-        $cekInfo = 'Content-Encoding: aes128gcm' . "\x00" . $context;
-        $nonceInfo = 'Content-Encoding: nonce' . "\x00" . $context;
-
-        $cek = $this->hkdf($salt, $prk, $cekInfo, 16);
-        $nonce = $this->hkdf($salt, $prk, $nonceInfo, 12);
+        $prk = $this->hkdfExtract($salt, $ikm);
+        $cek = $this->hkdfExpand($prk, 'Content-Encoding: aes128gcm' . "\x00", 16);
+        $nonce = $this->hkdfExpand($prk, 'Content-Encoding: nonce' . "\x00", 12);
 
         // Padding RFC 8188 (aes128gcm): data + delimiter 0x02 (record terakhir).
         // Format lama "\x00\x00" . data . "\x02" adalah skema aesgcm usang — browser
@@ -241,9 +240,15 @@ class ManualWebPushService
         return chr(0x80 | strlen($bytes)) . $bytes;
     }
 
-    private function hkdf(string $salt, string $ikm, string $info, int $len): string
+    /** HKDF-Extract (RFC 5869): HMAC dengan salt sebagai key. */
+    private function hkdfExtract(string $salt, string $ikm): string
     {
-        $prk = hash_hmac('sha256', $ikm, $salt, true);
+        return hash_hmac('sha256', $ikm, $salt, true);
+    }
+
+    /** HKDF-Expand (RFC 5869) murni, tanpa extract ulang. */
+    private function hkdfExpand(string $prk, string $info, int $len): string
+    {
         $okm = '';
         $t = '';
         $counter = 1;
