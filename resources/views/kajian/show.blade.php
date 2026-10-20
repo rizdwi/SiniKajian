@@ -342,7 +342,7 @@
     const btnIcon = document.getElementById('iconSaveDetail');
     if (btn) {
       if (isSaved) {
-        btn.className = "w-full py-3 px-2 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-sm touch-btn flex items-center justify-center gap-1.5 transition";
+        btn.className = "w-full py-3 px-2 rounded-2xl bg-amber-400 hover:bg-amber-500 text-[#1D4D4F] text-xs font-bold shadow-sm touch-btn flex items-center justify-center gap-1.5 transition";
         if (lbl) lbl.innerText = "✓ Tersimpan";
         if (btnIcon) btnIcon.setAttribute('fill', 'currentColor');
       } else {

@@ -1956,7 +1956,7 @@
       const modalSaveIcon = document.getElementById('modalSaveIcon');
       if (modalSaveBtn) {
         if (saved) {
-          modalSaveBtn.className = 'w-full py-3 px-2 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold shadow-sm touch-btn flex items-center justify-center gap-1.5 transition';
+          modalSaveBtn.className = 'w-full py-3 px-2 rounded-2xl bg-amber-400 hover:bg-amber-500 text-[#1D4D4F] text-xs font-extrabold shadow-sm touch-btn flex items-center justify-center gap-1.5 transition';
           if (modalSaveLabel) modalSaveLabel.innerText = '✓ Tersimpan';
           if (modalSaveIcon) modalSaveIcon.setAttribute('fill', 'currentColor');
         } else {
