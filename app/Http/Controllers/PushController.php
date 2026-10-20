@@ -93,60 +93,12 @@ class PushController extends Controller
     }
 
     /**
-     * Kirim satu web push menggunakan VAPID.
-     * Memerlukan minishlink/web-push; jika belum ter-install, return false.
+     * Kirim satu web push menggunakan VAPID (implementasi manual, tanpa library eksternal).
      * Return: true jika sukses, int (HTTP status) jika gagal dengan status diketahui, false jika gagal tanpa status.
      */
     private function sendWebPush(array $sub, array $payload): bool|int
     {
-        if (!class_exists(\Minishlink\WebPush\WebPush::class)) {
-            \Illuminate\Support\Facades\Log::warning('WebPush library belum ter-install.');
-            return false;
-        }
-
-        $publicKey = config('services.vapid.public_key');
-        $privateKey = config('services.vapid.private_key');
-        $subject = config('services.vapid.subject');
-
-        if (!$publicKey || !$privateKey) return false;
-
-        try {
-            $auth = [
-                'VAPID' => [
-                    'subject' => $subject,
-                    'publicKey' => $publicKey,
-                    'privateKey' => $privateKey,
-                ],
-            ];
-
-            $webPush = new \Minishlink\WebPush\WebPush($auth);
-
-            $subscription = \Minishlink\WebPush\Subscription::create([
-                'endpoint' => $sub['endpoint'],
-                'keys' => [
-                    'p256dh' => $sub['p256dh'],
-                    'auth' => $sub['auth'],
-                ],
-            ]);
-
-            $report = $webPush->sendOneNotification(
-                $subscription,
-                json_encode($payload)
-            );
-
-            if ($report->isSuccess()) {
-                return true;
-            }
-
-            // Kembalikan status HTTP agar caller bisa bedakan 410/404 vs error sementara
-            $response = $report->getResponse();
-            if ($response && method_exists($response, 'getStatusCode')) {
-                return $response->getStatusCode();
-            }
-            return false;
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::warning('WebPush gagal: ' . $e->getMessage());
-            return false;
-        }
+        $svc = new \App\Services\ManualWebPushService();
+        return $svc->send($sub, $payload);
     }
 }
