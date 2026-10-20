@@ -236,6 +236,28 @@
 @section('scripts')
 <script>
   const CSRF_TOKEN = '{{ csrf_token() }}';
+  // Toast notifikasi halaman detail.
+  // PENTING: fungsi ini sebelumnya TIDAK pernah didefinisikan di halaman
+  // ini, padahal toggleBookmarkDetailPage & toggleFollowDetailPage
+  // memanggilnya SEBELUM fetch ke server — ReferenceError menghentikan
+  // keduanya di tengah, sehingga bookmark/follow hanya berubah di
+  // localStorage dan tidak pernah sampai ke server. Itulah akar keluhan
+  // "bookmark diketuk tidak menyala tapi tersimpan, tidak bisa unsave"
+  // di halaman Detail Kajian.
+  function showToastNotification(message) {
+    let toast = document.getElementById('detailToast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'detailToast';
+      toast.className = 'fixed left-1/2 bottom-24 z-[70] -translate-x-1/2 bg-[#1D4D4F] text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-xl transition-opacity duration-300 whitespace-nowrap';
+      document.body.appendChild(toast);
+    }
+    toast.innerText = message;
+    toast.style.opacity = '1';
+    clearTimeout(window.__detailToastTimeout);
+    window.__detailToastTimeout = setTimeout(() => { toast.style.opacity = '0'; }, 2200);
+  }
+
   const KAJIAN_LAT = {{ $kajian->lat ?: -6.8851 }};
   const KAJIAN_LON = {{ $kajian->lon ?: 107.6136 }};
 
@@ -281,12 +303,24 @@
   // Sinkronisasi status awal dari localStorage
   document.addEventListener('DOMContentLoaded', () => {
     try {
-      const savedList = JSON.parse(localStorage.getItem('sinikajian_bookmarks') || '[]');
-      const followedList = JSON.parse(localStorage.getItem('sinikajian_followed_majelis') || '[]');
       const currentId = {{ $kajian->id }};
       const currentMasjid = "{{ addslashes($kajian->masjid) }}";
-      
-      updateSaveDetailState(savedList.includes(currentId));
+      const isLoggedIn = {{ Auth::check() ? 'true' : 'false' }};
+      const serverSaved = {{ $isBookmarked ? 'true' : 'false' }};
+      let savedList = JSON.parse(localStorage.getItem('sinikajian_bookmarks') || '[]');
+      const followedList = JSON.parse(localStorage.getItem('sinikajian_followed_majelis') || '[]');
+
+      if (isLoggedIn) {
+        // Server = sumber kebenaran: status awal dari server, localStorage
+        // diselaraskan mengikutinya (pola lama membaca localStorage lebih
+        // dulu sehingga status bisa terbalik dari server).
+        if (serverSaved && !savedList.includes(currentId)) savedList.push(currentId);
+        if (!serverSaved) savedList = savedList.filter(x => Number(x) !== currentId);
+        try { localStorage.setItem('sinikajian_bookmarks', JSON.stringify(savedList)); } catch(e) {}
+        updateSaveDetailState(serverSaved);
+      } else {
+        updateSaveDetailState(savedList.includes(currentId));
+      }
       updateFollowDetailState(followedList.includes(currentMasjid));
     } catch(e) {}
   });
@@ -333,27 +367,30 @@
     }
   }
 
+  // Terapkan status bookmark ke localStorage + ikon/tombol (satu-satunya
+  // jalur perubahan status di halaman ini, agar UI & penyimpanan sinkron).
+  function applyBookmarkState(saved, numericId) {
+    let list = [];
+    try { list = JSON.parse(localStorage.getItem('sinikajian_bookmarks') || '[]'); } catch(e) {}
+    if (saved) {
+      if (!list.includes(numericId)) list.push(numericId);
+    } else {
+      list = list.filter(x => Number(x) !== numericId);
+    }
+    try { localStorage.setItem('sinikajian_bookmarks', JSON.stringify(list)); } catch(e) {}
+    updateSaveDetailState(saved);
+  }
+
   function toggleBookmarkDetailPage(id) {
     const numericId = Number(id);
     let savedList = [];
-    try {
-      savedList = JSON.parse(localStorage.getItem('sinikajian_bookmarks') || '[]');
-    } catch(e) {}
+    try { savedList = JSON.parse(localStorage.getItem('sinikajian_bookmarks') || '[]'); } catch(e) {}
 
     const wasSaved = savedList.includes(numericId);
     const newSaved = !wasSaved;
 
-    if (newSaved) {
-      if (!savedList.includes(numericId)) savedList.push(numericId);
-    } else {
-      savedList = savedList.filter(x => Number(x) !== numericId);
-    }
-
-    try {
-      localStorage.setItem('sinikajian_bookmarks', JSON.stringify(savedList));
-    } catch(e) {}
-
-    updateSaveDetailState(newSaved);
+    // Update optimistis
+    applyBookmarkState(newSaved, numericId);
     showToastNotification(newSaved ? 'Kajian berhasil disimpan!' : 'Kajian dihapus dari tersimpan.');
 
     const isLoggedIn = {{ Auth::check() ? 'true' : 'false' }};
@@ -367,7 +404,23 @@
         }
       })
       .then(r => r.json())
-      .catch(err => console.warn('Gagal sinkronisasi bookmark server:', err));
+      .then(data => {
+        if (!data) return;
+        if (data.status === 'auth_required') {
+          applyBookmarkState(wasSaved, numericId);
+          showToastNotification('Masuk dulu untuk menyimpan kajian');
+          return;
+        }
+        // Vonis server menang: samakan tampilan dengannya.
+        if (typeof data.saved === 'boolean' && data.saved !== newSaved) {
+          applyBookmarkState(data.saved, numericId);
+        }
+      })
+      .catch(err => {
+        console.warn('Gagal sinkronisasi bookmark server:', err);
+        applyBookmarkState(wasSaved, numericId);
+        showToastNotification('Gagal menyinkronkan ke server, coba lagi');
+      });
     }
   }
 
@@ -402,7 +455,28 @@
       },
       body: JSON.stringify({ masjid: masjid })
     })
-    .catch(err => console.warn('Gagal follow majelis ke server:', err));
+    .then(r => r.json())
+    .then(data => {
+      // Vonis server menang bila berbeda dari update optimistis.
+      if (data && typeof data.followed === 'boolean' && data.followed !== newFollowed) {
+        let l = [];
+        try { l = JSON.parse(localStorage.getItem('sinikajian_followed_majelis') || '[]'); } catch(e) {}
+        if (data.followed) { if (!l.includes(masjid)) l.push(masjid); }
+        else { l = l.filter(m => m !== masjid); }
+        try { localStorage.setItem('sinikajian_followed_majelis', JSON.stringify(l)); } catch(e) {}
+        updateFollowDetailState(data.followed);
+      }
+    })
+    .catch(err => {
+      console.warn('Gagal follow majelis ke server:', err);
+      let l = [];
+      try { l = JSON.parse(localStorage.getItem('sinikajian_followed_majelis') || '[]'); } catch(e) {}
+      if (wasFollowed) { if (!l.includes(masjid)) l.push(masjid); }
+      else { l = l.filter(m => m !== masjid); }
+      try { localStorage.setItem('sinikajian_followed_majelis', JSON.stringify(l)); } catch(e) {}
+      updateFollowDetailState(wasFollowed);
+      showToastNotification('Gagal menyinkronkan ke server, coba lagi');
+    });
   }
 
   // Alias backwards compatibility

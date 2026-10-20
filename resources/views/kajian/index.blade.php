@@ -228,7 +228,7 @@
 
 <!-- Modal Bottom Sheet: Detail Kajian (Sesuai Desain Figma Screen 2) -->
 <div id="detailModal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 transition-opacity">
-  <div class="bg-white dark:bg-[#162526] w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto no-scrollbar shadow-2xl p-4 sm:p-5 space-y-4">
+  <div class="bg-white dark:bg-[#162526] w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto overscroll-contain no-scrollbar shadow-2xl p-4 sm:p-5 space-y-4" style="touch-action: pan-y; -webkit-overflow-scrolling: touch;">
     <!-- Mobile Drag Handle -->
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto sm:hidden mb-1"></div>
     
@@ -1504,6 +1504,10 @@
     // Tampilkan modal DULU agar selalu merespons klik
     const modal = document.getElementById('detailModal');
     if (modal) modal.classList.remove('hidden');
+    // Kunci scroll latar: tanpa ini gestur scroll di dalam modal ikut
+    // menggerakkan halaman di belakangnya (keluhan: background ikut
+    // terswipe sehingga detail terasa tidak bisa di-scroll).
+    document.body.style.overflow = 'hidden';
     try {
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
     set('modalCategory', ev.category || 'Kajian Sunnah');
@@ -1660,6 +1664,7 @@
 
   function closeDetailModal() {
     document.getElementById('detailModal').classList.add('hidden');
+    document.body.style.overflow = '';
   }
 
   function openFilterModal() {
@@ -1902,6 +1907,13 @@
           showBookmarkToast('Masuk dulu untuk menyimpan kajian');
           return;
         }
+        if (data && data.status === 'error') {
+          syncAllBookmarkButtons(numericId, wasSaved);
+          if (wasSaved) userBookmarkIds.add(numericId); else userBookmarkIds.delete(numericId);
+          try { localStorage.setItem('sinikajian_bookmarks', JSON.stringify(Array.from(userBookmarkIds))); } catch(e) {}
+          showBookmarkToast(data.message || 'Gagal menyimpan, coba lagi');
+          return;
+        }
         if (data && typeof data.saved === 'boolean') {
           if (data.saved !== newSaved) {
             syncAllBookmarkButtons(numericId, data.saved);
@@ -1912,7 +1924,13 @@
         }
       })
       .catch(err => {
+        // Gagal total (jaringan/CSRF/HTTP error): batalkan update optimistis
+        // agar tampilan tidak mengaku tersimpan padahal server tidak tahu.
         console.warn('Gagal sinkronisasi bookmark server:', err);
+        syncAllBookmarkButtons(numericId, wasSaved);
+        if (wasSaved) userBookmarkIds.add(numericId); else userBookmarkIds.delete(numericId);
+        try { localStorage.setItem('sinikajian_bookmarks', JSON.stringify(Array.from(userBookmarkIds))); } catch(e) {}
+        showBookmarkToast('Gagal menyinkronkan ke server, coba lagi');
       });
     }
   }
