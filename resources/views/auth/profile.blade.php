@@ -577,6 +577,8 @@
         badge.innerText = `${geo.city}, ${geo.province}`;
       } else if (geo.name) {
         badge.innerText = geo.name;
+      } else {
+        badge.innerText = 'Mendeteksi Lokasi...';
       }
     }
     const radiusText = document.getElementById('userProfileLocationRadius');
