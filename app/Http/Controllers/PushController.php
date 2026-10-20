@@ -69,6 +69,7 @@ class PushController extends Controller
             'body' => 'required|string|max:200',
             'url' => 'nullable|string|max:500',
             'kajian_id' => 'nullable|integer',
+            'masjid' => 'nullable|string|max:200',
         ]);
 
         $svc = new \App\Services\SupabaseUserService();
@@ -84,6 +85,19 @@ class PushController extends Controller
                 }));
             } else {
                 $subs = []; // tidak ada yang bookmark → tidak ada notif
+            }
+        }
+
+        // Jika masjid diberikan, hanya kirim ke user yang mengikuti majelis itu
+        $masjid = $request->input('masjid');
+        if ($masjid && $svc->enabled()) {
+            $followerUserIds = $svc->getMajelisFollowerUserIds((string) $masjid);
+            if (!empty($followerUserIds)) {
+                $subs = array_values(array_filter($subs, function ($sub) use ($followerUserIds) {
+                    return isset($sub['user_id']) && in_array((int) $sub['user_id'], $followerUserIds, true);
+                }));
+            } else {
+                $subs = []; // tidak ada pengikut → tidak ada notif
             }
         }
 

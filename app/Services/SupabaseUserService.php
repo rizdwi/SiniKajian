@@ -275,4 +275,27 @@ class SupabaseUserService
             return [];
         }
     }
+
+    /**
+     * Ambil daftar user_id yang mengikuti majelis (masjid) tertentu.
+     */
+    public function getMajelisFollowerUserIds(string $masjid): array
+    {
+        if (!$this->enabled()) return [];
+
+        try {
+            $res = Http::withHeaders($this->headers())
+                ->timeout(15)
+                ->get("{$this->url}/rest/v1/majelis_follows", [
+                    'select' => 'user_id',
+                    'masjid' => 'eq.' . $masjid,
+                ]);
+
+            $rows = $res->json() ?? [];
+            return array_values(array_unique(array_map(fn ($r) => (int) ($r['user_id'] ?? 0), $rows)));
+        } catch (\Exception $e) {
+            Log::warning('Supabase getMajelisFollowerUserIds gagal: ' . $e->getMessage());
+            return [];
+        }
+    }
 }

@@ -385,8 +385,8 @@
           <span id="modalFollowLabel" class="truncate">Ikuti Majelis</span>
         </button>
 
-        <!-- Tombol 3: Tambah ke Kalender -->
-        <button onclick="if(currentDetailEvent) downloadICS(currentDetailEvent.id)" class="w-full py-3 px-2 rounded-2xl bg-[#E6F4F1] dark:bg-[#1E2E2F] hover:bg-[#D1EAE5] text-[#1D4D4F] dark:text-[#7FC4BC] text-xs font-extrabold shadow-sm touch-btn flex items-center justify-center gap-1.5 transition">
+        <!-- Tombol 3: Tambah ke Kalender (full width, di tengah) -->
+        <button onclick="if(currentDetailEvent) downloadICS(currentDetailEvent.id)" class="col-span-2 w-full py-3 px-2 rounded-2xl bg-[#E6F4F1] dark:bg-[#1E2E2F] hover:bg-[#D1EAE5] text-[#1D4D4F] dark:text-[#7FC4BC] text-xs font-extrabold shadow-sm touch-btn flex items-center justify-center gap-1.5 transition">
           <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
           </svg>
