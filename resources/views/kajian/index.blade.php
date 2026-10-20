@@ -146,10 +146,6 @@
         </svg>
         <span class="text-[11px]">Favorit</span>
       </button>
-      <span class="ml-auto flex items-center gap-1">
-        <span id="filteredCountBadge" class="font-bold text-[#1D4D4F] bg-[#E6F4F1] px-2 py-0.5 rounded-full">{{ $kajians->count() }}</span>
-        <span class="text-[11px] text-[#607072] dark:text-[#9BA8A9]">Kajian</span>
-      </span>
     </div>
   </section>
 
