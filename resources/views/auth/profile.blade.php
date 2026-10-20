@@ -154,11 +154,8 @@
       <span id="favUstadzCount" class="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">0</span>
     </div>
     <div id="favUstadzList" class="space-y-2 max-h-56 overflow-y-auto pr-1 fav-scroll"></div>
-    <div id="emptyFavUstadz" class="p-4 rounded-2xl bg-white border border-[#E5ECEB] text-center space-y-2">
+    <div id="emptyFavUstadz" class="p-4 rounded-2xl bg-white border border-[#E5ECEB] text-center">
       <p class="text-xs text-[#607072]">Belum ada ustadz favorit. Tandai bintang di detail kajian untuk menambah.</p>
-      <a href="{{ route('kajian.index') }}" class="inline-block px-4 py-2 rounded-xl bg-[#1D4D4F] text-white text-xs font-bold shadow-2xs hover:bg-[#153A3B] transition">
-        Jelajahi Kajian
-      </a>
     </div>
   </div>
 
