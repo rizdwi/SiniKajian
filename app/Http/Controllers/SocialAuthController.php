@@ -128,7 +128,7 @@ class SocialAuthController extends Controller
                 // Sinkron ke Supabase
                 if ($sbSvc->enabled()) {
                     try {
-                        $sbSvc->findOrCreate([
+                        $sbUser = $sbSvc->findOrCreate([
                             'name' => $name,
                             'email' => $email,
                             'password' => $user->password,
@@ -138,6 +138,19 @@ class SocialAuthController extends Controller
                     } catch (\Throwable $e) {
                         \Illuminate\Support\Facades\Log::warning('Supabase sync OAuth gagal: ' . $e->getMessage());
                     }
+                }
+            }
+
+            // Muat avatar dari Supabase agar persisten antar login
+            if ($sbSvc->enabled()) {
+                try {
+                    $sbUser = $sbUser ?? $sbSvc->findByEmail($email);
+                    if ($sbUser && !empty($sbUser['avatar'])) {
+                        $user->avatar = $sbUser['avatar'];
+                        $user->save();
+                    }
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning('Load avatar Supabase gagal: ' . $e->getMessage());
                 }
             }
 

@@ -1964,11 +1964,9 @@
     if (el) el.innerText = userCoords.name || 'Mendeteksi Lokasi...';
 
     // Sinkronisasi avatar header dari localStorage
+    // (tidak dihapus saat logout agar tetap tampil setelah login ulang;
+    //  avatar server dari Supabase jadi sumber utama)
     try {
-      @guest
-        // Hapus avatar localStorage saat logout
-        localStorage.removeItem('sinikajian_user_avatar');
-      @else
       const localAvatar = localStorage.getItem('sinikajian_user_avatar');
       const headerImg = document.getElementById('headerUserAvatarImg');
       const headerInitial = document.getElementById('headerUserAvatarInitial');

@@ -453,15 +453,12 @@ class AuthController extends Controller
         try {
             $svc = new \App\Services\SupabaseUserService();
             if ($svc->enabled()) {
-                // Cari user di Supabase by email lama, update atau buat baru
-                $svc->findOrCreate([
+                $sbUser = $svc->findOrCreate([
                     'name' => $user->name,
                     'email' => $user->email,
                     'provider' => $user->provider,
                     'provider_id' => $user->provider_id,
                 ]);
-                // Update data terbaru
-                $sbUser = $svc->findOrCreate(['name' => $user->name, 'email' => $user->email]);
                 if ($sbUser && isset($sbUser['id'])) {
                     $updatePayload = [
                         'name' => $request->name,
@@ -470,7 +467,12 @@ class AuthController extends Controller
                     if (!empty($user->avatar)) {
                         $updatePayload['avatar'] = $user->avatar;
                     }
-                    $svc->update($sbUser['id'], $updatePayload);
+                    $ok = $svc->update($sbUser['id'], $updatePayload);
+                    if (!$ok) {
+                        \Log::warning('Sync avatar ke Supabase gagal untuk user ' . $user->email);
+                    }
+                } else {
+                    \Log::warning('findOrCreate Supabase return null untuk ' . $user->email);
                 }
             }
         } catch (\Exception $e) {
