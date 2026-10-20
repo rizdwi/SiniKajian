@@ -25,7 +25,7 @@ return [
     |
     */
 
-    'admin_email' => env('ADMIN_EMAIL', 'rizkidwisandy@gmail.com'),
+    'admin_email' => env('ADMIN_EMAIL'),
 
     /*
     |--------------------------------------------------------------------------

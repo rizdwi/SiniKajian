@@ -125,6 +125,8 @@
       kaabaDistance: 7924
     },
     watchId: null,
+    manualAt: 0,
+    explicitGpsRequest: false,
 
     init() {
       // 1. Muat cache dari localStorage untuk respon 0 detik
@@ -137,6 +139,13 @@
           this.current.city = cached.city || '';
           this.current.province = cached.province || '';
           this.current.isGps = !!cached.isGps;
+          this.manualAt = Number(cached.manualAt || 0);
+          // Migrasi state lama: saveState dulu hanya dipanggil oleh fix
+          // GPS (isGps=true) atau pilihan manual (isGps=false) — jadi
+          // cache isGps=false tanpa manualAt tetap berarti pilihan manual.
+          if (!this.current.isGps && !this.manualAt && cached.timestamp) {
+            this.manualAt = Number(cached.timestamp);
+          }
         } else {
           const oldLoc = JSON.parse(localStorage.getItem('sk_user_loc') || 'null');
           if (oldLoc && oldLoc.lat && oldLoc.lon) {
@@ -161,15 +170,36 @@
         alert('Geolocation tidak didukung browser ini.');
         return;
       }
+      this.explicitGpsRequest = true;
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           this.handlePositionUpdate(pos, true);
+          // User secara eksplisit meminta GPS live: pantau pergerakan
+          // selama sesi ini saja (watch tidak pernah dimulai otomatis).
+          try { localStorage.setItem('sk:gps-live', '1'); } catch (e) {}
+          this.startWatch();
         },
         (err) => {
+          this.explicitGpsRequest = false;
           console.warn('GPS Error:', err.message);
           alert('Tidak dapat mendeteksi lokasi GPS. Pastikan izin lokasi aktif pada peramban Anda.');
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    },
+
+    startWatch() {
+      if (this.watchId || !navigator.geolocation) return;
+      // Pilihan manual selalu menang — jangan pantau bila user memilih kota.
+      if (!this.current.isGps && this.manualAt) return;
+      this.watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          this.handlePositionUpdate(pos, false);
+        },
+        (err) => {
+          // silent fallback
+        },
+        { enableHighAccuracy: false, timeout: 15000, maximumAge: 30000 }
       );
     },
 
@@ -179,29 +209,40 @@
         return;
       }
 
-      // Ambil posisi presisi saat ini
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          this.handlePositionUpdate(pos, true);
-        },
-        (err) => {
-          console.warn('Otomatisasi GPS background:', err.message);
-        },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
-      );
+      // AUDIT 2026-10-21 (FE-H2/H3): pilihan kota manual TIDAK BOLEH
+      // ditimpa GPS otomatis — dan jangan memancing prompt izin / watch
+      // permanen ke semua pengunjung. Aturan baru:
+      //  - Ada pilihan manual -> berhenti total di sini.
+      //  - Izin lokasi SUDAH pernah diberikan -> segarkan satu kali
+      //    (one-shot, akurasi hemat), watch hanya bila user pernah
+      //    memakai tombol GPS live.
+      //  - Izin belum diberikan -> diam; tunggu gestur user (tombol GPS).
+      const hasManualChoice = !this.current.isGps && this.manualAt > 0;
+      if (hasManualChoice) {
+        return;
+      }
 
-      // Pantau pergerakan terus-menerus tanpa harus diset ulang
-      if (!this.watchId) {
-        this.watchId = navigator.geolocation.watchPosition(
+      const oneShot = () => {
+        navigator.geolocation.getCurrentPosition(
           (pos) => {
-            this.handlePositionUpdate(pos, false);
+            this.handlePositionUpdate(pos, true);
           },
           (err) => {
-            // silent fallback
+            console.warn('Otomatisasi GPS background:', err.message);
           },
-          { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
+          { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
         );
+        try {
+          if (localStorage.getItem('sk:gps-live') === '1') this.startWatch();
+        } catch (e) {}
+      };
+
+      if (navigator.permissions && navigator.permissions.query) {
+        navigator.permissions.query({ name: 'geolocation' }).then((status) => {
+          if (status.state === 'granted') oneShot();
+        }).catch(() => {});
       }
+      // Tanpa Permissions API: tidak meminta apa pun secara otomatis.
     },
 
     handlePositionUpdate(pos, isInitial) {
@@ -209,8 +250,17 @@
       const lon = pos.coords.longitude;
       const accuracy = pos.coords.accuracy;
 
+      // Pilihan manual user menang atas update GPS apa pun, kecuali
+      // update ini datang dari tombol GPS yang user tekan sendiri.
+      if (!this.current.isGps && this.manualAt > 0 && !this.explicitGpsRequest) {
+        return;
+      }
+      if (this.explicitGpsRequest) {
+        this.manualAt = 0;
+        this.explicitGpsRequest = false;
+      }
+
       // Cek apakah lokasi berubah signifikan (> 100 meter) atau inisial
-      // JANGAN override jika user sudah pilih manual (isGps=false)
       const dist = haversine(this.current.lat, this.current.lon, lat, lon);
       if (isInitial || (this.current.isGps && dist > 0.1)) {
         this.current.lat = lat;
@@ -246,6 +296,7 @@
           province: this.current.province || '',
           accuracy: this.current.accuracy,
           isGps: this.current.isGps,
+          manualAt: this.manualAt || 0,
           timestamp: Date.now()
         };
         localStorage.setItem('sk_geo_state', JSON.stringify(payload));
@@ -262,6 +313,14 @@
       this.current.lon = lon;
       this.current.name = name;
       this.current.isGps = false;
+      this.manualAt = Date.now();
+      // Berhenti memantau GPS — pilihan manual berlaku sampai user
+      // sendiri menekan tombol GPS lagi.
+      if (this.watchId) {
+        navigator.geolocation.clearWatch(this.watchId);
+        this.watchId = null;
+      }
+      try { localStorage.removeItem('sk:gps-live'); } catch (e) {}
       this.current.qiblaAzimuth = calculateQiblaAzimuth(lat, lon);
       this.current.kaabaDistance = Math.round(haversine(lat, lon, KAABA_COORDS.lat, KAABA_COORDS.lon));
 

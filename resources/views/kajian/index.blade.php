@@ -168,6 +168,15 @@
     </span>
   </div>
 
+  @if($kajianLoadError ?? false)
+  <!-- Status error muat data (FE-H6): dibedakan dari keadaan memang kosong -->
+  <div class="mb-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center" role="alert">
+    <p class="text-sm font-bold text-red-700">Gagal memuat data kajian</p>
+    <p class="text-xs text-red-600 mt-0.5">Server data sedang tidak terjangkau. Periksa koneksi internetmu lalu coba lagi.</p>
+    <button onclick="location.reload()" class="mt-2 px-4 py-1.5 rounded-full bg-red-600 text-white text-xs font-bold">Muat Ulang</button>
+  </div>
+  @endif
+
   <!-- Feed Daftar Kajian -->
   <section class="space-y-3" id="kajianCardsList">
     <!-- Skeleton loading (diganti JS saat data siap) -->
@@ -772,7 +781,7 @@
 
     const firstDay = new Date(year, month, 1).getDay(); // 0=Min
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const todayStr = new Date().toISOString().split('T')[0];
+    const _now = new Date(); const todayStr = _now.getFullYear() + '-' + String(_now.getMonth() + 1).padStart(2, '0') + '-' + String(_now.getDate()).padStart(2, '0');
     const kajianMap = getKajianDatesMap();
 
     for (let i = 0; i < firstDay; i++) {
@@ -916,7 +925,7 @@
       return a.localeCompare(b);
     });
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = todayStr;
 
     sortedKeys.forEach(key => {
       const list = groups[key];
@@ -1174,7 +1183,10 @@
     const countDisplay = document.getElementById('filteredCountText');
 
     let processed = rawKajians.map(item => {
-      const dist = calculateHaversine(userCoords.lat, userCoords.lon, item.lat, item.lon);
+      const latN = parseFloat(item.lat);
+      const lonN = parseFloat(item.lon);
+      let dist = (isNaN(latN) || isNaN(lonN)) ? null : calculateHaversine(userCoords.lat, userCoords.lon, latN, lonN);
+      if (dist !== null && !Number.isFinite(dist)) dist = null;
       return { ...item, distance: dist };
     });
 
@@ -1230,7 +1242,7 @@
         ).join('');
         return `
         <div class="spot-slide relative shrink-0 cursor-pointer overflow-hidden bg-[#153A3B]" style="width:100%;" data-slide-idx="${i}">
-          <img src="${item.poster_url || 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=800&q=80'}" alt="Kajian Pilihan" class="w-full h-52 object-cover opacity-85" draggable="false">
+          <img src="${item.poster_url ? supabaseThumb(item.poster_url, 800) : 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=800&q=80'}" alt="Kajian Pilihan" class="w-full h-52 object-cover opacity-85" draggable="false">
           <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/30"></div>
           <div class="absolute top-3 inset-x-3 flex items-center justify-between">
             <span class="px-3 py-1 rounded-full text-[10px] font-extrabold tracking-wider uppercase bg-[#E6F4F1] text-[#1D4D4F] shadow-xs">KAJIAN PILIHAN</span>
@@ -1240,7 +1252,7 @@
             <div class="flex items-center gap-2 mb-1">
               <span class="text-[10px] font-bold uppercase tracking-wider text-[#FCD34D]">${(item.day || '').toUpperCase()}${item.event_date ? ', ' + formatTanggalIndo(item.event_date) : ''} • ${item.time || ''}</span>
               <span class="text-white/40">•</span>
-              <span class="text-[10px] text-white/90 font-medium">${item.distance.toFixed(1)} km</span>
+              <span class="text-[10px] text-white/90 font-medium">${item.distance != null ? item.distance.toFixed(1) + ' km' : '— km'}</span>
               <span class="flex-1"></span>
               <span class="flex items-center gap-1.5">${dots}</span>
             </div>
@@ -1449,7 +1461,7 @@
           </div>
           
           <div class="self-center flex flex-col items-center gap-1.5 pl-1 shrink-0">
-            <span class="text-[10px] font-bold text-[#1D4D4F] dark:text-[#7FC4BC] whitespace-nowrap">${ev.distance.toFixed(1)} km</span>
+            <span class="text-[10px] font-bold text-[#1D4D4F] dark:text-[#7FC4BC] whitespace-nowrap">${ev.distance != null ? ev.distance.toFixed(1) + ' km' : '— km'}</span>
             <svg class="w-4 h-4 text-[#607072] dark:text-[#9BA8A9]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
             </svg>
@@ -1523,8 +1535,8 @@
     const flyerImg = document.getElementById('modalFlyerImg');
     const flyerLink = document.getElementById('modalFlyerFullLink');
     if (ev.poster_url) {
-      flyerImg.src = ev.poster_url;
-      flyerLink.href = ev.poster_url;
+      flyerImg.src = supabaseThumb(ev.poster_url, 800);
+      flyerLink.href = safeUrl(ev.poster_url);
       flyerWrapper.classList.remove('hidden');
     } else {
       flyerWrapper.classList.add('hidden');
@@ -1557,7 +1569,7 @@
     const targetUrl = ev.source_url || ev.sourceUrl;
     if (targetUrl && targetUrl !== '#') {
       const srcMeta = SOURCE_META[ev.source] || SOURCE_META.facebook;
-      sourceBtn.href = targetUrl;
+      sourceBtn.href = safeUrl(targetUrl);
       sourceBtn.style.cssText = srcMeta.style;
       sourceGlyph.innerText = srcMeta.glyph;
       sourceLabel.innerText = `Buka Sumber Asli di ${srcMeta.label} ↗`;
@@ -1642,7 +1654,27 @@
       },
       body: JSON.stringify({ masjid: masjid })
     })
-    .catch(err => console.warn('Gagal follow majelis ke server:', err));
+    .then(res => res.json())
+    .then(data => {
+      // Rekonsiliasi server (audit 2026-10-21, FE-M4): respons WAJIB dicek —
+      // bila server menolak / sesi habis / status tak sesuai, batalkan
+      // perubahan lokal agar toast tidak berbohong.
+      if (!data || data.status !== 'success' || typeof data.followed !== 'boolean' || data.followed !== newFollowed) {
+        let l2 = getFollowedMajelisList();
+        if (wasFollowed) { if (!l2.includes(masjid)) l2.push(masjid); } else { l2 = l2.filter(m => m !== masjid); }
+        setFollowedMajelisList(l2);
+        updateModalFollowButtonState(wasFollowed);
+        showBookmarkToast('Gagal menyinkronkan ke server, coba lagi');
+      }
+    })
+    .catch(err => {
+      console.warn('Gagal follow majelis ke server:', err);
+      let l2 = getFollowedMajelisList();
+      if (wasFollowed) { if (!l2.includes(masjid)) l2.push(masjid); } else { l2 = l2.filter(m => m !== masjid); }
+      setFollowedMajelisList(l2);
+      updateModalFollowButtonState(wasFollowed);
+      showBookmarkToast('Gagal menyinkronkan ke server, coba lagi');
+    });
   }
 
   // Alias backwards compatibility
@@ -1860,6 +1892,11 @@
     const isLoggedIn = {{ Auth::check() ? 'true' : 'false' }};
     if (!isLoggedIn) { window.location.href = '{{ route('login') }}'; return; }
     const numericId = Number(kajianId);
+    // Penjaga in-flight (audit 2026-10-21, FE-M3): abaikan ketukan ganda
+    // selama toggle untuk id ini masih menunggu jawaban server.
+    window._bmInFlight = window._bmInFlight || new Set();
+    if (window._bmInFlight.has(numericId)) return;
+    window._bmInFlight.add(numericId);
     const wasSaved = userBookmarkIds.has(numericId);
     const newSaved = !wasSaved;
 
@@ -1891,6 +1928,7 @@
       })
       .then(res => res.json())
       .then(data => {
+        window._bmInFlight.delete(numericId);
         if (data && data.status === 'auth_required') {
           // Belum login: batalkan update optimistis agar tampilan jujur
           syncAllBookmarkButtons(numericId, wasSaved);
@@ -1916,6 +1954,7 @@
         }
       })
       .catch(err => {
+        window._bmInFlight.delete(numericId);
         // Gagal total (jaringan/CSRF/HTTP error): batalkan update optimistis
         // agar tampilan tidak mengaku tersimpan padahal server tidak tahu.
         console.warn('Gagal sinkronisasi bookmark server:', err);

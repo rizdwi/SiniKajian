@@ -39,6 +39,10 @@ return [
             'serialize' => false,
         ],
 
+        'supabase' => [
+            'driver' => 'supabase',
+        ],
+
         'database' => [
             'driver' => 'database',
             'connection' => env('DB_CACHE_CONNECTION'),

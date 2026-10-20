@@ -108,7 +108,7 @@ Route::get('/email/verify/{id}/{hash}', function (\Illuminate\Http\Request $requ
                     'apikey' => config('services.supabase.service_key'),
                     'Authorization' => 'Bearer ' . config('services.supabase.service_key'),
                     'Content-Type' => 'application/json',
-                ])->patch(config('services.supabase.url') . '/rest/v1/app_users?email=eq.' . urlencode($user->email), [
+                ])->timeout(10)->patch(config('services.supabase.url') . '/rest/v1/app_users?email=eq.' . urlencode($user->email), [
                     'email_verified_at' => now()->toIso8601String(),
                 ]);
             }
@@ -149,13 +149,13 @@ Route::get('/favicon.ico', function () {
 // Webhook: trigger sync Supabase -> SQLite (dipanggil cron setelah insert)
 Route::post('/webhook/sync-kajian', function (\Illuminate\Http\Request $request) {
     $secret = env('SYNC_WEBHOOK_SECRET');
-    if (!$secret || $request->header('X-Sync-Secret') !== $secret) {
+    if (!$secret || !hash_equals($secret, (string) $request->header('X-Sync-Secret', ''))) {
         abort(403, 'Unauthorized');
     }
     \Illuminate\Support\Facades\Artisan::call('kajian:sync-supabase');
     // Clear Supabase cache agar data baru langsung tampil
     \App\Services\SupabaseKajianService::clearCache();
-    return response()->json(['ok' => true, 'output' => \Illuminate\Support\Facades\Artisan::output()]);
+    return response()->json(['ok' => true]);
 });
 
 // Web Push Notifications

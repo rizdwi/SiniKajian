@@ -1,7 +1,7 @@
 <?php
 
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
+ini_set('display_errors', '0');
+ini_set('display_startup_errors', '0');
 error_reporting(E_ALL);
 
 // 1. Inisialisasi struktur direktori /tmp untuk Vercel Serverless
@@ -78,12 +78,7 @@ $_SERVER['APP_ENV'] = 'production';
 putenv('SESSION_DRIVER=cookie');
 $_ENV['SESSION_DRIVER'] = 'cookie';
 $_SERVER['SESSION_DRIVER'] = 'cookie';
-if (!getenv('APP_KEY') && !isset($_ENV['APP_KEY'])) {
-    $fallbackKey = 'base64:eneFvNA7mfb/CrYt8SVrrRaHH+nRCD+cZ8pZDsnV72M=';
-    putenv('APP_KEY=' . $fallbackKey);
-    $_ENV['APP_KEY'] = $fallbackKey;
-    $_SERVER['APP_KEY'] = $fallbackKey;
-}
+// APP_KEY WAJIB dari env (Vercel). Tidak ada fallback di kode — fail-closed.
 
 $viewCompiledPath = $storage . '/framework/views';
 putenv('VIEW_COMPILED_PATH=' . $viewCompiledPath);
@@ -98,6 +93,7 @@ if ($dbConnection === 'sqlite' || empty(getenv('DB_CONNECTION'))) {
     $_SERVER['DB_DATABASE'] = $targetDb;
 }
 
+$cacheStore = getenv('CACHE_STORE') ?: ($_ENV['CACHE_STORE'] ?? 'supabase');
 $appDebug = getenv('APP_DEBUG') ?: ($_ENV['APP_DEBUG'] ?? 'false');
 $appName = getenv('APP_NAME') ?: ($_ENV['APP_NAME'] ?? 'Majelisku');
 $appUrl = getenv('APP_URL') ?: ($_ENV['APP_URL'] ?? 'https://majelisku.web.id');
@@ -116,7 +112,7 @@ putenv('SESSION_DRIVER=cookie');
 putenv('SESSION_LIFETIME=120');
 putenv('SESSION_SECURE_COOKIE=true');
 putenv('SESSION_SAME_SITE=lax');
-putenv('CACHE_STORE=array');
+putenv('CACHE_STORE=' . $cacheStore);
 putenv('MAIL_MAILER=' . $mailMailer);
 putenv('MAIL_FROM_ADDRESS=' . $mailFrom);
 putenv('MAIL_FROM_NAME=' . $mailFromName);
@@ -137,7 +133,7 @@ $_ENV['SESSION_DRIVER'] = 'cookie';
 $_ENV['SESSION_LIFETIME'] = '120';
 $_ENV['SESSION_SECURE_COOKIE'] = 'true';
 $_ENV['SESSION_SAME_SITE'] = 'lax';
-$_ENV['CACHE_STORE'] = 'array';
+$_ENV['CACHE_STORE'] = $cacheStore;
 $_ENV['MAIL_MAILER'] = $mailMailer;
 $_ENV['MAIL_FROM_ADDRESS'] = $mailFrom;
 $_ENV['MAIL_FROM_NAME'] = $mailFromName;
@@ -158,7 +154,7 @@ $_SERVER['SESSION_DRIVER'] = 'cookie';
 $_SERVER['SESSION_LIFETIME'] = '120';
 $_SERVER['SESSION_SECURE_COOKIE'] = 'true';
 $_SERVER['SESSION_SAME_SITE'] = 'lax';
-$_SERVER['CACHE_STORE'] = 'array';
+$_SERVER['CACHE_STORE'] = $cacheStore;
 $_SERVER['MAIL_MAILER'] = $mailMailer;
 $_SERVER['MAIL_FROM_ADDRESS'] = $mailFrom;
 $_SERVER['MAIL_FROM_NAME'] = $mailFromName;

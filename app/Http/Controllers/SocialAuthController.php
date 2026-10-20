@@ -68,7 +68,7 @@ class SocialAuthController extends Controller
         $redirectUri = str_replace('http://', 'https://', route('social.callback', $provider));
 
         try {
-            $tokenRes = Http::asForm()->post('https://oauth2.googleapis.com/token', [
+            $tokenRes = Http::asForm()->timeout(10)->post('https://oauth2.googleapis.com/token', [
                 'code' => $code,
                 'client_id' => $config['client_id'],
                 'client_secret' => $config['client_secret'],
@@ -80,7 +80,7 @@ class SocialAuthController extends Controller
                 throw new \RuntimeException('Gagal menukar kode otorisasi.');
             }
 
-            $userRes = Http::withToken($accessToken)->get('https://www.googleapis.com/oauth2/v3/userinfo');
+            $userRes = Http::withToken($accessToken)->timeout(10)->get('https://www.googleapis.com/oauth2/v3/userinfo');
             $socialUser = $userRes->json();
 
             // Guard: pastikan field penting ada

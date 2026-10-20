@@ -4,7 +4,8 @@
   "functions": {
     "api/index.php": {
       "runtime": "vercel-php@0.7.3",
-      "includeFiles": "database/**"
+      "includeFiles": "database/**",
+      "maxDuration": 60
     }
   },
   "routes": [
@@ -82,7 +83,7 @@
     "APP_URL": "https://majelisku.web.id",
     "APP_ENV": "production",
     "APP_DEBUG": "false",
-    "CACHE_STORE": "array",
+    "CACHE_STORE": "supabase",
     "SESSION_DRIVER": "cookie",
     "SESSION_LIFETIME": "120",
     "SESSION_SECURE_COOKIE": "true",

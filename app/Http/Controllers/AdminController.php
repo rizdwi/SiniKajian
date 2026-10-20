@@ -55,61 +55,85 @@ class AdminController extends Controller
 
     /**
      * Setujui dan terbitkan kajian ke publik.
+     * Beroperasi LANGSUNG ke Supabase by id mentah (audit 2026-10-21, H6):
+     * route-model binding ke SQLite lokal per-instance membuat moderasi
+     * 404/mutasi baris basi secara acak antar instance Vercel.
      */
-    public function verify(Kajian $kajian): RedirectResponse
+    public function verify($kajian): RedirectResponse
     {
         $this->ensureAdmin();
+        $id = (int) $kajian;
 
-        $kajian->verified = true;
-        $kajian->status = 'aktif';
-        $kajian->save();
-
-        // Sinkronisasi status terverifikasi ke Supabase jika aktif
         $supabaseUrl = config('services.supabase.url');
         $supabaseKey = config('services.supabase.service_key');
         if ($supabaseUrl && $supabaseKey) {
             try {
-                Http::withHeaders([
+                $res = Http::withHeaders([
                     'apikey' => $supabaseKey,
                     'Authorization' => "Bearer {$supabaseKey}",
                     'Content-Type' => 'application/json',
-                ])->patch("{$supabaseUrl}/rest/v1/kajian?id=eq.{$kajian->id}", [
+                    'Prefer' => 'return=representation',
+                ])->timeout(10)->patch("{$supabaseUrl}/rest/v1/kajian?id=eq.{$id}", [
                     'verified' => true,
                     'status' => 'aktif',
                 ]);
+                if (!$res->successful() || empty($res->json())) {
+                    return back()->with('error', 'Kajian tidak ditemukan di database utama.');
+                }
+                $title = $res->json()[0]['title'] ?? "#{$id}";
             } catch (\Throwable $e) {
-                Log::warning('Supabase verify sync error: ' . $e->getMessage());
+                Log::warning('Supabase verify error: ' . $e->getMessage());
+                return back()->with('error', 'Gagal menghubungi database utama, coba lagi.');
             }
+            return back()->with('success', "Kajian '{$title}' berhasil diverifikasi dan aktif di feed publik.");
         }
 
-        return back()->with('success', "Kajian '{$kajian->title}' berhasil diverifikasi dan aktif di feed publik.");
+        // Fallback SQLite lokal (dev saja)
+        $local = Kajian::find($id);
+        if (!$local) {
+            return back()->with('error', 'Kajian tidak ditemukan.');
+        }
+        $local->verified = true;
+        $local->status = 'aktif';
+        $local->save();
+        return back()->with('success', "Kajian '{$local->title}' berhasil diverifikasi dan aktif di feed publik.");
     }
 
     /**
-     * Hapus kajian yang tidak valid / spam.
+     * Hapus kajian yang tidak valid / spam — langsung dari Supabase.
      */
-    public function destroy(Kajian $kajian): RedirectResponse
+    public function destroy($kajian): RedirectResponse
     {
         $this->ensureAdmin();
+        $id = (int) $kajian;
 
-        $title = $kajian->title;
-        $id = $kajian->id;
-        $kajian->delete();
-
-        // Hapus dari Supabase jika aktif
         $supabaseUrl = config('services.supabase.url');
         $supabaseKey = config('services.supabase.service_key');
         if ($supabaseUrl && $supabaseKey) {
             try {
-                Http::withHeaders([
+                $res = Http::withHeaders([
                     'apikey' => $supabaseKey,
                     'Authorization' => "Bearer {$supabaseKey}",
-                ])->delete("{$supabaseUrl}/rest/v1/kajian?id=eq.{$id}");
+                    'Prefer' => 'return=representation',
+                ])->timeout(10)->delete("{$supabaseUrl}/rest/v1/kajian?id=eq.{$id}");
+                if (!$res->successful() || empty($res->json())) {
+                    return back()->with('error', 'Kajian tidak ditemukan di database utama.');
+                }
+                $title = $res->json()[0]['title'] ?? "#{$id}";
             } catch (\Throwable $e) {
-                Log::warning('Supabase delete sync error: ' . $e->getMessage());
+                Log::warning('Supabase delete error: ' . $e->getMessage());
+                return back()->with('error', 'Gagal menghubungi database utama, coba lagi.');
             }
+            return back()->with('success', "Kajian '{$title}' telah dihapus.");
         }
 
+        // Fallback SQLite lokal (dev saja)
+        $local = Kajian::find($id);
+        if (!$local) {
+            return back()->with('error', 'Kajian tidak ditemukan.');
+        }
+        $title = $local->title;
+        $local->delete();
         return back()->with('success', "Kajian '{$title}' telah dihapus.");
     }
 }

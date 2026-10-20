@@ -159,13 +159,16 @@ class AuthController extends Controller
         }
 
         $plainToken = \Illuminate\Support\Str::random(60);
+        $hashedToken = \Illuminate\Support\Facades\Hash::make($plainToken);
         \Illuminate\Support\Facades\DB::table('password_reset_tokens')->updateOrInsert(
             ['email' => $email],
             [
-                'token' => \Illuminate\Support\Facades\Hash::make($plainToken),
+                'token' => $hashedToken,
                 'created_at' => now(),
             ]
         );
+        // Simpan juga terpusat di Supabase agar tautan valid di instance mana pun
+        (new \App\Services\SupabaseUserService())->putResetToken($email, $hashedToken);
 
         try {
             $user->sendPasswordResetNotification($plainToken);
@@ -221,6 +224,15 @@ class AuthController extends Controller
             ->whereRaw('LOWER(email) = ?', [$email])
             ->first();
 
+        // Fallback terpusat: token mungkin dibuat instance Vercel lain
+        $sbSvc = new \App\Services\SupabaseUserService();
+        if (!$record) {
+            $sbRecord = $sbSvc->getResetToken($email);
+            if ($sbRecord) {
+                $record = (object) $sbRecord;
+            }
+        }
+
         if (!$record || !\Illuminate\Support\Facades\Hash::check($request->token, $record->token)) {
             return back()->withErrors(['email' => 'Token reset kata sandi tidak valid atau telah kadaluarsa.']);
         }
@@ -228,6 +240,7 @@ class AuthController extends Controller
         $createdAt = \Carbon\Carbon::parse($record->created_at);
         if ($createdAt->addMinutes(60)->isPast()) {
             \Illuminate\Support\Facades\DB::table('password_reset_tokens')->whereRaw('LOWER(email) = ?', [$email])->delete();
+            $sbSvc->deleteResetToken($email);
             return back()->withErrors(['email' => 'Token reset kata sandi telah kadaluarsa. Silakan ajukan ulang.']);
         }
 
@@ -235,13 +248,13 @@ class AuthController extends Controller
         if ($user) {
             $user->password = \Illuminate\Support\Facades\Hash::make($request->password);
             $user->save();
-
-            // Sinkronisasi ke Supabase jika aktif
-            $svc = new \App\Services\SupabaseUserService();
-            $svc->updatePassword($email, $request->password);
         }
+        // Sandi WAJIB diperbarui di Supabase (sumber kebenaran) walau baris
+        // lokal instance ini tidak punya user-nya.
+        $sbSvc->updatePassword($email, $request->password);
 
         \Illuminate\Support\Facades\DB::table('password_reset_tokens')->whereRaw('LOWER(email) = ?', [$email])->delete();
+        $sbSvc->deleteResetToken($email);
 
         return redirect()->route('login')->with('status', 'Kata sandi Anda berhasil diperbarui. Silakan masuk.');
     }

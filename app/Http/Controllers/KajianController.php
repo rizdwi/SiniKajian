@@ -44,7 +44,7 @@ class KajianController extends Controller
         $categories = $service->getCategories();
 
         // JSON untuk peta (semua, tanpa filter/pagination) — dari hasil yang sama, tanpa API call ke-2
-        $mapJson = $collection->toJson();
+        $mapJson = $collection->toJson(JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 
         // Filter
         if ($request->filled('kategori') && $request->kategori !== 'Semua') {
@@ -92,6 +92,8 @@ class KajianController extends Controller
             'allKajiansJson' => $mapJson,
             'categories' => $categories,
             'userBookmarks' => $userBookmarks,
+            // Bedakan "gagal memuat" dari "memang kosong" (FE-H6)
+            'kajianLoadError' => $service->lastFetchFailed && $collection->isEmpty(),
         ]);
     }
 
@@ -159,7 +161,7 @@ class KajianController extends Controller
             ->select(['id', 'title', 'ustadz', 'day', 'time', 'masjid', 'address', 'lat', 'lon', 'category', 'audience', 'poster_url', 'event_datetime', 'source', 'source_url', 'description', 'is_rutin'])
             ->orderBy('event_datetime', 'asc')
             ->get();
-        $mapJson = $mapKajians->toJson();
+        $mapJson = $mapKajians->toJson(JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 
         $userBookmarks = [];
         if (Auth::check()) {
@@ -304,7 +306,7 @@ class KajianController extends Controller
         return view('kajian.map', [
             'events' => $kajians,
             'kajians' => $kajians,
-            'allKajiansJson' => $kajians->toJson(),
+            'allKajiansJson' => $kajians->toJson(JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT),
         ]);
     }
 
@@ -591,9 +593,8 @@ class KajianController extends Controller
                     'apikey' => $supabaseKey,
                     'Authorization' => "Bearer {$supabaseKey}",
                     'Content-Type' => 'application/json',
-                    'Prefer' => 'resolution=merge-duplicates',
+                    'Prefer' => 'return=minimal',
                 ])->timeout(5)->post("{$supabaseUrl}/rest/v1/kajian", [
-                    'id' => $kajian->id,
                     'title' => $kajian->title,
                     'ustadz' => $kajian->ustadz,
                     'category' => $kajian->category,
@@ -690,7 +691,7 @@ class KajianController extends Controller
                     }
                     $saved = false;
                 } else {
-                    $ins = \Illuminate\Support\Facades\Http::withHeaders(array_merge($headers, ['Prefer' => 'return=minimal', 'Content-Type' => 'application/json']))
+                    $ins = \Illuminate\Support\Facades\Http::withHeaders(array_merge($headers, ['Prefer' => 'resolution=ignore-duplicates, return=minimal', 'Content-Type' => 'application/json']))
                         ->timeout(10)
                         ->post("{$supabaseUrl}/rest/v1/bookmarks", [
                             'user_id' => $userId,
@@ -1026,12 +1027,12 @@ class KajianController extends Controller
                             'masjid' => $masjid,
                         ]);
                 } else {
+                    // Filter WAJIB di query string: body DELETE diabaikan
+                    // PostgREST → tanpa ini, unfollow menghapus SELURUH
+                    // baris majelis_follows (bug C2, audit 2026-10-21).
                     \Illuminate\Support\Facades\Http::withHeaders($headers)
                         ->timeout(6)
-                        ->delete("{$supabaseUrl}/rest/v1/majelis_follows", [
-                            'user_id' => "eq.{$userId}",
-                            'masjid' => "eq.{$masjid}",
-                        ]);
+                        ->delete("{$supabaseUrl}/rest/v1/majelis_follows?user_id=eq.{$userId}&masjid=eq." . urlencode($masjid));
                 }
             } catch (\Exception $e) {
                 \Log::warning('Supabase follow majelis gagal: ' . $e->getMessage());

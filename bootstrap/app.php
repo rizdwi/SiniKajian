@@ -32,7 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null;
             }
 
-            if ($request->has('debug') || env('APP_DEBUG', false)) {
+            if (env('APP_DEBUG', false) && env('APP_ENV') !== 'production') {
                 return response(
                     "<h1>SiniKajian Debug</h1><p><strong>" . get_class($e) . ":</strong> " . e($e->getMessage()) . "</p><pre>" . e($e->getFile() . ':' . $e->getLine()) . "\n\n" . e($e->getTraceAsString()) . "</pre>",
                     500

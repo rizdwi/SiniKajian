@@ -329,11 +329,10 @@
         const a = e.target.closest('a[href]');
         if (a) prefetch(a.getAttribute('href'));
       });
-      window.addEventListener('load', () => {
-        setTimeout(() => {
-          document.querySelectorAll('nav a[href]').forEach((a) => prefetch(a.getAttribute('href')));
-        }, 1500);
-      });
+      // AUDIT 2026-10-21 (FE-H4): prefetch massal semua tujuan nav 1,5 dtk
+      // setelah SETIAP load dihapus — membakar ratusan KB kuota per halaman
+      // untuk halaman yang mungkin tak pernah dibuka. Prefetch kini hanya
+      // dari niat nyata user (sentuh/hover tautan) di atas.
     })();
   </script>
   @stack('scripts')

@@ -90,8 +90,13 @@ class SupabaseUserService
                 return $rows[0];
             }
 
-            // Buat baru
-            $res = Http::withHeaders($this->headers())
+            // Buat baru via upsert (merge-duplicates di kolom email) +
+            // return=representation: menutup celah balapan check-then-insert
+            // dan menghilangkan GET kedua (audit 2026-10-21, M3). Keamanan
+            // penuhnya ditopang unique index email di SQL pendamping.
+            $res = Http::withHeaders(array_merge($this->headers(), [
+                    'Prefer' => 'resolution=merge-duplicates, return=representation',
+                ]))
                 ->timeout(10)
                 ->post("{$this->url}/rest/v1/app_users", [
                     'name' => $data['name'],
@@ -103,13 +108,6 @@ class SupabaseUserService
                 ]);
 
             if ($res->successful()) {
-                // Ambil yang baru dibuat
-                $res = Http::withHeaders($this->headers())
-                    ->timeout(10)
-                    ->get("{$this->url}/rest/v1/app_users", [
-                        'email' => 'eq.' . $data['email'],
-                        'select' => '*',
-                    ]);
                 $rows = $res->json();
                 return $rows[0] ?? null;
             }
@@ -201,7 +199,7 @@ class SupabaseUserService
             $res = Http::withHeaders($this->headers())
                 ->timeout(10)
                 ->get("{$this->url}/rest/v1/app_users", [
-                    'email' => 'ilike.' . $cleanEmail,
+                    'email' => 'eq.' . $cleanEmail,
                     'select' => '*',
                 ]);
 
@@ -241,11 +239,12 @@ class SupabaseUserService
         if (!$this->enabled()) return false;
 
         try {
+            // PENTING: filter WAJIB di query string URL. Filter yang dikirim
+            // sebagai body DELETE diabaikan PostgREST → DELETE tanpa filter
+            // akan menghapus SELURUH tabel (bug C2, audit 2026-10-21).
             $res = Http::withHeaders($this->headers())
                 ->timeout(10)
-                ->delete("{$this->url}/rest/v1/push_subscriptions", [
-                    'endpoint' => 'eq.' . $endpoint,
-                ]);
+                ->delete("{$this->url}/rest/v1/push_subscriptions?endpoint=eq." . urlencode($endpoint));
 
             return $res->successful();
         } catch (\Exception $e) {
@@ -255,9 +254,11 @@ class SupabaseUserService
     }
 
     /**
-     * Ambil semua push subscriptions.
+     * Ambil push subscriptions dengan pagination eksplisit.
+     * PostgREST membatasi diam-diam di 1000 baris — limit/offset harus
+     * dinyatakan agar broadcast besar tidak kehilangan ekor daftarnya.
      */
-    public function getPushSubscriptions(): array
+    public function getPushSubscriptions(int $limit = 1000, int $offset = 0): array
     {
         if (!$this->enabled()) return [];
 
@@ -266,12 +267,72 @@ class SupabaseUserService
                 ->timeout(15)
                 ->get("{$this->url}/rest/v1/push_subscriptions", [
                     'select' => 'endpoint,p256dh,auth,user_id',
+                    'order' => 'id.asc',
+                    'limit' => $limit,
+                    'offset' => $offset,
                 ]);
 
             return $res->json() ?? [];
         } catch (\Exception $e) {
             Log::warning('Supabase getPushSubscriptions gagal: ' . $e->getMessage());
             return [];
+        }
+    }
+
+    /**
+     * Token reset sandi di Supabase (audit 2026-10-21, M1).
+     * Tabel lokal SQLite per-instance membuat tautan reset sering
+     * "tidak valid" secara acak antar instance Vercel; token kini
+     * disimpan terpusat. Butuh tabel password_reset_tokens di Supabase
+     * (SQL pendamping); bila tabel belum ada, semua method ini gagal
+     * senyap dan alur lokal lama tetap berjalan sebagai fallback.
+     */
+    public function putResetToken(string $email, string $hashedToken): void
+    {
+        if (!$this->enabled()) return;
+        try {
+            Http::withHeaders(array_merge($this->headers(), [
+                    'Prefer' => 'resolution=merge-duplicates',
+                ]))
+                ->timeout(10)
+                ->post("{$this->url}/rest/v1/password_reset_tokens", [
+                    'email' => strtolower(trim($email)),
+                    'token' => $hashedToken,
+                    'created_at' => now()->toIso8601String(),
+                ]);
+        } catch (\Exception $e) {
+            Log::warning('Supabase putResetToken gagal: ' . $e->getMessage());
+        }
+    }
+
+    public function getResetToken(string $email): ?array
+    {
+        if (!$this->enabled()) return null;
+        try {
+            $res = Http::withHeaders($this->headers())
+                ->timeout(10)
+                ->get("{$this->url}/rest/v1/password_reset_tokens", [
+                    'email' => 'eq.' . strtolower(trim($email)),
+                    'select' => 'token,created_at',
+                ]);
+            if (!$res->successful()) return null;
+            $rows = $res->json();
+            return $rows[0] ?? null;
+        } catch (\Exception $e) {
+            Log::warning('Supabase getResetToken gagal: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    public function deleteResetToken(string $email): void
+    {
+        if (!$this->enabled()) return;
+        try {
+            Http::withHeaders($this->headers())
+                ->timeout(10)
+                ->delete("{$this->url}/rest/v1/password_reset_tokens?email=eq." . urlencode(strtolower(trim($email))));
+        } catch (\Exception $e) {
+            Log::warning('Supabase deleteResetToken gagal: ' . $e->getMessage());
         }
     }
 

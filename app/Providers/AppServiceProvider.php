@@ -26,6 +26,12 @@ class AppServiceProvider extends ServiceProvider
     {
         \Carbon\Carbon::setLocale('id');
 
+        // Cache store bersama via Supabase (audit 2026-10-21, H3) — membuat
+        // Cache::remember & RateLimiter berlaku lintas instance Vercel.
+        \Illuminate\Support\Facades\Cache::extend('supabase', function ($app, array $config) {
+            return new \App\Cache\SupabaseStore();
+        });
+
         // Simpan identitas login di sesi (driver cookie) agar sesi tetap
         // dikenali di SEMUA instance Vercel. Tanpa ini, Auth hanya membawa
         // ID baris SQLite lokal — dan tiap instance punya salinan SQLite

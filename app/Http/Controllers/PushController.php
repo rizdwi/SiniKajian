@@ -104,27 +104,36 @@ class PushController extends Controller
             }
         }
 
+        // Chunking (audit 2026-10-21, H4): broadcast besar tidak boleh
+        // mengandalkan satu request sampai timeout. Pemanggil dapat
+        // mengirim offset+chunk; respons membawa next_offset untuk
+        // dilanjutkan pemanggil sampai null. Tanpa parameter, perilaku
+        // lama dipertahankan (semua target dalam satu panggilan).
+        $totalTargets = count($subs);
+        $offset = max(0, (int) $request->input('offset', 0));
+        $chunk = $request->has('chunk') ? min(100, max(1, (int) $request->input('chunk'))) : 1000;
+        $subs = array_slice($subs, $offset, $chunk);
+        $nextOffset = ($offset + count($subs)) < $totalTargets ? $offset + count($subs) : null;
+
         $sent = 0;
         $failed = 0;
-        $debug = [];
         foreach ($subs as $sub) {
             try {
                 $result = $this->sendWebPush($sub, $request->only(['title', 'body', 'url']));
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::warning('PushController send error: ' . $e->getMessage());
                 $result = false;
-                $debug[] = 'exception: ' . $e->getMessage();
             }
             if ($result === true) {
                 $sent++;
             } else {
                 $failed++;
-                $stageInfo = '';
                 if ($this->lastPushService) {
-                    $stageInfo = ' stage=' . ($this->lastPushService->lastStage ?? '-')
-                        . ' err=' . substr((string) ($this->lastPushService->lastError ?? ''), 0, 700);
+                    \Illuminate\Support\Facades\Log::warning('PushController send gagal: stage='
+                        . ($this->lastPushService->lastStage ?? '-')
+                        . ' err=' . substr((string) ($this->lastPushService->lastError ?? ''), 0, 300)
+                        . ' endpoint=' . substr($sub['endpoint'] ?? '', 0, 40));
                 }
-                $debug[] = 'result=' . var_export($result, true) . $stageInfo . ' endpoint=' . substr($sub['endpoint'] ?? '', 0, 40);
                 // Hapus subscription HANYA bila server push menyatakan gone/invalid (410/404).
                 // Jangan hapus pada error jaringan sementara agar subscription valid tidak hilang.
                 if ($result === 410 || $result === 404) {
@@ -133,14 +142,7 @@ class PushController extends Controller
             }
         }
 
-        $response = ['sent' => $sent, 'failed' => $failed, 'total' => count($subs)];
-        if ($request->input('debug')) {
-            $response['debug'] = $debug;
-            $response['vapid_configured'] = !empty(config('services.vapid.public_key')) && !empty(config('services.vapid.private_key'));
-            $response['vapid_pub_len'] = strlen((string) config('services.vapid.public_key'));
-            $response['vapid_priv_len'] = strlen((string) config('services.vapid.private_key'));
-        }
-        return response()->json($response);
+        return response()->json(['sent' => $sent, 'failed' => $failed, 'total' => count($subs), 'total_targets' => $totalTargets, 'next_offset' => $nextOffset]);
     }
 
     /**

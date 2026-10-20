@@ -41,35 +41,55 @@ class SupabaseKajianService
     }
 
     /**
+     * True bila pengambilan terakhir ke Supabase GAGAL (dibedakan dari
+     * "sukses tapi memang kosong") — audit 2026-10-21, FE-H6. Kegagalan
+     * TIDAK PERNAH masuk cache; sebagai gantinya salinan basi terakhir
+     * (maks 24 jam) disajikan agar homepage tidak kosong senyap.
+     */
+    public bool $lastFetchFailed = false;
+
+    /**
      * Ambil semua kajian aktif dari Supabase (dengan cache 5 menit).
      */
     public function getActiveKajians(): array
     {
-        return Cache::remember('supabase_kajians_active', 300, function () {
-            try {
-                $res = Http::withHeaders($this->headers())
-                    ->timeout(15)
-                    ->get("{$this->url}/rest/v1/kajian", [
-                        'select' => 'id,title,ustadz,category,audience,masjid,address,lat,lon,day,time,description,verified,source,source_url,flyer_url,event_date,is_cancelled',
-                        'verified' => 'eq.true',
-                        'order' => 'event_date.asc.nullslast,id.desc',
-                        'limit' => 500,
-                    ]);
+        $cached = Cache::get('supabase_kajians_active');
+        if (is_array($cached)) {
+            $this->lastFetchFailed = false;
+            return $cached;
+        }
 
-                if ($res->successful()) {
-                    $rows = $res->json() ?? [];
-                    // Filter: hanya yang event_date >= hari ini atau null (rutin)
-                    $today = now('Asia/Jakarta')->toDateString();
-                    return array_values(array_filter($rows, function ($r) use ($today) {
-                        $ed = $r['event_date'] ?? null;
-                        return empty($ed) || $ed >= $today;
-                    }));
-                }
-            } catch (\Exception $e) {
-                Log::warning('SupabaseKajianService gagal: ' . $e->getMessage());
+        try {
+            $res = Http::withHeaders($this->headers())
+                ->timeout(15)
+                ->get("{$this->url}/rest/v1/kajian", [
+                    'select' => 'id,title,ustadz,category,audience,masjid,address,lat,lon,day,time,description,verified,source,source_url,flyer_url,event_date,is_cancelled',
+                    'verified' => 'eq.true',
+                    'order' => 'event_date.asc.nullslast,id.desc',
+                    'limit' => 500,
+                ]);
+
+            if ($res->successful()) {
+                $rows = $res->json() ?? [];
+                // Filter: hanya yang event_date >= hari ini atau null (rutin)
+                $today = now('Asia/Jakarta')->toDateString();
+                $active = array_values(array_filter($rows, function ($r) use ($today) {
+                    $ed = $r['event_date'] ?? null;
+                    return empty($ed) || $ed >= $today;
+                }));
+                Cache::put('supabase_kajians_active', $active, 300);
+                Cache::put('supabase_kajians_active_stale', $active, 86400);
+                $this->lastFetchFailed = false;
+                return $active;
             }
-            return [];
-        });
+            Log::warning('SupabaseKajianService HTTP ' . $res->status());
+        } catch (\Exception $e) {
+            Log::warning('SupabaseKajianService gagal: ' . $e->getMessage());
+        }
+
+        $this->lastFetchFailed = true;
+        $stale = Cache::get('supabase_kajians_active_stale');
+        return is_array($stale) ? $stale : [];
     }
 
     /**

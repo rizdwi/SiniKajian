@@ -1,5 +1,5 @@
-// SiniKajian Service Worker - Version 15.1 (Laravel PWA)
-const CACHE_NAME = 'sinikajian-v15.1';
+// SiniKajian Service Worker - Version 15.2 (Laravel PWA)
+const CACHE_NAME = 'sinikajian-v15.2';
 const PREFETCH_CACHE = 'sinikajian-prefetch-v1';
 const PREFETCH_TTL_MS = 15000;
 
@@ -101,7 +101,7 @@ self.addEventListener('fetch', (event) => {
         } catch (e) { /* abaikan, lanjut jaringan */ }
       }
       try {
-        const networkResponse = await fetch(event.request, { cache: 'no-store' });
+        const networkResponse = await fetch(event.request);
         if (networkResponse && networkResponse.status === 200) {
           const clone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -117,7 +117,33 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Static Assets: Stale-While-Revalidate
+  // 2a. API same-origin: JANGAN di-cache SW (audit 2026-10-21, FE-M1) —
+  //     data basi satu siklus pernah menghidupkan lagi kartu yang dihapus.
+  if (url.origin === self.location.origin && url.pathname.startsWith('/api/')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // 2b. Flyer Supabase Storage: network-first agar flyer yang disembuhkan
+  //     pipeline (URL sama) langsung tampil versi baru; cache = fallback offline.
+  if (url.hostname.endsWith('.supabase.co') && url.pathname.includes('/storage/v1/object/public/')) {
+    event.respondWith((async () => {
+      try {
+        const networkResponse = await fetch(event.request);
+        if (networkResponse && networkResponse.status === 200) {
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return networkResponse;
+      } catch (e) {
+        const cached = await caches.match(event.request);
+        return cached || new Response('', { status: 504 });
+      }
+    })());
+    return;
+  }
+
+  // 3. Static Assets: Stale-While-Revalidate
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       const fetchPromise = fetch(event.request).then((networkResponse) => {
@@ -166,11 +192,19 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const url = (event.notification.data && event.notification.data.url) || '/';
   event.waitUntil(
-    clients.matchAll({ type: 'window' }).then((clientList) => {
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      const target = new URL(url, self.location.origin);
       for (const client of clientList) {
-        if (client.url === url && 'focus' in client) return client.focus();
+        try {
+          if (new URL(client.url).pathname === target.pathname && 'focus' in client) {
+            if ('navigate' in client && new URL(client.url).href !== target.href) {
+              client.navigate(target.href).catch(() => {});
+            }
+            return client.focus();
+          }
+        } catch (e) { /* abaikan klien aneh */ }
       }
-      if (clients.openWindow) return clients.openWindow(url);
+      if (clients.openWindow) return clients.openWindow(target.href);
     })
   );
 });

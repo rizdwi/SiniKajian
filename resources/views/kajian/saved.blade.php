@@ -335,6 +335,17 @@
     }
   }
 
+  // Escape & URL-aman untuk field DB sebelum innerHTML (audit 2026-10-21, FE-H1)
+  function escapeHtml(str) {
+    return String(str ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+  function safeUrl(url) {
+    try {
+      const u = new URL(String(url || ''), window.location.origin);
+      return (u.protocol === 'http:' || u.protocol === 'https:') ? u.href : '';
+    } catch (e) { return ''; }
+  }
+
   // Hydrate client-side bookmarks HANYA untuk tamu (belum login). Untuk user
   // login, server adalah sumber kebenaran: localStorage ditimpa dari server
   // dan daftar lokal tidak pernah dipakai menambal tampilan (sumber phantom).
@@ -360,39 +371,42 @@
                 if (emptyState) emptyState.remove();
                 matched.forEach(item => {
                   const card = document.createElement('div');
+                  const posterUrl = safeUrl(item.poster_url);
+                  const itemLat = parseFloat(item.lat);
+                  const itemLon = parseFloat(item.lon);
                   card.className = "saved-kajian-card bg-white rounded-3xl p-4 shadow-xs border border-[#E5ECEB] flex flex-col justify-between transition-all hover:border-[#1D4D4F]/30";
                   card.innerHTML = `
                     <div class="flex items-start justify-between gap-3">
-                      ${item.poster_url ? `
+                      ${posterUrl ? `
                         <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden shrink-0 bg-[#F8FAF9] border border-[#E5ECEB] shadow-2xs">
-                          <img src="${item.poster_url}" alt="Flyer" class="w-full h-full object-cover" loading="lazy">
+                          <img src="${posterUrl}" alt="Flyer" class="w-full h-full object-cover" loading="lazy">
                         </div>
                       ` : ''}
                       <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-1.5 mb-1 flex-wrap">
                           <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#E6F4F1] text-[#1D4D4F]">
-                            ${item.category || 'Kajian'}
+                            ${escapeHtml(item.category || 'Kajian')}
                           </span>
                           <span class="text-[11px] font-semibold text-[#607072]">
-                            ${item.day || ''} ${item.time ? '• ' + item.time : ''}
+                            ${escapeHtml(item.day || '')} ${item.time ? '• ' + escapeHtml(item.time) : ''}
                           </span>
                         </div>
-                        <h3 class="text-sm font-extrabold text-[#1C2224] leading-snug line-clamp-2">${item.title}</h3>
+                        <h3 class="text-sm font-extrabold text-[#1C2224] leading-snug line-clamp-2">${escapeHtml(item.title)}</h3>
                         <p class="text-xs font-medium text-[#607072] mt-1 flex items-center gap-1.5 truncate">
                           <svg class="w-3.5 h-3.5 text-[#1D4D4F] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                          ${item.ustadz || ''}
+                          ${escapeHtml(item.ustadz || '')}
                         </p>
                         <p class="text-[11px] text-[#607072] mt-0.5 flex items-center gap-1.5 truncate">
                           <svg class="w-3.5 h-3.5 text-[#607072] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
-                          ${item.masjid || ''}
+                          ${escapeHtml(item.masjid || '')}
                         </p>
                       </div>
-                      <button onclick="removeLocalCard(${item.id}, this)" title="Hapus dari tersimpan" class="p-2 rounded-2xl bg-[#E6F4F1] text-[#1D4D4F] hover:bg-[#d6ece7] transition">
+                      <button onclick="removeLocalCard(${Number(item.id)}, this)" title="Hapus dari tersimpan" class="p-2 rounded-2xl bg-[#E6F4F1] text-[#1D4D4F] hover:bg-[#d6ece7] transition">
                         <svg class="w-4 h-4 fill-[#1D4D4F]" viewBox="0 0 24 24"><path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
                       </button>
                     </div>
                     <div class="mt-3 pt-3 border-t border-[#E5ECEB] flex items-center justify-between gap-2">
-                      <a href="https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lon}" target="_blank" rel="noopener" class="text-xs font-bold text-[#1D4D4F] hover:underline flex items-center gap-1">
+                      <a href="https://www.google.com/maps/dir/?api=1&destination=${isNaN(itemLat) ? 0 : itemLat},${isNaN(itemLon) ? 0 : itemLon}" target="_blank" rel="noopener" class="text-xs font-bold text-[#1D4D4F] hover:underline flex items-center gap-1">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
                         Petunjuk Arah ↗
                       </a>

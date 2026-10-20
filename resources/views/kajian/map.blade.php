@@ -119,8 +119,28 @@
   const rawEvents = @json($events);
   let currentActiveView = 'map';
 
+  // Escape & URL-aman untuk semua field dari DB sebelum masuk innerHTML
+  // (audit 2026-10-21, FE-H1: data berasal dari OCR flyer publik).
+  function escapeHtml(str) {
+    return String(str ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+  function safeUrl(url) {
+    try {
+      const u = new URL(String(url || ''), window.location.origin);
+      return (u.protocol === 'http:' || u.protocol === 'https:') ? u.href : '';
+    } catch (e) { return ''; }
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
-    initMapbox();
+    // Guard Mapbox (audit 2026-10-21, FE-H5): CDN/token gagal TIDAK BOLEH
+    // membunuh seluruh halaman — daftar kajian tetap dirender.
+    try {
+      initMapbox();
+    } catch (e) {
+      console.warn('Mapbox gagal dimuat:', e);
+      const mapEl = document.getElementById('fullMap');
+      if (mapEl) mapEl.innerHTML = '<div class="flex items-center justify-center h-full text-xs text-[#607072] p-4 text-center">Peta tidak dapat dimuat saat ini. Gunakan daftar kajian di bawah.</div>';
+    }
     renderListView(rawEvents);
     document.getElementById('mapSearchInput').addEventListener('input', (e) => {
       const q = e.target.value.toLowerCase();
@@ -153,6 +173,9 @@
   }
 
   function initMapbox() {
+    if (!window.mapboxgl) {
+      throw new Error('Mapbox GL tidak tersedia (CDN gagal/token kosong)');
+    }
     mapboxgl.accessToken = '{{ config('services.mapbox.token') }}';
 
     let centerLat = -6.8851;
@@ -266,9 +289,10 @@
     container.innerHTML = '';
     processed.forEach(item => {
       const distStr = item.distance > 0 ? (item.distance < 1 ? Math.round(item.distance * 1000) + ' m' : item.distance.toFixed(1) + ' km') : 'Terdekat';
-      const flyer = item.poster_url 
+      const posterUrl = safeUrl(item.poster_url);
+      const flyer = posterUrl
         ? `<div class="w-14 h-14 rounded-2xl overflow-hidden shrink-0 bg-slate-100 border border-[#E5ECEB]">
-             <img src="${item.poster_url}" alt="Foto" class="w-full h-full object-cover">
+             <img src="${posterUrl}" alt="Foto" loading="lazy" class="w-full h-full object-cover">
            </div>`
         : `<div class="w-14 h-14 rounded-2xl overflow-hidden shrink-0 bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center font-bold text-xs border border-[#E5ECEB]">
              <span>MASJID</span>
@@ -287,14 +311,14 @@
         ${flyer}
         <div class="flex-1 min-w-0">
           <div class="flex items-center justify-between gap-1 mb-0.5">
-            <span class="text-[9px] font-bold text-[#1D4D4F] bg-[#E6F4F1] px-2 py-0.5 rounded-full uppercase">${item.category || 'Sunnah'}</span>
+            <span class="text-[9px] font-bold text-[#1D4D4F] bg-[#E6F4F1] px-2 py-0.5 rounded-full uppercase">${escapeHtml(item.category || 'Sunnah')}</span>
             <span class="text-[10px] font-extrabold text-[#1D4D4F] bg-[#E6F4F1] px-2 py-0.5 rounded-full">${distStr}</span>
           </div>
-          <h3 class="text-xs sm:text-sm font-bold text-[#1C2224] truncate">${item.masjid}</h3>
-          <p class="text-[11px] text-[#607072] truncate mt-0.5">${item.address || 'Lokasi Kajian'}</p>
+          <h3 class="text-xs sm:text-sm font-bold text-[#1C2224] truncate">${escapeHtml(item.masjid)}</h3>
+          <p class="text-[11px] text-[#607072] truncate mt-0.5">${escapeHtml(item.address || 'Lokasi Kajian')}</p>
           <p class="text-[10px] text-[#1D4D4F] font-semibold mt-1 flex items-center gap-1">
             <svg class="w-3 h-3 text-[#1D4D4F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <span>${item.day}, ${item.time}</span>
+            <span>${escapeHtml(item.day)}, ${escapeHtml(item.time)}</span>
           </p>
         </div>
         <div class="self-center">
