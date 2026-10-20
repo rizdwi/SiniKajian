@@ -394,7 +394,7 @@ class AuthController extends Controller
         $topUstadz = [];
         try {
             $svc = new \App\Services\SupabaseKajianService();
-            if ($svc->enabled()) {
+            if ($svc->isConfigured()) {
                 $kajians = $svc->getActiveKajians();
                 $counts = [];
                 foreach ($kajians as $k) {
