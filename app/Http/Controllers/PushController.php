@@ -24,7 +24,10 @@ class PushController extends Controller
             return response()->json(['error' => 'Service unavailable'], 503);
         }
 
-        $userId = Auth::check() ? Auth::id() : null;
+        // ID app_users yang stabil via email (bukan Auth::id() SQLite yang
+        // berubah antar instance Vercel) agar subscription terhubung ke
+        // bookmark & follow user yang sama.
+        $userId = Auth::check() ? ($svc->currentAppUserId() ?? Auth::id()) : null;
 
         // Upsert ke Supabase push_subscriptions
         $svc->upsertPushSubscription([

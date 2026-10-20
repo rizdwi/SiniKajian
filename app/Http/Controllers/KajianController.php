@@ -84,7 +84,7 @@ class KajianController extends Controller
         if (Auth::check()) {
             // Wajib dari Supabase: SQLite Vercel ephemeral selalu kosong/stale,
             // sehingga status bookmark di feed selalu salah saat halaman dimuat.
-            $userBookmarks = $this->getUserBookmarkIds((int) Auth::id());
+            $userBookmarks = $this->getUserBookmarkIds($this->appUserId() ?? 0);
         }
 
         return view('kajian.index', [
@@ -209,7 +209,7 @@ class KajianController extends Controller
                             'apikey' => $supabaseKey,
                             'Authorization' => 'Bearer ' . $supabaseKey,
                         ])->timeout(5)->get("{$supabaseUrl}/rest/v1/bookmarks", [
-                            'user_id' => 'eq.' . Auth::id(),
+                            'user_id' => 'eq.' . ($this->appUserId() ?? 0),
                             'kajian_id' => 'eq.' . $kajian->id,
                             'select' => 'id',
                         ]);
@@ -327,8 +327,11 @@ class KajianController extends Controller
         $bookmarkedKajians = collect();
         $attendances = collect();
 
+        $savedKajianIds = [];
         if ($user) {
-            $bookmarkedKajians = $this->getUserBookmarks($user->id)
+            $allBookmarks = $this->getUserBookmarks($this->appUserId() ?? $user->id);
+            $savedKajianIds = $allBookmarks->pluck('id')->map(fn ($v) => (int) $v)->values()->all();
+            $bookmarkedKajians = $allBookmarks
                 ->filter(function ($k) use ($cutoff) {
                     return $k->is_rutin || $k->event_datetime >= $cutoff;
                 });
@@ -339,7 +342,34 @@ class KajianController extends Controller
             'savedKajians' => $bookmarkedKajians,
             'bookmarkedKajians' => $bookmarkedKajians,
             'attendances' => $attendances,
+            'savedKajianIds' => $savedKajianIds,
         ]);
+    }
+
+    /**
+     * ID user untuk SEMUA operasi tabel bersama Supabase (bookmark,
+     * follow, attendance): ID app_users yang stabil via email.
+     * Fallback ke Auth::id() HANYA bila Supabase nonaktif/gagal —
+     * lihat SupabaseUserService::currentAppUserId() untuk alasannya
+     * (Auth::id() tidak stabil antar instance Vercel).
+     */
+    private function appUserId(): ?int
+    {
+        if (!Auth::check()) {
+            return null;
+        }
+        try {
+            $svc = new \App\Services\SupabaseUserService();
+            if ($svc->enabled()) {
+                $id = $svc->currentAppUserId();
+                if ($id) {
+                    return $id;
+                }
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Resolve app user id gagal: ' . $e->getMessage());
+        }
+        return (int) Auth::id();
     }
 
     /**
@@ -534,7 +564,7 @@ class KajianController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Kajian tidak ditemukan.'], 404);
         }
 
-        $userId = Auth::id();
+        $userId = $this->appUserId();
         $saved = false;
         $supabaseDone = false;
 
@@ -643,58 +673,24 @@ class KajianController extends Controller
      */
     public function syncBookmarks(Request $request): JsonResponse
     {
+        // OTORITATIF SERVER: endpoint ini TIDAK LAGI memasukkan bookmark
+        // dari daftar ID kiriman klien. Pola lama (localStorage -> server)
+        // mengubah bookmark hantu di HP menjadi data server beneran dan
+        // membuat angka profil phantom. Kini endpoint hanya mengembalikan
+        // daftar bookmark user dari Supabase agar klien menyelaraskan
+        // localStorage-nya KE server.
         if (!Auth::check()) {
-            return response()->json(['status' => 'unauthenticated', 'synced' => 0], 401);
+            return response()->json(['status' => 'unauthenticated', 'synced' => 0, 'ids' => []], 401);
         }
 
-        $userId = Auth::id();
-        $ids = $request->input('ids', []);
-        if (!is_array($ids) || empty($ids)) {
-            return response()->json(['status' => 'empty', 'synced' => 0]);
-        }
-
-        $cleanIds = array_filter(array_map('intval', $ids), fn($v) => $v > 0);
-        $validKajianIds = Kajian::whereIn('id', $cleanIds)->pluck('id')->toArray();
-        $synced = 0;
-
-        $supabaseUrl = config('services.supabase.url');
-        $supabaseKey = config('services.supabase.service_key');
-        $hasSupabase = !empty($supabaseUrl) && !empty($supabaseKey);
-
-        foreach ($validKajianIds as $kajianId) {
-            $exists = Bookmark::where('user_id', $userId)
-                ->where('kajian_id', $kajianId)
-                ->exists();
-
-            if (!$exists) {
-                Bookmark::create([
-                    'user_id' => $userId,
-                    'kajian_id' => $kajianId,
-                ]);
-                $synced++;
-
-                if ($hasSupabase) {
-                    try {
-                        \Illuminate\Support\Facades\Http::withHeaders([
-                            'apikey' => $supabaseKey,
-                            'Authorization' => 'Bearer ' . $supabaseKey,
-                            'Prefer' => 'return=minimal',
-                            'Content-Type' => 'application/json',
-                        ])->timeout(5)->post("{$supabaseUrl}/rest/v1/bookmarks", [
-                            'user_id' => $userId,
-                            'kajian_id' => $kajianId,
-                        ]);
-                    } catch (\Exception $e) {
-                        // ignore
-                    }
-                }
-            }
-        }
+        $userId = $this->appUserId();
+        $ids = $userId ? $this->getUserBookmarkIds($userId) : [];
 
         return response()->json([
             'status' => 'success',
-            'synced' => $synced,
-            'total' => Bookmark::where('user_id', $userId)->count(),
+            'synced' => 0,
+            'ids' => $ids,
+            'total' => count($ids),
         ]);
     }
 
@@ -725,7 +721,7 @@ class KajianController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Kajian tidak ditemukan.'], 404);
         }
 
-        $userId = Auth::id();
+        $userId = $this->appUserId();
         $today = now()->toDateString();
 
         $supabaseUrl = config('services.supabase.url');
@@ -825,7 +821,7 @@ class KajianController extends Controller
             return response()->json(['error' => 'Nama majelis/masjid diperlukan.'], 422);
         }
 
-        $userId = Auth::id();
+        $userId = $this->appUserId();
         $sessionToken = $request->session()->getId();
         $followed = false;
 

@@ -645,12 +645,19 @@
   // Seluruh database kajian dari controller Laravel 13
   const rawKajians = {!! $allKajiansJson !!};
   const userBookmarkIds = new Set(@json($userBookmarks));
-  // Sinkronkan bookmark dari localStorage
+  // Server = sumber kebenaran untuk user login: localStorage MENIRU server.
+  // Menggabungkan localStorage ke set server (pola lama) menghidupkan lagi
+  // bookmark hantu dari ketukan lama yang gagal tersimpan. Untuk tamu
+  // (belum login), bookmark memang hanya lokal sehingga tetap digabungkan.
   try {
+    @auth
+    localStorage.setItem('sinikajian_bookmarks', JSON.stringify(Array.from(userBookmarkIds)));
+    @else
     const localSaved = JSON.parse(localStorage.getItem('sinikajian_bookmarks') || '[]');
     if (Array.isArray(localSaved)) {
       localSaved.forEach(id => userBookmarkIds.add(Number(id)));
     }
+    @endauth
   } catch(e) {}
   const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 

@@ -171,10 +171,17 @@
     }
   }
 
-  // Hydrate client-side bookmarks jika pengguna belum login atau bookmark lokal belum di server
+  // Hydrate client-side bookmarks HANYA untuk tamu (belum login). Untuk user
+  // login, server adalah sumber kebenaran: localStorage ditimpa dari server
+  // dan daftar lokal tidak pernah dipakai menambal tampilan (sumber phantom).
   document.addEventListener('DOMContentLoaded', () => {
     try {
+      @auth
+      localStorage.setItem('sinikajian_bookmarks', JSON.stringify(@json($savedKajianIds ?? [])));
+      const savedIds = @json($savedKajianIds ?? []);
+      @else
       const savedIds = JSON.parse(localStorage.getItem('sinikajian_bookmarks') || '[]');
+      @endauth
       const tabBook = document.getElementById('tabBookmarks');
       const emptyState = document.getElementById('savedEmptyState');
       const serverCount = {{ count($savedKajians) }};
@@ -236,20 +243,6 @@
           });
       }
 
-      // Auto-sync bookmarks lokal ke server database jika user sudah login
-      @auth
-      if (Array.isArray(savedIds) && savedIds.length > 0) {
-        fetch('/api/bookmarks/sync', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify({ ids: savedIds })
-        }).catch(() => {});
-      }
-      @endauth
     } catch(e) {}
   });
 </script>

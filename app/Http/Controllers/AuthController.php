@@ -376,11 +376,36 @@ class AuthController extends Controller
 
             $savedCount = $allBookmarks->count();
             $agendaCount = $attendances->count();
+            $savedKajianIds = $allBookmarks->pluck('id')->map(fn ($v) => (int) $v)->values()->all();
 
-            $dbFollowCount = \App\Models\MajelisFollow::where('user_id', $user->id)->count();
-            $sessionFollows = session()->get('followed_majelis', []);
-            $bmMajelisCount = $user->bookmarkedKajians()->distinct('masjid')->count('masjid');
-            $majelisCount = max($dbFollowCount, count($sessionFollows), $bmMajelisCount);
+            // Majelis diikuti: HANYA dari Supabase majelis_follows dengan ID
+            // app_users. Cara lama — max() dari SQLite lokal + session +
+            // bookmark lokal — menghasilkan angka phantom (data user/instance
+            // lain) dan sudah dilarang: satu sumber kebenaran saja.
+            $majelisCount = 0;
+            $followedMajelisNames = [];
+            if ($supabaseUserId) {
+                try {
+                    $sbUrl = config('services.supabase.url');
+                    $sbKey = config('services.supabase.service_key');
+                    if ($sbUrl && $sbKey) {
+                        $res = \Illuminate\Support\Facades\Http::withHeaders([
+                                'apikey' => $sbKey,
+                                'Authorization' => 'Bearer ' . $sbKey,
+                            ])
+                            ->timeout(10)
+                            ->get("{$sbUrl}/rest/v1/majelis_follows", [
+                                'user_id' => "eq.{$supabaseUserId}",
+                                'select' => 'masjid',
+                            ]);
+                        $rows = $res->json() ?? [];
+                        $followedMajelisNames = array_values(array_filter(array_column($rows, 'masjid')));
+                        $majelisCount = count($followedMajelisNames);
+                    }
+                } catch (\Throwable $e) {
+                    \Log::warning('Ambil majelis diikuti Supabase gagal: ' . $e->getMessage());
+                }
+            }
         } else {
             $bookmarkedKajians = collect();
             $attendances = collect();
@@ -388,6 +413,8 @@ class AuthController extends Controller
             $savedCount = 0;
             $agendaCount = 0;
             $majelisCount = 0;
+            $savedKajianIds = [];
+            $followedMajelisNames = [];
         }
 
         // Ustadz paling sering muncul (top 8 by jumlah kajian aktif)
@@ -417,6 +444,8 @@ class AuthController extends Controller
             'savedCount' => $savedCount,
             'agendaCount' => $agendaCount,
             'majelisCount' => $majelisCount,
+            'savedKajianIds' => $savedKajianIds,
+            'followedMajelisNames' => $followedMajelisNames,
             'topUstadz' => $topUstadz,
         ]);
     }

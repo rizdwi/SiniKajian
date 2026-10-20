@@ -27,6 +27,28 @@ class SupabaseUserService
         return !empty($this->url) && !empty($this->key);
     }
 
+    /**
+     * ID user yang STABIL untuk tabel bersama di Supabase (bookmarks,
+     * majelis_follows, push_subscriptions, attendances): ID baris
+     * app_users yang dicocokkan via EMAIL user yang sedang login.
+     *
+     * JANGAN pakai Auth::id() (ID SQLite lokal) untuk tabel Supabase:
+     * SQLite di Vercel ephemeral — instance dingin mewarisi file yang
+     * ter-commit dan menulis ID baru, sehingga user yang sama mendapat
+     * ID berbeda-beda antar instance (bookmark/follow/subscription
+     * tercerai ke banyak ID hantu: 195/216/241 untuk satu orang).
+     * Email adalah satu-satunya kunci yang stabil.
+     */
+    public function currentAppUserId(): ?int
+    {
+        $user = \Illuminate\Support\Facades\Auth::user();
+        if (!$user || empty($user->email)) {
+            return null;
+        }
+        $row = $this->findOrCreate(['name' => $user->name, 'email' => $user->email]);
+        return isset($row['id']) ? (int) $row['id'] : null;
+    }
+
     public function getSupabaseUrl(): ?string
     {
         return $this->url;
