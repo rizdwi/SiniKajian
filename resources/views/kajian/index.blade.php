@@ -1300,25 +1300,48 @@
         renderSpotlight(spotlightIdx);
       };
 
-      // Swipe support
+      // Swipe support dengan drag visual real-time (responsif mengikuti jari)
       const spotEl = heroSpotlight.querySelector('.relative');
       if (spotEl && !spotEl.dataset.swipeBound) {
         spotEl.dataset.swipeBound = '1';
-        let touchStartX = 0;
-        let touchStartY = 0;
+        spotEl.style.touchAction = 'pan-y';
+        let startX = 0, startY = 0, dragX = 0, dragging = false, locked = false;
+
         spotEl.addEventListener('touchstart', (e) => {
-          touchStartX = e.touches[0].clientX;
-          touchStartY = e.touches[0].clientY;
+          startX = e.touches[0].clientX;
+          startY = e.touches[0].clientY;
+          dragX = 0; dragging = true; locked = false;
           window.__spotlightJustSwiped = false;
+          spotEl.style.transition = 'none';
         }, { passive: true });
-        spotEl.addEventListener('touchend', (e) => {
-          const dx = e.changedTouches[0].clientX - touchStartX;
-          const dy = e.changedTouches[0].clientY - touchStartY;
-          // Hanya swipe horizontal yang dominan
-          if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+
+        spotEl.addEventListener('touchmove', (e) => {
+          if (!dragging) return;
+          const dx = e.touches[0].clientX - startX;
+          const dy = e.touches[0].clientY - startY;
+          // Kunci arah: hanya drag horizontal yang menggerakkan banner
+          if (!locked) {
+            if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+            locked = true;
+            if (Math.abs(dy) > Math.abs(dx)) { dragging = false; spotEl.style.transform = ''; return; }
+          }
+          dragX = dx;
+          // Ikuti jari dengan redaman di tepi (rubber band)
+          const damped = dx * 0.85;
+          spotEl.style.transform = `translateX(${damped}px)`;
+          spotEl.style.opacity = String(1 - Math.min(Math.abs(dx) / 600, 0.35));
+        }, { passive: true });
+
+        const endDrag = (e) => {
+          if (!dragging && !locked) return;
+          dragging = false;
+          const dx = dragX;
+          spotEl.style.transition = 'transform .28s cubic-bezier(.22,1,.36,1), opacity .28s';
+          spotEl.style.transform = '';
+          spotEl.style.opacity = '';
+          if (Math.abs(dx) > 45) {
             window.__spotlightJustSwiped = true;
             window.__spotlightGo(spotlightIdx + (dx < 0 ? 1 : -1));
-            // Reset auto-rotate agar tidak langsung loncat lagi
             if (window.__spotlightTimer) {
               clearInterval(window.__spotlightTimer);
               window.__spotlightTimer = setInterval(() => {
@@ -1326,7 +1349,10 @@
               }, 6000);
             }
           }
-        }, { passive: true });
+          dragX = 0;
+        };
+        spotEl.addEventListener('touchend', endDrag, { passive: true });
+        spotEl.addEventListener('touchcancel', endDrag, { passive: true });
       }
 
       // Auto-advance tiap 6 detik
