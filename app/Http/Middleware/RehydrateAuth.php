@@ -57,6 +57,40 @@ class RehydrateAuth
                     Log::warning('RehydrateAuth gagal: ' . $e->getMessage());
                 }
             }
+
+            // SESI ZOMBI (keluhan user 2026-10-20: "unsave -> reload ->
+            // tersimpan lagi terus begitu"): sesi dibuat SEBELUM perbaikan
+            // ini ada, jadi cookie hanya membawa kunci login standar
+            // (login_web_*) berisi ID user — tanpa auth_identity. Di
+            // instance dingin baris user itu tidak ada dan identitas tak
+            // bisa dipulihkan dari cookie lama, sehingga user terbaca
+            // tamu secara ACAK: halaman Tersimpan menampilkan kartu dari
+            // localStorage, unsave hanya menghapus lokal, reload berikut
+            // (instance hangat) menampilkan lagi baris server yang tak
+            // pernah terhapus. Obatnya: bersihkan sesi zombi SEKALI dan
+            // arahkan ke login; login berikutnya menanam auth_identity
+            // dan stabil permanen.
+            if (!Auth::check()) {
+                $guardKey = Auth::guard('web')->getName();
+                if ($guardKey && $request->session()->has($guardKey)) {
+                    try {
+                        Auth::logout();
+                    } catch (\Throwable $e) {
+                        // abaikan — sesi memang sudah tak konsisten
+                    }
+                    $request->session()->invalidate();
+                    $request->session()->regenerateToken();
+
+                    if ($request->expectsJson() || $request->ajax()) {
+                        return response()->json([
+                            'status' => 'auth_required',
+                            'message' => 'Sesi diperbarui, silakan masuk lagi.',
+                        ], 401);
+                    }
+                    return redirect()->route('login')
+                        ->with('error', 'Sesi Anda diperbarui. Silakan masuk lagi sekali saja — setelah itu semua tersimpan normal.');
+                }
+            }
         }
 
         return $next($request);

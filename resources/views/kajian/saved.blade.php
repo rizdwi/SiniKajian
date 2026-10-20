@@ -35,7 +35,7 @@
   <!-- Tab 1: Bookmarks -->
   <div id="tabBookmarks" class="space-y-3">
     @forelse($savedKajians as $item)
-      <div class="bg-white rounded-3xl p-4 shadow-xs border border-[#E5ECEB] flex flex-col justify-between transition-all hover:border-[#1D4D4F]/30">
+      <div class="saved-kajian-card bg-white rounded-3xl p-4 shadow-xs border border-[#E5ECEB] flex flex-col justify-between transition-all hover:border-[#1D4D4F]/30">
         <div class="flex items-start justify-between gap-3">
           @if($item->poster_url)
             <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden shrink-0 bg-[#F8FAF9] border border-[#E5ECEB] shadow-2xs">
@@ -67,13 +67,12 @@
             </p>
           </div>
 
-          <!-- Unbookmark Form -->
-          <form action="{{ route('kajian.bookmark', $item->id) }}" method="POST" onsubmit="removeBookmarkFromLocalStorage({{ $item->id }})">
-            @csrf
-            <button type="submit" title="Hapus dari tersimpan" class="p-2 rounded-2xl bg-[#E6F4F1] text-[#1D4D4F] hover:bg-[#d6ece7] transition">
-              <svg class="w-4 h-4 fill-[#1D4D4F]" viewBox="0 0 24 24"><path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
-            </button>
-          </form>
+          <!-- Unbookmark: AJAX tanpa reload (pola form lama memicu reload
+               penuh; bersama sesi zombi membuat unsave terasa tak pernah
+               tersimpan terhapus) -->
+          <button type="button" onclick="unsaveKajian({{ $item->id }}, this)" title="Hapus dari tersimpan" class="p-2 rounded-2xl bg-[#E6F4F1] text-[#1D4D4F] hover:bg-[#d6ece7] transition">
+            <svg class="w-4 h-4 fill-[#1D4D4F]" viewBox="0 0 24 24"><path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
+          </button>
         </div>
 
         <div class="mt-3 pt-3 border-t border-[#E5ECEB] flex items-center justify-between gap-2">
@@ -243,6 +242,35 @@
       tabAtt.classList.remove('hidden');
       tabBook.classList.add('hidden');
     }
+  }
+
+  function unsaveKajian(id, btn) {
+    fetch(`/kajian/${id}/bookmark`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({})
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.status === 'auth_required') { window.location.href = '{{ route('login') }}'; return; }
+      if (data && data.status === 'success' && data.bookmarked === false) {
+        removeBookmarkFromLocalStorage(id);
+        const card = btn.closest('.saved-kajian-card');
+        if (card) card.remove();
+        const remaining = document.querySelectorAll('#tabBookmarks .saved-kajian-card').length;
+        const tabBtn = document.getElementById('tabBtnBookmarks');
+        if (tabBtn) tabBtn.innerText = `Ditandai (${remaining})`;
+        showSavedToast('Dihapus dari tersimpan.');
+        if (remaining === 0) location.reload();
+      } else {
+        showSavedToast('Gagal menghapus, coba lagi');
+      }
+    })
+    .catch(() => showSavedToast('Gagal menghapus, coba lagi'));
   }
 
   function removeBookmarkFromLocalStorage(id) {
