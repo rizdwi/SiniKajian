@@ -1,5 +1,5 @@
-// SiniKajian Service Worker - Version 15.0 (Laravel PWA)
-const CACHE_NAME = 'sinikajian-v15.0';
+// SiniKajian Service Worker - Version 15.1 (Laravel PWA)
+const CACHE_NAME = 'sinikajian-v15.1';
 const PREFETCH_CACHE = 'sinikajian-prefetch-v1';
 const PREFETCH_TTL_MS = 15000;
 
@@ -57,7 +57,13 @@ self.addEventListener('fetch', (event) => {
   if (event.request.headers.get('X-Prefetch') === '1' && url.origin === self.location.origin && url.search === '') {
     event.respondWith(
       fetch(event.request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200 && !networkResponse.headers.get('set-cookie')) {
+        // v15.1: respons ber-Set-Cookie TETAP disimpan. Alasan: Laravel
+        // memasang cookie sesi+CSRF di SEMUA halaman, jadi syarat lama
+        // membuang 100% hasil prefetch (terukur live 2026-10-20: user
+        // tidak merasakan perubahan apa pun). Aman: respons yang disajikan
+        // dari Cache Storage tidak menerapkan Set-Cookie ke browser, dan
+        // kebasian tetap dijaga TTL 15 dtk + penanda mutasi di bawah.
+        if (networkResponse && networkResponse.status === 200) {
           const headers = new Headers(networkResponse.headers);
           headers.set('X-Prefetch-At', String(Date.now()));
           const stamped = new Response(networkResponse.clone().body, {
