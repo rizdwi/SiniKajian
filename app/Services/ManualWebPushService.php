@@ -15,6 +15,9 @@ class ManualWebPushService
     /** Detail error tahap terakhir (pesan exception / curl error / HTTP status). */
     public ?string $lastError = null;
 
+    /** Log tiap percobaan pembuatan kunci ephemeral (untuk diagnostik). */
+    private array $keygenLog = [];
+
     private function markStage(string $stage, string $error = ''): void
     {
         $this->lastStage = $stage;
@@ -129,24 +132,20 @@ class ManualWebPushService
 
         // Generate ephemeral keypair (prime256v1)
         // PENTING (akar kegagalan push live di Vercel): runtime vercel-php
-        // tidak menyediakan openssl.cnf bawaan, sehingga openssl_pkey_new()
-        // membaca private_key_bits=0 dan gagal total ("Private key length
-        // must be at least 384 bits, configured to 0" — terbukti via debug
-        // stage=encrypt_exception 2026-10-20). Atasi: tentukan bits secara
-        // eksplisit, dan sediakan config minimal yang dibundel bersama kode
-        // sebagai fallback.
-        $keyConfig = [
-            'curve_name' => 'prime256v1',
-            'private_key_type' => OPENSSL_KEYTYPE_EC,
-            'private_key_bits' => 256,
-        ];
-        $ephemeral = $this->safePkeyNew($keyConfig);
+        // bermasalah membaca konfigurasi OpenSSL — openssl_pkey_new() mula-
+        // mula gagal "Private key length must be at least 384 bits,
+        // configured to 0" (debug live 2026-10-20), dan tetap gagal walau
+        // private_key_bits ditentukan eksplisit + config dibundel. Karena
+        // itu pembuatan kunci dicoba berlapis (lihat generateEphemeralKey)
+        // termasuk config yang ditulis runtime ke folder temp server.
+        $ephemeral = $this->generateEphemeralKey();
         if (!$ephemeral) {
-            $keyConfig['config'] = __DIR__ . '/openssl.cnf';
-            $ephemeral = $this->safePkeyNew($keyConfig);
-        }
-        if (!$ephemeral) {
-            $this->markStage('encrypt_keygen', $this->opensslErrors());
+            $bundled = __DIR__ . '/openssl.cnf';
+            $this->markStage(
+                'encrypt_keygen',
+                'cnf_bundled_exists=' . (file_exists($bundled) ? '1' : '0')
+                . ' ' . implode(' | ', $this->keygenLog)
+            );
             return null;
         }
 
@@ -351,15 +350,88 @@ class ManualWebPushService
 
     /**
      * openssl_pkey_new() yang aman dari ErrorException Laravel
-     * (warning OpenSSL diubah jadi exception di Laravel).
+     * (warning OpenSSL diubah jadi exception di Laravel). Pesan kegagalan
+     * (exception atau antrean error OpenSSL) ditulis ke $err.
      */
-    private function safePkeyNew(array $config)
+    private function safePkeyNew(array $config, ?string &$err = null)
     {
+        $err = '';
         try {
             $key = openssl_pkey_new($config);
-            return $key === false ? false : $key;
+            if ($key === false) {
+                $err = $this->opensslErrors();
+                return false;
+            }
+            return $key;
         } catch (\Throwable $e) {
+            $err = $e->getMessage();
+            $this->opensslErrors(); // kosongkan antrean error
             return false;
+        }
+    }
+
+    /**
+     * Buat kunci EC ephemeral P-256 dengan percobaan berlapis. Runtime
+     * vercel-php terbukti menolak variasi sederhana (bits eksplisit dan
+     * config yang dibundel), jadi lapisan terakhir menulis file config
+     * OpenSSL ke folder temp server (selalu bisa ditulis) dan juga
+     * mengarahkan env OPENSSL_CONF ke sana sebelum mencoba lagi.
+     */
+    private function generateEphemeralKey()
+    {
+        $this->keygenLog = [];
+        $base = [
+            'curve_name' => 'prime256v1',
+            'private_key_type' => OPENSSL_KEYTYPE_EC,
+            'private_key_bits' => 256,
+        ];
+
+        $attempts = [];
+        $attempts['bits'] = $base;
+
+        $cfg = $base;
+        $cfg['config'] = '';
+        $attempts['config_kosong'] = $cfg;
+
+        $cfg = $base;
+        $cfg['config'] = __DIR__ . '/openssl.cnf';
+        $attempts['config_bundel'] = $cfg;
+
+        $tmpCnf = $this->writeTempOpensslConfig();
+        if ($tmpCnf) {
+            $cfg = $base;
+            $cfg['config'] = $tmpCnf;
+            $attempts['config_temp'] = $cfg;
+
+            // Arahkan juga env OPENSSL_CONF (dibaca PHP saat config tak
+            // ditentukan) lalu coba tanpa key 'config'.
+            putenv('OPENSSL_CONF=' . $tmpCnf);
+            $attempts['env_temp'] = $base;
+        }
+
+        foreach ($attempts as $name => $cfg) {
+            $key = $this->safePkeyNew($cfg, $err);
+            if ($key) {
+                return $key;
+            }
+            $this->keygenLog[] = $name . ': ' . ($err !== '' ? $err : '(tanpa pesan)');
+        }
+        return false;
+    }
+
+    /** Tulis config OpenSSL minimal ke folder temp; kembalikan path / null. */
+    private function writeTempOpensslConfig(): ?string
+    {
+        $path = sys_get_temp_dir() . '/majelisku-openssl.cnf';
+        if (is_file($path)) {
+            return $path;
+        }
+        $content = "[ req ]\ndefault_bits = 2048\ndefault_md = sha256\n"
+            . "distinguished_name = dn\nprompt = no\n\n[ dn ]\n";
+        try {
+            return file_put_contents($path, $content) !== false ? $path : null;
+        } catch (\Throwable $e) {
+            return null;
         }
     }
 
