@@ -151,7 +151,7 @@
 
   <!-- Hero Spotlight: Majelis Pilihan Terdekat (Figma Screen 1: KAJIAN PILIHAN) -->
   <section id="heroSpotlightContainer" class="hidden">
-    <div class="relative rounded-3xl overflow-hidden shadow-md border border-[#E5ECEB] bg-[#153A3B] group cursor-pointer" onclick="document.getElementById('spotlightDetailBtn').click()">
+    <div class="relative rounded-3xl overflow-hidden shadow-md border border-[#E5ECEB] bg-[#153A3B] group cursor-pointer" onclick="if(!window.__spotlightJustSwiped){document.getElementById('spotlightDetailBtn').click()}window.__spotlightJustSwiped=false;">
       <!-- Hero Image / Flyer Background -->
       <img id="spotlightHeroImg" src="https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=800&q=80" alt="Kajian Pilihan" class="w-full h-52 object-cover opacity-85 group-hover:scale-105 transition-transform duration-500">
       <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/30"></div>
@@ -1305,10 +1305,27 @@
       if (spotEl && !spotEl.dataset.swipeBound) {
         spotEl.dataset.swipeBound = '1';
         let touchStartX = 0;
-        spotEl.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
+        let touchStartY = 0;
+        spotEl.addEventListener('touchstart', (e) => {
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+          window.__spotlightJustSwiped = false;
+        }, { passive: true });
         spotEl.addEventListener('touchend', (e) => {
           const dx = e.changedTouches[0].clientX - touchStartX;
-          if (Math.abs(dx) > 40) window.__spotlightGo(spotlightIdx + (dx < 0 ? 1 : -1));
+          const dy = e.changedTouches[0].clientY - touchStartY;
+          // Hanya swipe horizontal yang dominan
+          if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+            window.__spotlightJustSwiped = true;
+            window.__spotlightGo(spotlightIdx + (dx < 0 ? 1 : -1));
+            // Reset auto-rotate agar tidak langsung loncat lagi
+            if (window.__spotlightTimer) {
+              clearInterval(window.__spotlightTimer);
+              window.__spotlightTimer = setInterval(() => {
+                window.__spotlightGo(spotlightIdx + 1);
+              }, 6000);
+            }
+          }
         }, { passive: true });
       }
 
