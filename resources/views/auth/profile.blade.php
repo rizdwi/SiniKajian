@@ -145,17 +145,17 @@
       </div>
     @endforelse
     </div>
-  </div>
 
-  <!-- Ustadz Favorit -->
-  <div class="space-y-2">
-    <div class="px-1 flex items-center justify-between">
-      <h3 class="text-sm font-bold text-[#1C2224]">Ustadz Favorit</h3>
-      <span id="favUstadzCount" class="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">0</span>
-    </div>
-    <div id="favUstadzList" class="space-y-2 max-h-56 overflow-y-auto pr-1 fav-scroll"></div>
-    <div id="emptyFavUstadz" class="p-4 rounded-2xl bg-white border border-[#E5ECEB] text-center">
-      <p class="text-xs text-[#607072]">Belum ada ustadz favorit. Tandai bintang di detail kajian untuk menambah.</p>
+    <!-- Ustadz Favorit (di dalam Agenda) -->
+    <div class="space-y-2 pt-1">
+      <div class="px-1 flex items-center justify-between">
+        <h3 class="text-sm font-bold text-[#1C2224]">Ustadz Favorit</h3>
+        <span id="favUstadzCount" class="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">0</span>
+      </div>
+      <div id="favUstadzList" class="space-y-2 max-h-56 overflow-y-auto pr-1 fav-scroll"></div>
+      <div id="emptyFavUstadz" class="p-4 rounded-2xl bg-white border border-[#E5ECEB] text-center">
+        <p class="text-xs text-[#607072]">Belum ada ustadz favorit. Tandai bintang di detail kajian untuk menambah.</p>
+      </div>
     </div>
   </div>
 
