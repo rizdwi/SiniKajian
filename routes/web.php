@@ -25,10 +25,6 @@ Route::post('/api/bookmarks/sync', [KajianController::class, 'syncBookmarks'])->
 Route::post('/kajian/{id}/kehadiran', [KajianController::class, 'logAttendance'])->middleware('throttle:20,1')->name('kajian.attendance');
 Route::post('/kehadiran/bersihkan', [KajianController::class, 'clearAttendances'])->middleware('throttle:10,1')->name('attendance.clear');
 Route::post('/majelis/follow', [KajianController::class, 'toggleFollowMajelis'])->middleware('throttle:30,1')->name('majelis.follow');
-Route::get('/api/kajian', [KajianController::class, 'apiList'])->middleware('throttle:60,1')->name('api.kajian');
-Route::get('/api/kajians', [KajianController::class, 'apiList'])->middleware('throttle:60,1');
-Route::get('/kajians', [KajianController::class, 'apiList'])->middleware('throttle:60,1');
-Route::get('/kajian', [KajianController::class, 'apiList'])->middleware('throttle:60,1');
 
 // Autentikasi Pengguna & Kredensial
 Route::redirect('/login', '/masuk');

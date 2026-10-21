@@ -49,13 +49,29 @@ class SupabaseKajianService
     public bool $lastFetchFailed = false;
 
     /**
+     * Memo per-proses (TTL 30 detik): satu request halaman memanggil
+     * getActiveKajians() berkali-kali (konten + kategori + find) —
+     * tanpa memo, blob cache sebesar daftar kajian diunduh dari REST
+     * Supabase pada SETIAP panggilan (penyebab API 6-7 detik, 2026-10-21).
+     */
+    private static ?array $memoRows = null;
+    private static int $memoAt = 0;
+    private const MEMO_TTL = 30;
+
+    /**
      * Ambil semua kajian aktif dari Supabase (dengan cache 5 menit).
      */
     public function getActiveKajians(): array
     {
+        if (self::$memoRows !== null && (time() - self::$memoAt) < self::MEMO_TTL) {
+            return self::$memoRows;
+        }
+
         $cached = Cache::get('supabase_kajians_active');
         if (is_array($cached)) {
             $this->lastFetchFailed = false;
+            self::$memoRows = $cached;
+            self::$memoAt = time();
             return $cached;
         }
 
@@ -80,6 +96,8 @@ class SupabaseKajianService
                 Cache::put('supabase_kajians_active', $active, 300);
                 Cache::put('supabase_kajians_active_stale', $active, 86400);
                 $this->lastFetchFailed = false;
+                self::$memoRows = $active;
+                self::$memoAt = time();
                 return $active;
             }
             Log::warning('SupabaseKajianService HTTP ' . $res->status());
@@ -89,7 +107,12 @@ class SupabaseKajianService
 
         $this->lastFetchFailed = true;
         $stale = Cache::get('supabase_kajians_active_stale');
-        return is_array($stale) ? $stale : [];
+        if (is_array($stale) && $stale !== []) {
+            self::$memoRows = $stale;
+            self::$memoAt = time();
+            return $stale;
+        }
+        return [];
     }
 
     /**
@@ -160,6 +183,8 @@ class SupabaseKajianService
      */
     public static function clearCache(): void
     {
+        self::$memoRows = null;
+        self::$memoAt = 0;
         Cache::forget('supabase_kajians_active');
     }
 

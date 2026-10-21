@@ -231,6 +231,9 @@ class KajianController extends Controller
 
     /**
      * API JSON untuk integrasi mobile atau map renderer.
+     * Data publik yang sama untuk semua pengunjung -> dilayani CDN Vercel
+     * (s-maxage) supaya origin tidak menerima beban per pengunjung.
+     * Respons kosong (indikasi kegagalan upstream) TIDAK ikut ter-cache.
      */
     public function apiList(): JsonResponse
     {
@@ -251,10 +254,19 @@ class KajianController extends Controller
                 ->get();
         }
 
-        return response()->json([
+        $response = response()->json([
             'status' => 'success',
             'data' => $kajians,
         ]);
+
+        if (count($kajians) > 0) {
+            $response->headers->set('Cache-Control', 'public, max-age=30, s-maxage=120, stale-while-revalidate=600, stale-if-error=86400');
+            $response->headers->set('Vercel-CDN-Cache-Control', 'public, s-maxage=120, stale-while-revalidate=600, stale-if-error=86400');
+        } else {
+            $response->headers->set('Cache-Control', 'no-store');
+        }
+
+        return $response;
     }
 
     /**
