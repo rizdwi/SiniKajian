@@ -1,0 +1,135 @@
+@extends('layouts.app')
+
+@section('title', 'Akun Pantau Scraping - Panel Admin')
+
+@section('content')
+<div class="max-w-4xl mx-auto space-y-6 pb-24 pt-2 px-2 sm:px-0">
+
+  <!-- Header Bar -->
+  <div class="flex items-center justify-between bg-white rounded-3xl p-5 border border-[#E5ECEB] shadow-xs">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-2xl bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center font-bold">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+      </div>
+      <div>
+        <h1 class="text-base font-extrabold text-[#1D4D4F]">Akun Pantau Scraping</h1>
+        <p class="text-xs text-[#607072]">Akun sumber yang dipantau scraper kajian + daftar blacklist. Perubahan di sini langsung berlaku untuk scraper.</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="{{ route('admin.kajian.index') }}" class="px-3.5 py-2 rounded-full border border-[#E5ECEB] text-xs font-bold text-[#607072] hover:bg-[#F8FAF9] transition">Moderasi</a>
+      <a href="{{ route('admin.traffic') }}" class="px-3.5 py-2 rounded-full border border-[#E5ECEB] text-xs font-bold text-[#607072] hover:bg-[#F8FAF9] transition">Traffic</a>
+    </div>
+  </div>
+
+  @if(session('success'))
+    <div class="p-4 rounded-2xl bg-[#E6F4F1] border border-[#D1EAE5] text-[#1D4D4F] text-xs font-bold">{{ session('success') }}</div>
+  @endif
+  @if(session('error'))
+    <div class="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs font-bold">{{ session('error') }}</div>
+  @endif
+
+  @if(!$tableReady)
+    <div class="bg-amber-50 rounded-3xl p-5 border border-amber-200 space-y-3">
+      <h2 class="text-sm font-extrabold text-amber-900">Tabel akun pantau belum dibuat</h2>
+      <p class="text-xs text-amber-800">Jalankan SQL berikut di Supabase SQL Editor (proyek MajelisKu), lalu muat ulang halaman ini:</p>
+      <pre class="text-[11px] bg-white border border-amber-200 rounded-2xl p-3 overflow-x-auto text-[#1C2224]">CREATE TABLE IF NOT EXISTS monitor_accounts (
+    id BIGSERIAL PRIMARY KEY,
+    list_type TEXT NOT NULL DEFAULT 'monitor',
+    platform TEXT,
+    username TEXT NOT NULL,
+    url TEXT,
+    region TEXT,
+    note TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS monitor_accounts_unique
+    ON monitor_accounts (list_type, platform, username);</pre>
+    </div>
+  @else
+
+  <!-- Form Tambah Akun -->
+  <form method="POST" action="{{ route('admin.akun.store') }}" class="bg-white rounded-3xl p-5 border border-[#E5ECEB] shadow-xs space-y-3">
+    @csrf
+    <h2 class="text-sm font-extrabold text-[#1C2224]">Tambah Akun</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <select name="list_type" class="text-xs border border-[#E5ECEB] rounded-xl px-3 py-2.5 bg-white">
+        <option value="monitor">Dipantau</option>
+        <option value="blacklist">Blacklist</option>
+      </select>
+      <select name="platform" class="text-xs border border-[#E5ECEB] rounded-xl px-3 py-2.5 bg-white">
+        <option value="instagram">Instagram</option>
+        <option value="facebook">Facebook</option>
+        <option value="threads">Threads</option>
+        <option value="">— (nama/pola)</option>
+      </select>
+      <input name="username" required placeholder="username / nama" class="text-xs border border-[#E5ECEB] rounded-xl px-3 py-2.5">
+      <input name="region" placeholder="Wilayah (mis. Karawang)" class="text-xs border border-[#E5ECEB] rounded-xl px-3 py-2.5">
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <input name="url" placeholder="URL profil (kosong = dibuat otomatis)" class="text-xs border border-[#E5ECEB] rounded-xl px-3 py-2.5">
+      <input name="note" placeholder="Catatan" class="text-xs border border-[#E5ECEB] rounded-xl px-3 py-2.5">
+    </div>
+    <button class="px-4 py-2.5 rounded-full bg-[#1D4D4F] text-white text-xs font-bold hover:opacity-90 transition">+ Tambah</button>
+  </form>
+
+  @php
+    $rowView = function ($a) {
+      $badge = ['instagram' => 'bg-pink-50 text-pink-700 border-pink-200', 'facebook' => 'bg-blue-50 text-blue-700 border-blue-200', 'threads' => 'bg-neutral-100 text-neutral-700 border-neutral-300'];
+      return [$badge[$a['platform'] ?? ''] ?? 'bg-neutral-100 text-neutral-600 border-neutral-200'];
+    };
+  @endphp
+
+  <!-- Daftar Akun Dipantau -->
+  <div class="bg-white rounded-3xl p-5 border border-[#E5ECEB] shadow-xs space-y-2">
+    <div class="flex items-center justify-between pb-2 border-b border-[#E5ECEB]">
+      <h2 class="text-sm font-extrabold text-[#1C2224]">Akun Dipantau</h2>
+      <span class="px-2.5 py-0.5 rounded-full bg-[#E6F4F1] text-[#1D4D4F] text-[11px] font-bold border border-[#D1EAE5]">{{ count($monitors) }} akun · {{ collect($monitors)->where('is_active', true)->count() }} aktif</span>
+    </div>
+    @forelse($monitors as $a)
+      <div class="flex items-center gap-3 py-2 border-b border-[#F1F5F4] last:border-0 {{ empty($a['is_active']) ? 'opacity-50' : '' }}">
+        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border {{ $rowView($a)[0] }} shrink-0">{{ strtoupper($a['platform'] ?? '-') }}</span>
+        <div class="flex-1 min-w-0">
+          @if(!empty($a['url']))<a href="{{ $a['url'] }}" target="_blank" rel="noopener" class="text-xs font-bold text-[#1C2224] hover:underline">{{ '@' . $a['username'] }}</a>@else<span class="text-xs font-bold text-[#1C2224]">{{ $a['username'] }}</span>@endif
+          <p class="text-[11px] text-[#607072] truncate">{{ $a['region'] ?? '' }}{{ !empty($a['note']) ? ' · ' . $a['note'] : '' }}</p>
+        </div>
+        <a href="{{ route('admin.akun.edit', $a['id']) }}" class="px-3 py-1.5 rounded-full border border-[#E5ECEB] text-[11px] font-bold text-[#607072] hover:bg-[#F8FAF9] transition shrink-0">Edit</a>
+        <form method="POST" action="{{ route('admin.akun.toggle', $a['id']) }}" class="shrink-0">@csrf
+          <button class="px-3 py-1.5 rounded-full border text-[11px] font-bold transition {{ !empty($a['is_active']) ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-[#D1EAE5] bg-[#E6F4F1] text-[#1D4D4F]' }}">{{ !empty($a['is_active']) ? 'Nonaktifkan' : 'Aktifkan' }}</button>
+        </form>
+        <form method="POST" action="{{ route('admin.akun.destroy', $a['id']) }}" onsubmit="return confirm('Hapus akun ini dari daftar pantau?')" class="shrink-0">@csrf @method('DELETE')
+          <button class="px-3 py-1.5 rounded-full border border-red-200 bg-red-50 text-red-700 text-[11px] font-bold hover:bg-red-100 transition">Hapus</button>
+        </form>
+      </div>
+    @empty
+      <p class="text-xs text-[#607072] py-4 text-center">Belum ada akun dipantau.</p>
+    @endforelse
+  </div>
+
+  <!-- Daftar Blacklist -->
+  <div class="bg-white rounded-3xl p-5 border border-[#E5ECEB] shadow-xs space-y-2">
+    <div class="flex items-center justify-between pb-2 border-b border-[#E5ECEB]">
+      <h2 class="text-sm font-extrabold text-[#1C2224]">Blacklist (Ditolak Permanen)</h2>
+      <span class="px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 text-[11px] font-bold border border-red-200">{{ count($blacklists) }} entri</span>
+    </div>
+    @forelse($blacklists as $a)
+      <div class="flex items-center gap-3 py-2 border-b border-[#F1F5F4] last:border-0 {{ empty($a['is_active']) ? 'opacity-50' : '' }}">
+        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border bg-red-50 text-red-700 border-red-200 shrink-0">{{ strtoupper($a['platform'] ?? 'NAMA') }}</span>
+        <div class="flex-1 min-w-0">
+          <span class="text-xs font-bold text-[#1C2224]">{{ $a['username'] }}</span>
+          <p class="text-[11px] text-[#607072] truncate">{{ !empty($a['note']) ? $a['note'] : '' }}</p>
+        </div>
+        <a href="{{ route('admin.akun.edit', $a['id']) }}" class="px-3 py-1.5 rounded-full border border-[#E5ECEB] text-[11px] font-bold text-[#607072] hover:bg-[#F8FAF9] transition shrink-0">Edit</a>
+        <form method="POST" action="{{ route('admin.akun.destroy', $a['id']) }}" onsubmit="return confirm('Hapus entri blacklist ini? Kajian dari sumber ini bisa masuk lagi.')" class="shrink-0">@csrf @method('DELETE')
+          <button class="px-3 py-1.5 rounded-full border border-red-200 bg-red-50 text-red-700 text-[11px] font-bold hover:bg-red-100 transition">Hapus</button>
+        </form>
+      </div>
+    @empty
+      <p class="text-xs text-[#607072] py-4 text-center">Blacklist kosong.</p>
+    @endforelse
+  </div>
+
+  @endif
+</div>
+@endsection

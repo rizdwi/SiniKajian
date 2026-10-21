@@ -75,7 +75,6 @@ class AdminController extends Controller
                     'Prefer' => 'return=representation',
                 ])->timeout(10)->patch("{$supabaseUrl}/rest/v1/kajian?id=eq.{$id}", [
                     'verified' => true,
-                    'status' => 'aktif',
                 ]);
                 if (!$res->successful() || empty($res->json())) {
                     return back()->with('error', 'Kajian tidak ditemukan di database utama.');

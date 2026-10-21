@@ -18,6 +18,7 @@
     </div>
     <div class="flex items-center gap-2">
       <a href="{{ route('admin.kajian.index') }}" class="px-3.5 py-2 rounded-full border border-[#E5ECEB] text-xs font-bold text-[#607072] hover:bg-[#F8FAF9] transition">Moderasi</a>
+      <a href="{{ route('admin.akun.index') }}" class="px-3.5 py-2 rounded-full border border-[#E5ECEB] text-xs font-bold text-[#607072] hover:bg-[#F8FAF9] transition">Akun Pantau</a>
       <a href="{{ route('profile') }}" class="px-3.5 py-2 rounded-full border border-[#E5ECEB] text-xs font-bold text-[#607072] hover:bg-[#F8FAF9] transition">&larr; Ke Profil</a>
     </div>
   </div>

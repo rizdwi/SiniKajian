@@ -54,6 +54,12 @@ Route::middleware('auth')->group(function () {
     Route::prefix('admin')->group(function () {
         Route::get('/kajian', [\App\Http\Controllers\AdminController::class, 'index'])->name('admin.kajian.index');
         Route::get('/traffic', [\App\Http\Controllers\AdminController::class, 'traffic'])->name('admin.traffic');
+        Route::get('/akun', [\App\Http\Controllers\AdminAccountController::class, 'index'])->name('admin.akun.index');
+        Route::post('/akun', [\App\Http\Controllers\AdminAccountController::class, 'store'])->name('admin.akun.store');
+        Route::get('/akun/{id}/edit', [\App\Http\Controllers\AdminAccountController::class, 'edit'])->name('admin.akun.edit');
+        Route::put('/akun/{id}', [\App\Http\Controllers\AdminAccountController::class, 'update'])->name('admin.akun.update');
+        Route::post('/akun/{id}/toggle', [\App\Http\Controllers\AdminAccountController::class, 'toggle'])->name('admin.akun.toggle');
+        Route::delete('/akun/{id}', [\App\Http\Controllers\AdminAccountController::class, 'destroy'])->name('admin.akun.destroy');
         Route::post('/kajian/{kajian}/verify', [\App\Http\Controllers\AdminController::class, 'verify'])->name('admin.kajian.verify');
         Route::delete('/kajian/{kajian}', [\App\Http\Controllers\AdminController::class, 'destroy'])->name('admin.kajian.destroy');
     });
