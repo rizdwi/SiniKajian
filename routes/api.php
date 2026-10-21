@@ -13,3 +13,8 @@ Route::get('/kajians', [KajianController::class, 'apiList']);
 
 // Beacon pageview untuk menu admin Traffic (catat path saja, tanpa PII).
 Route::post('/traffic/hit', [\App\Http\Controllers\TrafficController::class, 'hit']);
+
+// Box saran & masukan melayang (perintah user 2026-10-21): terbuka untuk
+// tamu, throttle ketat + honeypot di controller untuk menahan spam.
+Route::post('/feedback', [\App\Http\Controllers\FeedbackController::class, 'store'])
+    ->middleware('throttle:5,1');

@@ -1,5 +1,5 @@
 // SiniKajian Service Worker - Version 15.2 (Laravel PWA)
-const CACHE_NAME = 'sinikajian-v15.2';
+const CACHE_NAME = 'sinikajian-v15.3';
 const PREFETCH_CACHE = 'sinikajian-prefetch-v1';
 const PREFETCH_TTL_MS = 15000;
 

@@ -289,4 +289,69 @@ class AdminController extends Controller
 
         return view('admin.traffic', compact('stats', 'recentUsers', 'topMasjid', 'traffic'));
     }
+
+    /**
+     * Menu admin: saran & masukan dari box melayang (perintah user
+     * 2026-10-21). Tabel Supabase `feedback`; null = tabel belum dibuat.
+     */
+    public function feedback(): View
+    {
+        $this->ensureAdmin();
+
+        $rows = $this->sbGet('feedback', [
+            'select' => 'id,category,name,contact,message,page,is_read,created_at',
+            'order' => 'created_at.desc',
+            'limit' => 200,
+        ]);
+        $unread = $rows === null ? null : collect($rows)->where('is_read', false)->count();
+
+        return view('admin.feedback', compact('rows', 'unread'));
+    }
+
+    public function feedbackRead(int $id): \Illuminate\Http\RedirectResponse
+    {
+        $this->ensureAdmin();
+
+        $url = config('services.supabase.url');
+        $key = config('services.supabase.service_key');
+        if ($url && $key) {
+            try {
+                Http::withHeaders([
+                    'apikey' => $key,
+                    'Authorization' => "Bearer {$key}",
+                    'Content-Type' => 'application/json',
+                    'Prefer' => 'return=minimal',
+                ])->timeout(10)->patch("{$url}/rest/v1/feedback?id=eq.{$id}", [
+                    'is_read' => true,
+                ]);
+            } catch (\Throwable $e) {
+                Log::warning('feedbackRead gagal: ' . $e->getMessage());
+            }
+        }
+
+        return back()->with('success', 'Feedback ditandai sudah dibaca.');
+    }
+
+    public function feedbackDestroy(int $id): \Illuminate\Http\RedirectResponse
+    {
+        $this->ensureAdmin();
+
+        $url = config('services.supabase.url');
+        $key = config('services.supabase.service_key');
+        if ($url && $key) {
+            try {
+                // Filter WAJIB di query-string: PostgREST mengabaikan
+                // filter di body DELETE (insiden audit 2026-10-21).
+                Http::withHeaders([
+                    'apikey' => $key,
+                    'Authorization' => "Bearer {$key}",
+                    'Prefer' => 'return=minimal',
+                ])->timeout(10)->delete("{$url}/rest/v1/feedback?id=eq.{$id}");
+            } catch (\Throwable $e) {
+                Log::warning('feedbackDestroy gagal: ' . $e->getMessage());
+            }
+        }
+
+        return back()->with('success', 'Feedback dihapus.');
+    }
 }

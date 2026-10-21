@@ -19,6 +19,7 @@
     <div class="flex items-center gap-1.5 mt-2.5">
       <a href="{{ route('admin.kajian.index') }}" class="px-2.5 py-1.5 rounded-full border border-[#E5ECEB] text-[11px] font-bold text-[#607072] hover:bg-[#F8FAF9] transition">Moderasi</a>
       <a href="{{ route('admin.traffic') }}" class="px-2.5 py-1.5 rounded-full border border-[#E5ECEB] text-[11px] font-bold text-[#607072] hover:bg-[#F8FAF9] transition">Traffic</a>
+      <a href="{{ route('admin.feedback') }}" class="px-2.5 py-1.5 rounded-full border border-[#E5ECEB] text-[11px] font-bold text-[#607072] hover:bg-[#F8FAF9] transition">Feedback</a>
     </div>
   </div>
 

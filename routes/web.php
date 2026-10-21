@@ -54,6 +54,9 @@ Route::middleware('auth')->group(function () {
     Route::prefix('admin')->group(function () {
         Route::get('/kajian', [\App\Http\Controllers\AdminController::class, 'index'])->name('admin.kajian.index');
         Route::get('/traffic', [\App\Http\Controllers\AdminController::class, 'traffic'])->name('admin.traffic');
+        Route::get('/feedback', [\App\Http\Controllers\AdminController::class, 'feedback'])->name('admin.feedback');
+        Route::post('/feedback/{id}/read', [\App\Http\Controllers\AdminController::class, 'feedbackRead'])->name('admin.feedback.read');
+        Route::delete('/feedback/{id}', [\App\Http\Controllers\AdminController::class, 'feedbackDestroy'])->name('admin.feedback.destroy');
         Route::get('/akun', [\App\Http\Controllers\AdminAccountController::class, 'index'])->name('admin.akun.index');
         Route::post('/akun', [\App\Http\Controllers\AdminAccountController::class, 'store'])->name('admin.akun.store');
         Route::get('/akun/{id}/edit', [\App\Http\Controllers\AdminAccountController::class, 'edit'])->name('admin.akun.edit');

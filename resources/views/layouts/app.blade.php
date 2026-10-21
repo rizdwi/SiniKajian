@@ -54,7 +54,7 @@
   <!-- Tailwind CSS: build statis (public/css/app.css, dikompilasi dari
        tailwind.config.js) menggantikan runtime CDN — browser tak lagi
        mengompilasi utility di setiap halaman (upgrade kecepatan 2026-10-20) -->
-  <link rel="stylesheet" href="{{ asset('css/app.css') }}?v=20261020a">
+  <link rel="stylesheet" href="{{ asset('css/app.css') }}?v=20261021a">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -255,6 +255,118 @@
   <script src="{{ asset('js/geo-engine.js') }}" defer></script>
 
   @yield('scripts')
+
+  <!-- Feedback / Saran (floating, di atas tombol dark/light) -->
+  <button type="button" onclick="toggleFeedback()" aria-label="Kirim saran dan masukan" title="Saran & Masukan"
+    class="fixed bottom-[10.75rem] right-4 z-40 w-11 h-11 rounded-full bg-[#1D4D4F] border border-[#1D4D4F] shadow-lg flex items-center justify-center text-white touch-btn">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12a8 8 0 01-8 8H5l-2 2V12a8 8 0 018-8h2a8 8 0 018 8z"></path>
+    </svg>
+  </button>
+
+  <div id="feedbackPanel" class="hidden fixed right-4 bottom-[14rem] z-50 w-[calc(100vw-2rem)] max-w-[320px] bg-white dark:bg-[#16282A] border border-[#E5ECEB] dark:border-[#2A3F40] rounded-2xl shadow-2xl overflow-hidden">
+    <div class="flex items-center gap-2 px-4 py-3 bg-[#1D4D4F] text-white">
+      <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12a8 8 0 01-8 8H5l-2 2V12a8 8 0 018-8h2a8 8 0 018 8z"></path>
+      </svg>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-extrabold leading-tight">Saran &amp; Masukan</p>
+        <p class="text-[11px] opacity-80 leading-tight">Bantu kami mengembangkan Majelisku</p>
+      </div>
+      <button type="button" onclick="toggleFeedback(false)" aria-label="Tutup panel saran" class="shrink-0 w-7 h-7 rounded-full bg-white/15 flex items-center justify-center touch-btn">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+    </div>
+    <form id="feedbackForm" class="px-4 py-3 space-y-2.5" onsubmit="return submitFeedback(event)">
+      <div>
+        <label for="fbCategory" class="block text-[11px] font-bold text-[#607072] mb-1">Kategori</label>
+        <select id="fbCategory" class="w-full rounded-xl border border-[#E5ECEB] dark:border-[#2A3F40] bg-[#F8FAF9] dark:bg-[#0F1B1C] px-3 py-2 text-sm text-[#1C2224] dark:text-[#E8EDED] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]/40">
+          <option>Saran Fitur</option>
+          <option>Laporan Bug</option>
+          <option>Info Kajian</option>
+          <option selected>Lainnya</option>
+        </select>
+      </div>
+      <div>
+        <label for="fbMessage" class="block text-[11px] font-bold text-[#607072] mb-1">Pesan <span class="text-rose-500">*</span></label>
+        <textarea id="fbMessage" rows="3" maxlength="1000" required placeholder="Tulis saran, laporan error, atau info kajian di sini…" class="w-full rounded-xl border border-[#E5ECEB] dark:border-[#2A3F40] bg-[#F8FAF9] dark:bg-[#0F1B1C] px-3 py-2 text-sm text-[#1C2224] dark:text-[#E8EDED] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]/40 resize-none"></textarea>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <input id="fbName" type="text" maxlength="60" placeholder="Nama (opsional)" class="w-full rounded-xl border border-[#E5ECEB] dark:border-[#2A3F40] bg-[#F8FAF9] dark:bg-[#0F1B1C] px-3 py-2 text-sm text-[#1C2224] dark:text-[#E8EDED] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]/40">
+        <input id="fbContact" type="text" maxlength="80" placeholder="WA/email (opsional)" class="w-full rounded-xl border border-[#E5ECEB] dark:border-[#2A3F40] bg-[#F8FAF9] dark:bg-[#0F1B1C] px-3 py-2 text-sm text-[#1C2224] dark:text-[#E8EDED] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F]/40">
+      </div>
+      <input type="text" id="fbWebsite" name="website" class="hidden" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <p id="fbError" class="hidden text-[11px] font-semibold text-rose-600"></p>
+      <button id="fbSubmit" type="submit" class="w-full py-2.5 rounded-xl bg-[#1D4D4F] text-white text-sm font-bold touch-btn">Kirim Masukan</button>
+      <p class="text-[10px] text-[#607072] text-center">Tanpa perlu login. Kontak hanya untuk tindak lanjut.</p>
+    </form>
+    <div id="feedbackThanks" class="hidden px-4 py-6 text-center">
+      <div class="w-11 h-11 mx-auto rounded-full bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+      </div>
+      <p class="text-sm font-extrabold text-[#1C2224] dark:text-[#E8EDED] mt-2">Jazakumullah khairan!</p>
+      <p class="text-[11px] text-[#607072] mt-0.5">Masukanmu sudah kami terima dan akan kami baca.</p>
+    </div>
+  </div>
+  <script>
+    function toggleFeedback(force) {
+      var p = document.getElementById('feedbackPanel');
+      if (!p) return;
+      var show = (typeof force === 'boolean') ? force : p.classList.contains('hidden');
+      p.classList.toggle('hidden', !show);
+      if (show) {
+        var m = document.getElementById('fbMessage');
+        if (m) setTimeout(function() { m.focus(); }, 60);
+      }
+    }
+    function submitFeedback(e) {
+      e.preventDefault();
+      var btn = document.getElementById('fbSubmit');
+      var err = document.getElementById('fbError');
+      err.classList.add('hidden');
+      btn.disabled = true;
+      btn.textContent = 'Mengirim…';
+      fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          category: document.getElementById('fbCategory').value,
+          name: document.getElementById('fbName').value,
+          contact: document.getElementById('fbContact').value,
+          message: document.getElementById('fbMessage').value,
+          page: window.location.pathname,
+          website: document.getElementById('fbWebsite').value
+        })
+      }).then(function(r) {
+        return r.json().catch(function() { return {}; }).then(function(j) { return { status: r.status, j: j }; });
+      }).then(function(res) {
+        if (res.j && res.j.ok) {
+          document.getElementById('feedbackForm').classList.add('hidden');
+          document.getElementById('feedbackThanks').classList.remove('hidden');
+          setTimeout(function() {
+            toggleFeedback(false);
+            setTimeout(function() {
+              document.getElementById('feedbackForm').reset();
+              document.getElementById('feedbackForm').classList.remove('hidden');
+              document.getElementById('feedbackThanks').classList.add('hidden');
+              btn.disabled = false;
+              btn.textContent = 'Kirim Masukan';
+            }, 300);
+          }, 2600);
+        } else if (res.status === 429) {
+          throw new Error('Terlalu sering mengirim — tunggu sebentar lalu coba lagi ya.');
+        } else {
+          throw new Error((res.j && res.j.error) || 'Gagal mengirim. Coba lagi ya.');
+        }
+      }).catch(function(ex) {
+        err.textContent = ex.message || 'Gagal mengirim. Coba lagi ya.';
+        err.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = 'Kirim Masukan';
+      });
+      return false;
+    }
+  </script>
 
   <!-- Dark Mode Toggle (floating) -->
   <button onclick="toggleTheme()" aria-label="Mode gelap/terang"
