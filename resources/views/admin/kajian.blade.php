@@ -71,13 +71,13 @@
             </div>
 
             <div class="flex items-center gap-2 shrink-0 pt-2 md:pt-0">
-              <form action="{{ route('admin.kajian.verify', $item) }}" method="POST">
+              <form action="{{ route('admin.kajian.verify', $item->id) }}" method="POST">
                 @csrf
                 <button type="submit" class="px-3.5 py-2 rounded-full bg-[#1D4D4F] hover:bg-[#143839] text-white text-xs font-bold transition active:scale-95 shadow-2xs">
                   Setujui & Terbitkan
                 </button>
               </form>
-              <form action="{{ route('admin.kajian.destroy', $item) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menolak & menghapus pengajuan ini?')">
+              <form action="{{ route('admin.kajian.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menolak & menghapus pengajuan ini?')">
                 @csrf
                 @method('DELETE')
                 <button type="submit" class="px-3.5 py-2 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition active:scale-95 border border-rose-200">
@@ -95,7 +95,7 @@
   <div class="bg-white rounded-3xl p-5 border border-[#E5ECEB] shadow-xs space-y-4">
     <div class="flex items-center justify-between pb-2 border-b border-[#E5ECEB]">
       <h2 class="text-sm font-extrabold text-[#1C2224]">Kajian Aktif di Feed Publik</h2>
-      <span class="text-xs text-[#607072] font-semibold">Total: {{ $verifiedKajians->total() }}</span>
+      <span class="text-xs text-[#607072] font-semibold">Total: {{ $verifiedKajians->count() }}</span>
     </div>
 
     <div class="divide-y divide-[#E5ECEB]">
@@ -111,10 +111,10 @@
             </p>
           </div>
           <div class="flex items-center gap-2 shrink-0">
-            <a href="{{ route('kajian.show', $item) }}" target="_blank" class="px-3 py-1.5 rounded-full border border-[#E5ECEB] text-xs font-bold text-[#1D4D4F] hover:bg-[#F8FAF9] transition">
+            <a href="{{ route('kajian.show', $item->id) }}" target="_blank" class="px-3 py-1.5 rounded-full border border-[#E5ECEB] text-xs font-bold text-[#1D4D4F] hover:bg-[#F8FAF9] transition">
               Lihat
             </a>
-            <form action="{{ route('admin.kajian.destroy', $item) }}" method="POST" onsubmit="return confirm('Hapus kajian ini dari sistem?')">
+            <form action="{{ route('admin.kajian.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Hapus kajian ini dari sistem?')">
               @csrf
               @method('DELETE')
               <button type="submit" class="p-1.5 rounded-full text-slate-400 hover:text-rose-600 transition" title="Hapus">
@@ -126,9 +126,6 @@
       @endforeach
     </div>
 
-    <div class="pt-2">
-      {{ $verifiedKajians->links() }}
-    </div>
   </div>
 
 </div>
