@@ -53,6 +53,7 @@ Route::middleware('auth')->group(function () {
     // Admin Moderasi Kajian
     Route::prefix('admin')->group(function () {
         Route::get('/kajian', [\App\Http\Controllers\AdminController::class, 'index'])->name('admin.kajian.index');
+        Route::get('/traffic', [\App\Http\Controllers\AdminController::class, 'traffic'])->name('admin.traffic');
         Route::post('/kajian/{kajian}/verify', [\App\Http\Controllers\AdminController::class, 'verify'])->name('admin.kajian.verify');
         Route::delete('/kajian/{kajian}', [\App\Http\Controllers\AdminController::class, 'destroy'])->name('admin.kajian.destroy');
     });

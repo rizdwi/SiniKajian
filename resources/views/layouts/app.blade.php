@@ -335,6 +335,22 @@
       // dari niat nyata user (sentuh/hover tautan) di atas.
     })();
   </script>
+  <script>
+    // Beacon traffic first-party untuk menu admin Traffic: hanya path
+    // halaman, tanpa cookie / data pribadi. Gagal = diam (tak penting).
+    (function () {
+      try {
+        var p = location.pathname;
+        if (p.indexOf('/admin') === 0 || p.indexOf('/api') === 0) return;
+        var body = JSON.stringify({ path: p });
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon('/api/traffic/hit', new Blob([body], { type: 'application/json' }));
+        } else {
+          fetch('/api/traffic/hit', { method: 'POST', body: body, headers: { 'Content-Type': 'application/json' }, keepalive: true }).catch(function () {});
+        }
+      } catch (e) {}
+    })();
+  </script>
   @stack('scripts')
 </body>
 </html>

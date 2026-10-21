@@ -10,3 +10,6 @@ use Illuminate\Support\Facades\Route;
 // menerima <=1 request per masa s-maxage per region.
 Route::get('/kajian', [KajianController::class, 'apiList'])->name('api.kajian');
 Route::get('/kajians', [KajianController::class, 'apiList']);
+
+// Beacon pageview untuk menu admin Traffic (catat path saja, tanpa PII).
+Route::post('/traffic/hit', [\App\Http\Controllers\TrafficController::class, 'hit']);

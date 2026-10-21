@@ -13,7 +13,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->trustProxies(at: '*');
+        // JANGAN trustProxies('*'): hanya edge Vercel (peer langsung) yang
+        // header X-Forwarded-nya boleh dipercaya — lihat TrustVercelProxy.
+        $middleware->prepend(\App\Http\Middleware\TrustVercelProxy::class);
         $middleware->redirectGuestsTo('/masuk');
         $middleware->validateCsrfTokens(except: ['webhook/*', 'api/push/*']);
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);

@@ -16,9 +16,14 @@
         <p class="text-xs text-[#607072]">Kelola pengajuan komunitas dan keabsahan jadwal kajian.</p>
       </div>
     </div>
-    <a href="{{ route('profile') }}" class="px-3.5 py-2 rounded-full border border-[#E5ECEB] text-xs font-bold text-[#607072] hover:bg-[#F8FAF9] transition">
-      &larr; Ke Profil
-    </a>
+    <div class="flex items-center gap-2">
+      <a href="{{ route('admin.traffic') }}" class="px-3.5 py-2 rounded-full border border-[#E5ECEB] text-xs font-bold text-[#607072] hover:bg-[#F8FAF9] transition">
+        Traffic
+      </a>
+      <a href="{{ route('profile') }}" class="px-3.5 py-2 rounded-full border border-[#E5ECEB] text-xs font-bold text-[#607072] hover:bg-[#F8FAF9] transition">
+        &larr; Ke Profil
+      </a>
+    </div>
   </div>
 
   <!-- Alert Notifikasi -->

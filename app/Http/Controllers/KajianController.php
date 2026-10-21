@@ -254,10 +254,32 @@ class KajianController extends Controller
                 ->get();
         }
 
-        $response = response()->json([
+        // Pagination OPSIONAL (?per_page=20&page=2): tanpa parameter,
+        // perilaku lama dipertahankan (semua data, dipakai aplikasi).
+        $perPage = (int) request()->query('per_page', 0);
+        $meta = null;
+        if ($perPage > 0) {
+            $perPage = min($perPage, 100);
+            $page = max(1, (int) request()->query('page', 1));
+            $all = collect($kajians)->values();
+            $meta = [
+                'total' => $all->count(),
+                'page' => $page,
+                'per_page' => $perPage,
+                'last_page' => max(1, (int) ceil($all->count() / $perPage)),
+            ];
+            $kajians = $all->forPage($page, $perPage)->values();
+        }
+
+        $payload = [
             'status' => 'success',
             'data' => $kajians,
-        ]);
+        ];
+        if ($meta !== null) {
+            $payload['meta'] = $meta;
+        }
+
+        $response = response()->json($payload);
 
         if (count($kajians) > 0) {
             $response->headers->set('Cache-Control', 'public, max-age=30, s-maxage=120, stale-while-revalidate=600, stale-if-error=86400');
