@@ -5,7 +5,8 @@
     "api/index.php": {
       "runtime": "vercel-php@0.7.3",
       "includeFiles": "database/**",
-      "maxDuration": 60
+      "maxDuration": 60,
+      "regions": ["sin1"]
     }
   },
   "routes": [
