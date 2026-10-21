@@ -90,6 +90,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS monitor_accounts_unique
         <div class="flex items-center gap-2">
           <span class="px-1.5 py-0.5 rounded text-[9px] font-bold border {{ $badgeCls[$a['platform'] ?? ''] ?? 'bg-neutral-100 text-neutral-600 border-neutral-200' }} shrink-0">{{ $badgeShort[$a['platform'] ?? ''] ?? '—' }}</span>
           @if(!empty($a['url']))<a href="{{ $a['url'] }}" target="_blank" rel="noopener" class="text-xs font-bold text-[#1C2224] truncate flex-1 min-w-0 hover:underline">{{ '@' . $a['username'] }}</a>@else<span class="text-xs font-bold text-[#1C2224] truncate flex-1 min-w-0">{{ $a['username'] }}</span>@endif
+          @php $n = $contrib[strtolower($a['username'])] ?? 0; @endphp
+          @if($n >= 3)<span class="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 text-[9px] font-bold shrink-0">🏅 Produktif · {{ $n }} kajian</span>@elseif($n >= 1)<span class="px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-bold shrink-0">✓ Aktif · {{ $n }} kajian</span>@endif
         </div>
         <div class="flex items-center gap-1.5 mt-1">
           <p class="flex-1 min-w-0 text-[10px] text-[#607072] truncate">{{ $a['region'] ?? '' }}{{ !empty($a['note']) ? ' · ' . $a['note'] : '' }}</p>

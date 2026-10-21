@@ -29,6 +29,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Traffic: Email yang Dikecualikan
+    |--------------------------------------------------------------------------
+    |
+    | Akun pemilik/uji yang TIDAK dihitung dalam statistik pengguna &
+    | kunjungan di menu admin Traffic (perintah user 2026-10-21).
+    | Email admin (di atas) selalu ikut dikecualikan. Pisahkan koma.
+    |
+    */
+
+    'traffic_exclude_emails' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) env('TRAFFIC_EXCLUDE_EMAILS', 'rizkidwisandy1@gmail.com'))
+    ))),
+
+    /*
+    |--------------------------------------------------------------------------
     | Sync Webhook Secret
     |--------------------------------------------------------------------------
     |

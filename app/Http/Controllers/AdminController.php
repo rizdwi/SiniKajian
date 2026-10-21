@@ -199,23 +199,45 @@ class AdminController extends Controller
         $since30 = $now->copy()->subDays(29)->toDateString();
 
         // --- Pengguna & keterlibatan (tabel yang sudah ada) ---
+        // Akun pemilik/uji dikecualikan dari statistik pengguna
+        // (perintah user 2026-10-21): email admin + daftar config.
+        $excludeEmails = collect([strtolower((string) config('app.admin_email'))])
+            ->merge(array_map('strtolower', (array) config('app.traffic_exclude_emails', [])))
+            ->filter()->unique()->values()->all();
+        $userRows = $this->sbGet('app_users', [
+            'select' => 'id,name,email,provider,created_at',
+            'order' => 'id.desc',
+            'limit' => 1000,
+        ]);
+        $usersTotal = $usersToday = $users7d = $users30d = null;
+        $recentUsers = [];
+        if ($userRows !== null) {
+            $kept = array_values(array_filter(
+                $userRows,
+                fn ($u) => !in_array(strtolower((string) ($u['email'] ?? '')), $excludeEmails, true)
+            ));
+            $usersTotal = count($kept);
+            $usersToday = $users7d = $users30d = 0;
+            foreach ($kept as $u) {
+                $d = \Carbon\Carbon::parse($u['created_at'])->setTimezone('Asia/Jakarta')->toDateString();
+                if ($d === $today) $usersToday++;
+                if ($d >= $since7) $users7d++;
+                if ($d >= $since30) $users30d++;
+            }
+            $recentUsers = array_slice($kept, 0, 8);
+        }
+
         $stats = [
-            'users_total' => $this->sbCount('app_users'),
-            'users_today' => $this->sbCount('app_users', ['created_at' => 'gte.' . $today]),
-            'users_7d' => $this->sbCount('app_users', ['created_at' => 'gte.' . $since7]),
-            'users_30d' => $this->sbCount('app_users', ['created_at' => 'gte.' . $since30]),
+            'users_total' => $usersTotal,
+            'users_today' => $usersToday,
+            'users_7d' => $users7d,
+            'users_30d' => $users30d,
             'push_subs' => $this->sbCount('push_subscriptions'),
             'bookmarks' => $this->sbCount('bookmarks'),
             'attendances' => $this->sbCount('attendances'),
             'follows' => $this->sbCount('majelis_follows'),
             'kajian_cancelled' => $this->sbCount('kajian', ['is_cancelled' => 'is.true']),
         ];
-
-        $recentUsers = $this->sbGet('app_users', [
-            'select' => 'id,name,email,provider,created_at',
-            'order' => 'id.desc',
-            'limit' => 8,
-        ]) ?? [];
 
         // --- Kajian aktif + masjid tersering ---
         $svc = new \App\Services\SupabaseKajianService();

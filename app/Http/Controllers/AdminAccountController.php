@@ -64,8 +64,25 @@ class AdminAccountController extends Controller
         $tableReady = $rows !== null;
         $rows = $rows ?? [];
 
+        // Lencana kontribusi: hitung kajian di DB per akun sumber dari
+        // source_url (format {platform}.com/{username}/p/... — di-backfill
+        // 2026-10-21 dan diwajibkan untuk insert scraper berikutnya).
+        $contrib = [];
+        $kajianRows = $this->sb('GET', 'kajian?select=source_url&limit=1000');
+        if ($kajianRows) {
+            foreach ($kajianRows as $kr) {
+                $u = (string) ($kr['source_url'] ?? '');
+                if (preg_match('~(?:instagram\.com|facebook\.com)/([^/?#]+)/(?:p|reel|reels|posts)/~', $u, $m)
+                    || preg_match('~threads\.net/@([^/?#]+)/~', $u, $m)) {
+                    $h = strtolower($m[1]);
+                    $contrib[$h] = ($contrib[$h] ?? 0) + 1;
+                }
+            }
+        }
+
         return view('admin.akun', [
             'tableReady' => $tableReady,
+            'contrib' => $contrib,
             'monitors' => array_values(array_filter($rows, fn ($r) => ($r['list_type'] ?? 'monitor') === 'monitor')),
             'blacklists' => array_values(array_filter($rows, fn ($r) => ($r['list_type'] ?? '') === 'blacklist')),
         ]);

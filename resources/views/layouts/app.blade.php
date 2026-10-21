@@ -335,6 +335,16 @@
       // dari niat nyata user (sentuh/hover tautan) di atas.
     })();
   </script>
+  @php
+    // Kunjungan akun pemilik/uji yang dikecualikan TIDAK dicatat ke
+    // statistik traffic (perintah user 2026-10-21). Berlaku saat login
+    // dengan akun tersebut; kunjungan tamu tetap dihitung normal.
+    $trafficExcluded = auth()->check() && collect([strtolower((string) config('app.admin_email'))])
+        ->merge(array_map('strtolower', (array) config('app.traffic_exclude_emails', [])))
+        ->filter()->unique()
+        ->contains(strtolower((string) auth()->user()->email));
+  @endphp
+  @unless($trafficExcluded)
   <script>
     // Beacon traffic first-party untuk menu admin Traffic: hanya path
     // halaman, tanpa cookie / data pribadi. Gagal = diam (tak penting).
@@ -351,6 +361,7 @@
       } catch (e) {}
     })();
   </script>
+  @endunless
   @stack('scripts')
 </body>
 </html>
