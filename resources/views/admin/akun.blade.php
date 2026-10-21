@@ -3,22 +3,22 @@
 @section('title', 'Akun Pantau Scraping - Panel Admin')
 
 @section('content')
-<div class="max-w-4xl mx-auto space-y-6 pb-24 pt-2 px-2 sm:px-0">
+<div class="max-w-4xl mx-auto space-y-3 pb-20 pt-2 px-2 sm:px-0">
 
-  <!-- Header Bar -->
-  <div class="flex items-center justify-between bg-white rounded-3xl p-5 border border-[#E5ECEB] shadow-xs">
-    <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-2xl bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center font-bold">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+  <!-- Header Bar (compact) -->
+  <div class="bg-white rounded-2xl px-3.5 py-3 border border-[#E5ECEB] shadow-xs">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-xl bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center shrink-0">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
       </div>
-      <div>
-        <h1 class="text-base font-extrabold text-[#1D4D4F]">Akun Pantau Scraping</h1>
-        <p class="text-xs text-[#607072]">Akun sumber yang dipantau scraper kajian + daftar blacklist. Perubahan di sini langsung berlaku untuk scraper.</p>
+      <div class="min-w-0 flex-1">
+        <h1 class="text-sm font-extrabold text-[#1D4D4F] whitespace-nowrap">Akun Pantau Scraping</h1>
+        <p class="text-[11px] text-[#607072] truncate">Akun sumber scraper + blacklist — perubahan langsung berlaku</p>
       </div>
     </div>
-    <div class="flex items-center gap-2">
-      <a href="{{ route('admin.kajian.index') }}" class="px-3.5 py-2 rounded-full border border-[#E5ECEB] text-xs font-bold text-[#607072] hover:bg-[#F8FAF9] transition">Moderasi</a>
-      <a href="{{ route('admin.traffic') }}" class="px-3.5 py-2 rounded-full border border-[#E5ECEB] text-xs font-bold text-[#607072] hover:bg-[#F8FAF9] transition">Traffic</a>
+    <div class="flex items-center gap-1.5 mt-2.5">
+      <a href="{{ route('admin.kajian.index') }}" class="px-2.5 py-1.5 rounded-full border border-[#E5ECEB] text-[11px] font-bold text-[#607072] hover:bg-[#F8FAF9] transition">Moderasi</a>
+      <a href="{{ route('admin.traffic') }}" class="px-2.5 py-1.5 rounded-full border border-[#E5ECEB] text-[11px] font-bold text-[#607072] hover:bg-[#F8FAF9] transition">Traffic</a>
     </div>
   </div>
 
@@ -30,7 +30,7 @@
   @endif
 
   @if(!$tableReady)
-    <div class="bg-amber-50 rounded-3xl p-5 border border-amber-200 space-y-3">
+    <div class="bg-amber-50 rounded-2xl p-3.5 border border-amber-200 space-y-3">
       <h2 class="text-sm font-extrabold text-amber-900">Tabel akun pantau belum dibuat</h2>
       <p class="text-xs text-amber-800">Jalankan SQL berikut di Supabase SQL Editor (proyek MajelisKu), lalu muat ulang halaman ini:</p>
       <pre class="text-[11px] bg-white border border-amber-200 rounded-2xl p-3 overflow-x-auto text-[#1C2224]">CREATE TABLE IF NOT EXISTS monitor_accounts (
@@ -50,7 +50,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS monitor_accounts_unique
   @else
 
   <!-- Form Tambah Akun -->
-  <form method="POST" action="{{ route('admin.akun.store') }}" class="bg-white rounded-3xl p-5 border border-[#E5ECEB] shadow-xs space-y-3">
+  <form method="POST" action="{{ route('admin.akun.store') }}" class="bg-white rounded-2xl p-3.5 border border-[#E5ECEB] shadow-xs space-y-3">
     @csrf
     <h2 class="text-sm font-extrabold text-[#1C2224]">Tambah Akun</h2>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -82,7 +82,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS monitor_accounts_unique
   @endphp
 
   <!-- Daftar Akun Dipantau -->
-  <div class="bg-white rounded-3xl p-5 border border-[#E5ECEB] shadow-xs space-y-2">
+  <div class="bg-white rounded-2xl p-3.5 border border-[#E5ECEB] shadow-xs space-y-2">
     <div class="flex items-center justify-between pb-2 border-b border-[#E5ECEB]">
       <h2 class="text-sm font-extrabold text-[#1C2224]">Akun Dipantau</h2>
       <span class="px-2.5 py-0.5 rounded-full bg-[#E6F4F1] text-[#1D4D4F] text-[11px] font-bold border border-[#D1EAE5]">{{ count($monitors) }} akun · {{ collect($monitors)->where('is_active', true)->count() }} aktif</span>
@@ -108,7 +108,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS monitor_accounts_unique
   </div>
 
   <!-- Daftar Blacklist -->
-  <div class="bg-white rounded-3xl p-5 border border-[#E5ECEB] shadow-xs space-y-2">
+  <div class="bg-white rounded-2xl p-3.5 border border-[#E5ECEB] shadow-xs space-y-2">
     <div class="flex items-center justify-between pb-2 border-b border-[#E5ECEB]">
       <h2 class="text-sm font-extrabold text-[#1C2224]">Blacklist (Ditolak Permanen)</h2>
       <span class="px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 text-[11px] font-bold border border-red-200">{{ count($blacklists) }} entri</span>
