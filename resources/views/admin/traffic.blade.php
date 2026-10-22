@@ -150,5 +150,31 @@ CREATE INDEX IF NOT EXISTS idx_traffic_events_created
     @endforelse
   </div>
 
+  <!-- Aktivitas Kunjungan Pengguna -->
+  <div class="bg-white rounded-2xl p-3.5 border border-[#E5ECEB] shadow-xs space-y-1">
+    <h2 class="text-xs font-extrabold text-[#1C2224] pb-1">Aktivitas Kunjungan Pengguna</h2>
+    @if($userActivity === null)
+      <p class="text-[11px] text-[#607072]">Data pengguna belum tersedia.</p>
+    @else
+      @forelse($userActivity as $a)
+        <div class="flex items-center justify-between text-[11px] py-1 border-b border-[#F1F5F4] last:border-0 gap-3">
+          <div class="min-w-0">
+            <p class="font-bold text-[#1C2224] truncate">{{ $a['name'] !== '' ? $a['name'] : '—' }}</p>
+            <p class="text-[#607072] truncate">{{ $a['email'] }}</p>
+            <p class="text-[#607072] truncate">Login terakhir: {{ !empty($a['last_login_at']) ? \Carbon\Carbon::parse($a['last_login_at'])->setTimezone('Asia/Jakarta')->format('d M Y H:i') . ' WIB' : '—' }}</p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="text-[#1C2224] font-bold">{{ !empty($a['last_seen_at']) ? \Carbon\Carbon::parse($a['last_seen_at'])->setTimezone('Asia/Jakarta')->format('d M H:i') : '—' }}</p>
+            <p class="text-[#607072]">{{ $a['tracked'] && $a['hits7'] !== null ? $a['hits7'] . ' kunjung 7hr · ' . $a['hits30'] . ' /30hr' : 'belum terlacak' }}</p>
+            <p class="text-[#607072] truncate">{{ $a['last_path'] ? 'terakhir: ' . $a['last_path'] : '' }}</p>
+          </div>
+        </div>
+      @empty
+        <p class="text-[11px] text-[#607072]">Belum ada pengguna terdaftar.</p>
+      @endforelse
+      <p class="text-[10px] text-[#607072] pt-1">Kunjungan dihitung dari pageview user yang sedang login (mulai tercatat sejak fitur ini aktif).</p>
+    @endif
+  </div>
+
 </div>
 @endsection

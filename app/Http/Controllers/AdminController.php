@@ -204,7 +204,14 @@ class AdminController extends Controller
         $excludeEmails = collect([strtolower((string) config('app.admin_email'))])
             ->merge(array_map('strtolower', (array) config('app.traffic_exclude_emails', [])))
             ->filter()->unique()->values()->all();
+        // Kolom aktivitas (last_login_at/last_seen_at) ditambahkan lewat SQL
+        // Editor (perintah user 2026-10-23); sebelum SQL dijalankan query
+        // lengkap ini gagal -> fallback ke select dasar agar halaman utuh.
         $userRows = $this->sbGet('app_users', [
+            'select' => 'id,name,email,provider,created_at,last_login_at,last_seen_at',
+            'order' => 'id.desc',
+            'limit' => 1000,
+        ]) ?? $this->sbGet('app_users', [
             'select' => 'id,name,email,provider,created_at',
             'order' => 'id.desc',
             'limit' => 1000,
@@ -287,7 +294,52 @@ class AdminController extends Controller
             ];
         }
 
-        return view('admin.traffic', compact('stats', 'recentUsers', 'topMasjid', 'traffic'));
+        // --- Aktivitas kunjungan per pengguna (perintah user 2026-10-23) ---
+        // Pageview user login kini membawa user_email (beacon /traffic/hit-user).
+        // Null pada hits = kolom user_email belum dibuat -> tampilkan "—".
+        $userActivity = null;
+        if (isset($kept)) {
+            $uEvents = $this->sbGet('traffic_events', [
+                'select' => 'user_email,path,created_at',
+                'user_email' => 'not.is.null',
+                'created_at' => 'gte.' . $now->copy()->subDays(29)->startOfDay()->toIso8601String(),
+                'order' => 'created_at.desc',
+                'limit' => 10000,
+            ]);
+            $agg = [];
+            if ($uEvents !== null) {
+                foreach ($uEvents as $ev) {
+                    $em = strtolower((string) ($ev['user_email'] ?? ''));
+                    if ($em === '') continue;
+                    $day = \Carbon\Carbon::parse($ev['created_at'])->setTimezone('Asia/Jakarta')->toDateString();
+                    $agg[$em] ??= ['hits30' => 0, 'hits7' => 0, 'last_at' => null, 'last_path' => null];
+                    $agg[$em]['hits30']++;
+                    if ($day >= $since7) $agg[$em]['hits7']++;
+                    if ($agg[$em]['last_at'] === null) { // urutan desc: baris pertama = terbaru
+                        $agg[$em]['last_at'] = $ev['created_at'];
+                        $agg[$em]['last_path'] = (string) ($ev['path'] ?? '/');
+                    }
+                }
+            }
+            $userActivity = [];
+            foreach ($kept as $u) {
+                $em = strtolower((string) ($u['email'] ?? ''));
+                $a = $agg[$em] ?? null;
+                $userActivity[] = [
+                    'name' => $u['name'] ?? '',
+                    'email' => $u['email'] ?? '',
+                    'last_login_at' => $u['last_login_at'] ?? null,
+                    'last_seen_at' => $u['last_seen_at'] ?? ($a['last_at'] ?? null),
+                    'hits7' => $a['hits7'] ?? null,
+                    'hits30' => $a['hits30'] ?? null,
+                    'last_path' => $a['last_path'] ?? null,
+                    'tracked' => $uEvents !== null,
+                ];
+            }
+            usort($userActivity, fn ($x, $y) => strcmp((string) ($y['last_seen_at'] ?? ''), (string) ($x['last_seen_at'] ?? '')));
+        }
+
+        return view('admin.traffic', compact('stats', 'recentUsers', 'topMasjid', 'traffic', 'userActivity'));
     }
 
     /**

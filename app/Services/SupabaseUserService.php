@@ -165,6 +165,31 @@ class SupabaseUserService
     }
 
     /**
+     * Catat aktivitas user (perintah user 2026-10-23): kolom last_login_at /
+     * last_seen_at di app_users, agar admin bisa melihat kapan user terakhir
+     * login & berkunjung. Fire-and-forget: gagal (termasuk kolom belum dibuat
+     * lewat SQL Editor) TIDAK PERNAH mengganggu alur login/kunjungan.
+     * $fields hanya boleh berisi last_login_at dan/atau last_seen_at.
+     */
+    public function touchActivity(string $email, array $fields): void
+    {
+        if (!$this->enabled()) return;
+
+        $allowed = array_intersect_key($fields, array_flip(['last_login_at', 'last_seen_at']));
+        if ($allowed === []) return;
+
+        try {
+            Http::withHeaders(array_merge($this->headers(), [
+                    'Prefer' => 'return=minimal',
+                ]))
+                ->timeout(5)
+                ->patch("{$this->url}/rest/v1/app_users?email=eq." . urlencode(strtolower(trim($email))), $allowed);
+        } catch (\Exception $e) {
+            Log::debug('Supabase touchActivity diabaikan: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Ambil user by ID.
      */
     public function find(int $id): ?array

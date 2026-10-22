@@ -17,7 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // header X-Forwarded-nya boleh dipercaya — lihat TrustVercelProxy.
         $middleware->prepend(\App\Http\Middleware\TrustVercelProxy::class);
         $middleware->redirectGuestsTo('/masuk');
-        $middleware->validateCsrfTokens(except: ['webhook/*', 'api/push/*']);
+        $middleware->validateCsrfTokens(except: ['webhook/*', 'api/push/*', 'traffic/hit-user']);
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
         // Hidupkan ulang login di instance Vercel mana pun dari identitas
         // yang tersimpan di sesi cookie (SQLite lokal tiap instance berbeda).

@@ -60,6 +60,12 @@ class AuthController extends Controller
             \Illuminate\Support\Facades\RateLimiter::clear($throttleKey);
             $request->session()->regenerate();
 
+            // Catat aktivitas login untuk menu admin Traffic (perintah user 2026-10-23).
+            (new \App\Services\SupabaseUserService())->touchActivity((string) Auth::user()->email, [
+                'last_login_at' => now()->toIso8601String(),
+                'last_seen_at' => now()->toIso8601String(),
+            ]);
+
             return redirect()->intended(route('profile'))
                 ->with('success', 'Selamat datang kembali, ' . Auth::user()->name . '!');
         }
@@ -81,6 +87,12 @@ class AuthController extends Controller
                 Auth::login($user, $remember);
                 \Illuminate\Support\Facades\RateLimiter::clear($throttleKey);
                 $request->session()->regenerate();
+
+                // Catat aktivitas login untuk menu admin Traffic (perintah user 2026-10-23).
+                $sbSvc->touchActivity((string) $user->email, [
+                    'last_login_at' => now()->toIso8601String(),
+                    'last_seen_at' => now()->toIso8601String(),
+                ]);
 
                 return redirect()->intended(route('profile'))
                     ->with('success', 'Selamat datang kembali, ' . $user->name . '!');

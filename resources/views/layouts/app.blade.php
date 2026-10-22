@@ -459,16 +459,20 @@
   @unless($trafficExcluded)
   <script>
     // Beacon traffic first-party untuk menu admin Traffic: hanya path
-    // halaman, tanpa cookie / data pribadi. Gagal = diam (tak penting).
+    // halaman. Tamu -> endpoint anonim. User login -> endpoint sesi
+    // (identitas diambil server dari sesi, bukan dari halaman ini) agar
+    // admin bisa melihat aktivitas kunjungan per user (perintah user
+    // 2026-10-23). Gagal = diam (tak penting).
     (function () {
       try {
         var p = location.pathname;
         if (p.indexOf('/admin') === 0 || p.indexOf('/api') === 0) return;
+        var url = @json(auth()->check() ? '/traffic/hit-user' : '/api/traffic/hit');
         var body = JSON.stringify({ path: p });
         if (navigator.sendBeacon) {
-          navigator.sendBeacon('/api/traffic/hit', new Blob([body], { type: 'application/json' }));
+          navigator.sendBeacon(url, new Blob([body], { type: 'application/json' }));
         } else {
-          fetch('/api/traffic/hit', { method: 'POST', body: body, headers: { 'Content-Type': 'application/json' }, keepalive: true }).catch(function () {});
+          fetch(url, { method: 'POST', body: body, headers: { 'Content-Type': 'application/json' }, keepalive: true }).catch(function () {});
         }
       } catch (e) {}
     })();

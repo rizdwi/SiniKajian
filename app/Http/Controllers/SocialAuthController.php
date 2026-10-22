@@ -163,6 +163,13 @@ class SocialAuthController extends Controller
             }
 
             Auth::login($user, true);
+
+            // Catat aktivitas login untuk menu admin Traffic (perintah user 2026-10-23).
+            $sbSvc->touchActivity((string) $user->email, [
+                'last_login_at' => now()->toIso8601String(),
+                'last_seen_at' => now()->toIso8601String(),
+            ]);
+
             return redirect()->intended(route('kajian.index'));
 
         } catch (\Exception $e) {

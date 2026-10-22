@@ -18,6 +18,10 @@ Route::get('/peta', [KajianController::class, 'map'])->name('kajian.map');
 Route::get('/kiblat', [KajianController::class, 'qibla'])->name('kajian.qibla');
 Route::get('/tersimpan', [KajianController::class, 'saved'])->name('kajian.saved');
 
+// Beacon pageview user login (grup web: identitas dari sesi server, bukan
+// payload klien) untuk menu admin Traffic — perintah user 2026-10-23.
+Route::post('/traffic/hit-user', [\App\Http\Controllers\TrafficController::class, 'hitUser'])->middleware('throttle:60,1')->name('traffic.hit-user');
+
 // Interaksi Kajian
 Route::post('/kajian', [KajianController::class, 'store'])->middleware('throttle:5,15')->name('kajian.store');
 Route::post('/kajian/{id}/bookmark', [KajianController::class, 'toggleBookmark'])->middleware('throttle:30,1')->name('kajian.bookmark');
