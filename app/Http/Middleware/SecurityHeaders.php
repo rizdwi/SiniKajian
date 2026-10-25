@@ -21,12 +21,14 @@ class SecurityHeaders
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('Permissions-Policy', 'geolocation=(self), camera=(), microphone=()');
 
-        // CSP: izinkan self, Tailwind CDN, Google Maps, Mapbox, Fonts, Turnstile
+        // CSP: izinkan self, Tailwind CDN, Google Maps, Mapbox, Turnstile.
+        // Font self-hosted (2026-10-25): fonts.googleapis.com / fonts.gstatic.com
+        // dihapus dari CSP karena font kini disajikan dari /fonts sendiri.
         $csp = "default-src 'self'; " .
                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://maps.googleapis.com https://maps.gstatic.com https://api.mapbox.com https://challenges.cloudflare.com; " .
-               "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com https://api.mapbox.com; " .
+               "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://api.mapbox.com; " .
                "img-src 'self' data: blob: https:; " .
-               "font-src 'self' https://fonts.gstatic.com; " .
+               "font-src 'self'; " .
                "connect-src 'self' https://*.supabase.co https://maps.googleapis.com https://api.mapbox.com https://events.mapbox.com; " .
                "frame-src https://challenges.cloudflare.com; " .
                "frame-ancestors 'self'; " .

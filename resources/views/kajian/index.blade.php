@@ -151,9 +151,13 @@
 
   <!-- Hero Spotlight: Majelis Pilihan Terdekat (Figma Screen 1: KAJIAN PILIHAN) -->
   <!-- Banner carousel: berdiri sendiri sebagai track horizontal, bisa di-swipe -->
-  <section id="heroSpotlightContainer" class="hidden">
-    <div id="spotlightViewport" class="overflow-hidden rounded-3xl" style="touch-action:pan-y;">
-      <div id="spotlightTrack" class="flex will-change-transform"></div>
+  <section id="heroSpotlightContainer">
+    <div id="spotlightViewport" class="overflow-hidden rounded-3xl" style="touch-action:pan-y;min-height:208px;">
+      <div id="spotlightTrack" class="flex will-change-transform">
+        <!-- Skeleton: ruang hero dicadangkan sejak paint pertama agar tidak
+             ada lompatan tata letak (CLS) saat JS mengisi carousel (2026-10-25) -->
+        <div class="w-full h-52 bg-[#153A3B] animate-pulse shrink-0" aria-hidden="true"></div>
+      </div>
     </div>
   </section>
 
@@ -1001,8 +1005,12 @@
     const diff = Math.round((target - today) / 86400000);
     if (diff < 0) return '';
     let label = diff === 0 ? 'Hari ini' : diff === 1 ? 'Besok' : diff + ' hari lagi';
-    let bg = diff === 0 ? '#DC2626' : diff === 1 ? '#EAB308' : '#16A34A';
-    return `<span style="background:${bg};color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:9999px;white-space:nowrap;flex-shrink:0;">${label}</span>`;
+    // Kontras aksesibilitas (Lighthouse 2026-10-25): teks putih di kuning
+    // #EAB308 (1,6:1) dan hijau #16A34A (3,0:1) gagal 4,5:1 untuk teks kecil.
+    // Besok = teks gelap di kuning; 2+ hari = hijau lebih gelap + teks putih.
+    let bg = diff === 0 ? '#DC2626' : diff === 1 ? '#EAB308' : '#15803D';
+    let fg = diff === 1 ? '#422006' : '#fff';
+    return `<span style="background:${bg};color:${fg};font-size:9px;font-weight:700;padding:2px 8px;border-radius:9999px;white-space:nowrap;flex-shrink:0;">${label}</span>`;
   }
 
   // Helper: validasi URL aman (cegah javascript: dll)
@@ -1032,7 +1040,8 @@
       if (u.hostname.includes('supabase.co') && u.pathname.includes('/storage/v1/object/public/')) {
         u.pathname = u.pathname.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
         u.searchParams.set('width', width || 200);
-        u.searchParams.set('quality', 70);
+        u.searchParams.set('quality', 60);
+        u.searchParams.set('format', 'webp');
         u.searchParams.set('resize', 'cover');
         return u.toString();
       }
@@ -1242,7 +1251,7 @@
         ).join('');
         return `
         <div class="spot-slide relative shrink-0 cursor-pointer overflow-hidden bg-[#153A3B]" style="width:100%;" data-slide-idx="${i}">
-          <img src="${item.poster_url ? supabaseThumb(item.poster_url, 800) : 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=800&q=80'}" alt="Kajian Pilihan" class="w-full h-52 object-cover opacity-85" draggable="false">
+          <img src="${item.poster_url ? supabaseThumb(item.poster_url, 800) : 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=800&q=80'}" alt="Kajian Pilihan" class="w-full h-52 object-cover opacity-85" draggable="false" fetchpriority="high" decoding="async">
           <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/30"></div>
           <div class="absolute top-3 inset-x-3 flex items-center justify-between">
             <span class="px-3 py-1 rounded-full text-[10px] font-extrabold tracking-wider uppercase bg-[#E6F4F1] text-[#1D4D4F] shadow-xs">KAJIAN PILIHAN</span>
@@ -1451,7 +1460,7 @@
                 ${escapeHtml(ev.category || 'Umum')}
               </span>
               ${hasSource ? `
-                <a href="${safeUrl(ev.source_url)}" target="_blank" rel="noopener noreferrer" title="Buka sumber asli di ${escapeHtml(srcMeta.label)}" class="inline-flex items-center gap-1 text-[9px] font-bold text-white px-2 py-0.5 rounded-full shadow-xs no-underline transition hover:opacity-90 cursor-pointer" style="${srcMeta.style}">
+                <a href="${safeUrl(ev.source_url)}" target="_blank" rel="noopener noreferrer" title="Buka sumber asli di ${escapeHtml(srcMeta.label)}" aria-label="Buka sumber asli di ${escapeHtml(srcMeta.label)} — kajian #${ev.id}" class="inline-flex items-center gap-1 text-[9px] font-bold text-white px-2 py-0.5 rounded-full shadow-xs no-underline transition hover:opacity-90 cursor-pointer" style="${srcMeta.style}">
                   <span class="font-extrabold text-[9px]">${srcMeta.glyph}</span>
                   <span>${escapeHtml(srcMeta.label)} ↗</span>
                 </a>

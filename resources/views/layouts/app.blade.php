@@ -2,7 +2,7 @@
 <html lang="id" class="h-full">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <script>
     // Dark mode: terapkan sebelum render untuk hindari flash
     (function() {
@@ -54,10 +54,11 @@
   <!-- Tailwind CSS: build statis (public/css/app.css, dikompilasi dari
        tailwind.config.js) menggantikan runtime CDN — browser tak lagi
        mengompilasi utility di setiap halaman (upgrade kecepatan 2026-10-20) -->
-  <link rel="stylesheet" href="{{ asset('css/app.css') }}?v=20261021a">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ asset('css/app.css') }}?v=20261025a">
+  <!-- Font self-hosted (2026-10-25): Plus Jakarta Sans dari /fonts, bukan
+       Google Fonts — menghapus rantai render-blocking ke fonts.googleapis.com
+       (Lighthouse: hemat ~750 md di 4G lambat). Preload agar FCP tidak menunggu. -->
+  <link rel="preload" href="{{ asset('fonts/plus-jakarta-sans-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
   @stack('styles')
 
   <style>
@@ -252,7 +253,7 @@
   </script>
 
   <!-- Zero-Click Auto Geolocation & Sensor Engine -->
-  <script src="{{ asset('js/geo-engine.js') }}" defer></script>
+  <script src="{{ asset('js/geo-engine.js') }}?v=20261025a" defer></script>
 
   @yield('scripts')
 
