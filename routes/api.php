@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/kajian', [KajianController::class, 'apiList'])->name('api.kajian');
 Route::get('/kajians', [KajianController::class, 'apiList']);
 
+// Detail ringkas satu kajian (B+C 2026-10-26): hanya id + description,
+// dipakai modal detail beranda. whereNumber agar tidak menabrak /kajian.
+Route::get('/kajian/{id}', [KajianController::class, 'apiShow'])->whereNumber('id')->name('api.kajian.show');
+
 // Beacon pageview untuk menu admin Traffic (catat path saja, tanpa PII).
 Route::post('/traffic/hit', [\App\Http\Controllers\TrafficController::class, 'hit']);
 

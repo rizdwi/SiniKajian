@@ -182,7 +182,104 @@
   @endif
 
   <!-- Feed Daftar Kajian -->
-  <section class="space-y-3" id="kajianCardsList">
+  {{-- Kartu server-render (B+C 2026-10-26): 12 kartu pertama tampilan default
+       dirender di server dari koleksi yang sama (tanpa query tambahan),
+       agar cat pertama sudah berisi konten, bukan skeleton. JS
+       (renderKajianFeed) mempertahankan kartu ini bila urutannya sama
+       persis dengan hasil hitungnya; kalau beda, dibangun ulang seperti
+       biasa. Bila $serverCards kosong, skeleton lama dipakai fallback. --}}
+  @php
+    $skMonths = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    $skTanggalIndo = function ($date) use ($skMonths) {
+      if (!$date) return '';
+      $p = explode('-', substr((string) $date, 0, 10));
+      if (count($p) !== 3) return '';
+      return ((int) $p[2]) . ' ' . ($skMonths[((int) $p[1]) - 1] ?? '') . ' ' . $p[0];
+    };
+    $skHariLagi = function ($date) {
+      if (!$date) return '';
+      $today = \Carbon\Carbon::now('Asia/Jakarta')->startOfDay();
+      $target = \Carbon\Carbon::parse(substr((string) $date, 0, 10))->startOfDay();
+      $diff = $today->diffInDays($target, false);
+      if ($diff < 0) return '';
+      $label = $diff === 0 ? 'Hari ini' : ($diff === 1 ? 'Besok' : $diff . ' hari lagi');
+      $bg = $diff === 0 ? '#DC2626' : ($diff === 1 ? '#EAB308' : '#15803D');
+      $fg = $diff === 1 ? '#422006' : '#fff';
+      return '<span style="background:' . $bg . ';color:' . $fg . ';font-size:9px;font-weight:700;padding:2px 8px;border-radius:9999px;white-space:nowrap;flex-shrink:0;">' . $label . '</span>';
+    };
+    $skThumb = function ($url, $w = 200) {
+      if (!$url) return null;
+      $parts = parse_url($url);
+      if (!isset($parts['host']) || !str_contains($parts['host'], 'supabase.co')) return $url;
+      if (!isset($parts['path']) || !str_contains($parts['path'], '/storage/v1/object/public/')) return $url;
+      $path = str_replace('/storage/v1/object/public/', '/storage/v1/render/image/public/', $parts['path']);
+      return ($parts['scheme'] ?? 'https') . '://' . $parts['host'] . $path . '?width=' . (int) $w . '&quality=60&format=webp&resize=cover';
+    };
+    $skSourceMeta = function ($source) {
+      $map = [
+        'instagram' => ['label' => 'Instagram', 'style' => 'background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)', 'glyph' => 'IG'],
+        'facebook' => ['label' => 'Facebook', 'style' => 'background:#1877F2', 'glyph' => 'f'],
+        'threads' => ['label' => 'Threads', 'style' => 'background:#111111', 'glyph' => '@'],
+      ];
+      return $map[$source] ?? $map['facebook'];
+    };
+    $skSafeUrl = function ($url) {
+      if (!$url) return '#';
+      $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+      return in_array($scheme, ['http', 'https'], true) ? $url : '#';
+    };
+  @endphp
+  <section class="space-y-3" id="kajianCardsList" @if(!empty($serverCards)) data-server-rendered="1" @endif>
+    @if(!empty($serverCards))
+      @foreach($serverCards as $c)
+        @php
+          $cThumb = $skThumb($c['poster_url'] ?? null, 200);
+          $cMeta = $skSourceMeta($c['source'] ?? 'instagram');
+          $cHasSource = !empty($c['source_url']) && $c['source_url'] !== '#';
+        @endphp
+        <article data-kajian-id="{{ $c['id'] }}" class="bg-white dark:bg-[#162526] rounded-2xl p-3.5 border border-[#E5ECEB] dark:border-[#1E2E2F] shadow-xs hover:border-[#1D4D4F]/50 transition-all cursor-pointer{{ !empty($c['is_cancelled']) ? ' !border-red-300' : '' }}" style="position:relative;overflow:hidden;">
+          @if(!empty($c['is_cancelled']))
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:10;">
+            <span style="border:4px solid #dc2626;color:#dc2626;font-weight:900;font-size:28px;letter-spacing:4px;padding:6px 20px;border-radius:8px;transform:rotate(-12deg);background:rgba(255,255,255,0.75);text-transform:uppercase;font-family:system-ui;">Dibatalkan</span>
+          </div>
+          @endif
+          <div class="flex items-start gap-3"@if(!empty($c['is_cancelled'])) style="opacity:0.45;filter:grayscale(0.6);"@endif>
+            @if($cThumb)
+            <div class="w-16 h-16 rounded-2xl overflow-hidden shrink-0 bg-slate-100 border border-[#E5ECEB] shadow-xs">
+              <img src="{{ $cThumb }}" alt="Flyer" class="w-full h-full object-cover" loading="lazy" decoding="async" onerror="this.parentElement.style.display='none'">
+            </div>
+            @else
+            <div class="w-16 h-16 rounded-2xl overflow-hidden shrink-0 bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center font-bold text-xs border border-[#E5ECEB]">
+              <span>{{ mb_substr($c['category'] ?: 'ILMU', 0, 4) }}</span>
+            </div>
+            @endif
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1 flex-wrap mb-1">
+                <span class="text-[10px] font-bold text-[#1D4D4F] bg-[#E6F4F1] px-2 py-0.5 rounded-full whitespace-nowrap">{{ $c['day'] }}{{ $c['event_date'] ? ', ' . $skTanggalIndo($c['event_date']) : '' }} • {{ $c['time'] }}</span>
+                {!! $skHariLagi($c['event_date']) !!}
+              </div>
+              <h3 class="text-xs sm:text-sm font-bold text-[#1C2224] dark:text-[#E8EDED] leading-snug line-clamp-2 hover:text-[#1D4D4F]">{{ $c['title'] }}</h3>
+              <p class="text-[11px] text-[#607072] dark:text-[#9BA8A9] mt-0.5 truncate">{{ $c['ustadz'] }} • {{ $c['masjid'] }}</p>
+              <div class="flex items-center gap-1.5 mt-2 flex-wrap" onclick="event.stopPropagation();">
+                <span class="text-[9px] font-medium text-[#607072] dark:text-[#9BA8A9] bg-[#F8FAF9] border border-[#E5ECEB] px-2 py-0.5 rounded-md">{{ $c['category'] ?: 'Umum' }}</span>
+                @if($cHasSource)
+                <a href="{{ $skSafeUrl($c['source_url']) }}" target="_blank" rel="noopener noreferrer" title="Buka sumber asli di {{ $cMeta['label'] }}" aria-label="Buka sumber asli di {{ $cMeta['label'] }} — kajian #{{ $c['id'] }}" class="inline-flex items-center gap-1 text-[9px] font-bold text-white px-2 py-0.5 rounded-full shadow-xs no-underline transition hover:opacity-90 cursor-pointer" style="{{ $cMeta['style'] }}">
+                  <span class="font-extrabold text-[9px]">{{ $cMeta['glyph'] }}</span>
+                  <span>{{ $cMeta['label'] }} ↗</span>
+                </a>
+                @endif
+              </div>
+            </div>
+            <div class="self-center flex flex-col items-center gap-1.5 pl-1 shrink-0">
+              <span data-dist class="text-[10px] font-bold text-[#1D4D4F] dark:text-[#7FC4BC] whitespace-nowrap">{{ isset($c['distance']) ? number_format((float) $c['distance'], 1) . ' km' : '— km' }}</span>
+              <svg class="w-4 h-4 text-[#607072] dark:text-[#9BA8A9]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              </svg>
+            </div>
+          </div>
+        </article>
+      @endforeach
+    @else
     <!-- Skeleton loading (diganti JS saat data siap) -->
     <div id="feedSkeleton" class="space-y-3" aria-hidden="true">
       <div class="bg-white dark:bg-[#162526] rounded-2xl p-3.5 border border-[#E5ECEB] dark:border-[#1E2E2F]">
@@ -216,6 +313,7 @@
         </div>
       </div>
     </div>
+    @endif
   </section>
 
   <!-- Empty State (R-27 compliant) -->
@@ -1403,10 +1501,10 @@
     }
 
     emptyState.classList.add('hidden');
-    container.innerHTML = '';
 
     // Mode agenda: grup per tanggal
     if (viewMode === 'agenda') {
+      container.innerHTML = '';
       renderAgendaView(container, filtered);
       return;
     }
@@ -1415,6 +1513,28 @@
     const displayLimit = window.kajianDisplayLimit || 12;
     const toShow = filtered.slice(0, displayLimit);
 
+    // Kartu server-render (B+C 2026-10-26): pertahankan bila urutannya
+    // sudah sama persis dengan hasil hitung JS (id sama, urutan sama).
+    // Kalau beda (mis. lokasi tersimpan user bukan titik default), bangun
+    // ulang seperti biasa. Jarak di kartu server ikut diperbarui dari
+    // hitungan JS agar tidak tertinggal jarak titik default.
+    let keptServerCards = false;
+    if (container.dataset.serverRendered === '1') {
+      const serverCards = [...container.querySelectorAll('[data-kajian-id]')];
+      const serverIds = serverCards.map(el => Number(el.dataset.kajianId));
+      const wantIds = toShow.map(ev => Number(ev.id));
+      if (serverIds.length === wantIds.length && serverIds.every((id, i) => id === wantIds[i])) {
+        keptServerCards = true;
+        toShow.forEach((ev, i) => {
+          const span = serverCards[i].querySelector('[data-dist]');
+          if (span) span.textContent = ev.distance != null ? ev.distance.toFixed(1) + ' km' : '— km';
+        });
+      }
+      delete container.dataset.serverRendered;
+    }
+
+    if (!keptServerCards) {
+    container.innerHTML = '';
     toShow.forEach(ev => {
       const isSaved = userBookmarkIds.has(ev.id);
       const srcMeta = SOURCE_META[ev.source] || SOURCE_META.facebook;
@@ -1474,7 +1594,7 @@
           </div>
           
           <div class="self-center flex flex-col items-center gap-1.5 pl-1 shrink-0">
-            <span class="text-[10px] font-bold text-[#1D4D4F] dark:text-[#7FC4BC] whitespace-nowrap">${ev.distance != null ? ev.distance.toFixed(1) + ' km' : '— km'}</span>
+            <span data-dist class="text-[10px] font-bold text-[#1D4D4F] dark:text-[#7FC4BC] whitespace-nowrap">${ev.distance != null ? ev.distance.toFixed(1) + ' km' : '— km'}</span>
             <svg class="w-4 h-4 text-[#607072] dark:text-[#9BA8A9]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
             </svg>
@@ -1483,6 +1603,7 @@
       `;
       container.appendChild(card);
     });
+    }
 
     // Tombol "Muat Lebih Banyak" jika masih ada
     const existingBtn = document.getElementById('loadMoreBtn');
@@ -1542,6 +1663,24 @@
     document.getElementById('modalAudience').innerText = ev.audience ? `Terbuka untuk ${ev.audience}` : 'Terbuka untuk umum';
     document.getElementById('modalHeroSub').innerText = `${ev.ustadz} • ${ev.masjid}`;
     document.getElementById('modalDescription').innerText = ev.description || 'Kajian ilmiah ahlussunnah wal jamaah, terbuka untuk jamaah yang ingin menuntut ilmu syar\'i.';
+    // Deskripsi tidak lagi dibawa JSON beranda (B+C): ambil on-demand.
+    // Modal tetap langsung tampil dengan teks fallback di atas; deskripsi
+    // asli menyusul tanpa menunda klik. Gagal fetch = fallback tetap.
+    if (!ev.description) {
+      fetch('/api/kajian/' + encodeURIComponent(ev.id), { headers: { 'Accept': 'application/json' } })
+        .then(r => r.ok ? r.json() : null)
+        .then(j => {
+          const d = j && j.data && j.data.description;
+          if (d) {
+            ev.description = d;
+            if (currentDetailEvent && Number(currentDetailEvent.id) === Number(ev.id)) {
+              const el = document.getElementById('modalDescription');
+              if (el) el.innerText = d;
+            }
+          }
+        })
+        .catch(() => {});
+    }
     
     // Flyer Preview - hanya tampil jika ada flyer asli
     const flyerWrapper = document.getElementById('modalFlyerWrapper');

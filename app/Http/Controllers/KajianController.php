@@ -34,6 +34,123 @@ class KajianController extends Controller
     }
 
     /**
+     * Titik lokasi default (Bandung) — SAMA dengan fallback JS di
+     * index.blade.php saat belum ada lokasi tersimpan / GPS. Dipakai
+     * serverFirstCards agar urutan kartu server = urutan render pertama JS.
+     */
+    private const DEFAULT_LAT = -6.9175;
+    private const DEFAULT_LON = 107.6191;
+    private const DEFAULT_RADIUS_KM = 25;
+
+    /**
+     * Baca satu field dari item koleksi (stdClass Supabase atau model Eloquent).
+     */
+    private function kfield($item, string $key, $default = null)
+    {
+        if (is_array($item)) {
+            return $item[$key] ?? $default;
+        }
+        if (is_object($item)) {
+            return $item->{$key} ?? $default;
+        }
+        return $default;
+    }
+
+    /**
+     * Satu item -> array ringkas untuk JSON beranda. Sengaja DIBUANG:
+     * flyer_url (duplikat poster_url), is_rutin, verified (tak dipakai FE),
+     * description (diambil on-demand via apiShow saat modal dibuka).
+     */
+    private function slimKajianItem($item): array
+    {
+        $date = $this->kfield($item, 'event_date');
+        if ($date instanceof \DateTimeInterface) {
+            $date = $date->format('Y-m-d');
+        } elseif (is_string($date) && strlen($date) > 10) {
+            $date = substr($date, 0, 10);
+        }
+        $dt = $this->kfield($item, 'event_datetime', $date);
+        if ($dt instanceof \DateTimeInterface) {
+            $dt = $dt->format('Y-m-d');
+        } elseif (is_string($dt) && strlen($dt) > 10) {
+            $dt = substr($dt, 0, 10);
+        }
+
+        return [
+            'id' => (int) $this->kfield($item, 'id', 0),
+            'title' => (string) $this->kfield($item, 'title', ''),
+            'ustadz' => (string) $this->kfield($item, 'ustadz', ''),
+            'masjid' => (string) $this->kfield($item, 'masjid', ''),
+            'address' => (string) $this->kfield($item, 'address', ''),
+            'day' => (string) $this->kfield($item, 'day', ''),
+            'event_date' => $date ?: null,
+            'event_datetime' => $dt ?: null,
+            'time' => (string) $this->kfield($item, 'time', ''),
+            'category' => (string) $this->kfield($item, 'category', 'Kajian'),
+            'audience' => (string) $this->kfield($item, 'audience', 'Umum'),
+            'lat' => (float) $this->kfield($item, 'lat', 0),
+            'lon' => (float) $this->kfield($item, 'lon', 0),
+            'poster_url' => $this->kfield($item, 'poster_url'),
+            'source' => (string) $this->kfield($item, 'source', 'instagram'),
+            'source_url' => (string) $this->kfield($item, 'source_url', ''),
+            'is_cancelled' => (bool) $this->kfield($item, 'is_cancelled', false),
+        ];
+    }
+
+    private function slimKajianPayload($collection): array
+    {
+        return collect($collection)->map(fn($item) => $this->slimKajianItem($item))->values()->all();
+    }
+
+    private function haversineKm(float $lat1, float $lon1, float $lat2, float $lon2): float
+    {
+        $r = 6371.0;
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+        $a = sin($dLat / 2) ** 2 + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon / 2) ** 2;
+        return 2 * $r * asin(min(1, sqrt($a)));
+    }
+
+    /**
+     * 12 kartu pertama tampilan default beranda (radius 25 km dari titik
+     * default, urut tanggal -> jarak -> jam — sama persis dengan
+     * renderKajianFeed() di JS). Dihitung dari koleksi yang SUDAH diambil
+     * (tanpa query tambahan — nol beban server ekstra).
+     */
+    private function serverFirstCards($collection): array
+    {
+        $items = [];
+        foreach ($collection as $item) {
+            $lat = (float) $this->kfield($item, 'lat', 0);
+            $lon = (float) $this->kfield($item, 'lon', 0);
+            if (!$lat || !$lon) {
+                continue;
+            }
+            $dist = $this->haversineKm(self::DEFAULT_LAT, self::DEFAULT_LON, $lat, $lon);
+            if ($dist > self::DEFAULT_RADIUS_KM) {
+                continue;
+            }
+            $slim = $this->slimKajianItem($item);
+            // Presisi penuh untuk urut (JS mengurut dengan jarak presisi
+            // penuh juga); pembulatan 1 desimal hanya saat tampil di Blade.
+            $slim['distance'] = $dist;
+            $items[] = $slim;
+        }
+        usort($items, function ($a, $b) {
+            $da = $a['event_date'] ?? '9999-12-31';
+            $db = $b['event_date'] ?? '9999-12-31';
+            if ($da !== $db) {
+                return $da <=> $db;
+            }
+            if ($a['distance'] !== $b['distance']) {
+                return $a['distance'] <=> $b['distance'];
+            }
+            return ($a['time'] ?? '') <=> ($b['time'] ?? '');
+        });
+        return array_slice($items, 0, 12);
+    }
+
+    /**
      * Index via Supabase REST API.
      */
     protected function indexFromSupabase(Request $request, SupabaseKajianService $service): View
@@ -43,8 +160,11 @@ class KajianController extends Controller
 
         $categories = $service->getCategories();
 
-        // JSON untuk peta (semua, tanpa filter/pagination) — dari hasil yang sama, tanpa API call ke-2
-        $mapJson = $collection->toJson(JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+        // JSON ringkas untuk feed client-side (semua, tanpa filter/pagination)
+        // — dari hasil yang sama, tanpa API call ke-2. Slim (B+C 2026-10-26):
+        // tanpa flyer_url/is_rutin/verified/description (~29% lebih kecil).
+        $mapJson = json_encode($this->slimKajianPayload($collection), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+        $serverCards = $this->serverFirstCards($collection);
 
         // Filter
         if ($request->filled('kategori') && $request->kategori !== 'Semua') {
@@ -92,6 +212,7 @@ class KajianController extends Controller
             'allKajiansJson' => $mapJson,
             'categories' => $categories,
             'userBookmarks' => $userBookmarks,
+            'serverCards' => $serverCards,
             // Bedakan "gagal memuat" dari "memang kosong" (FE-H6)
             'kajianLoadError' => $service->lastFetchFailed && $collection->isEmpty(),
         ]);
@@ -161,7 +282,8 @@ class KajianController extends Controller
             ->select(['id', 'title', 'ustadz', 'day', 'time', 'masjid', 'address', 'lat', 'lon', 'category', 'audience', 'poster_url', 'event_datetime', 'source', 'source_url', 'description', 'is_rutin'])
             ->orderBy('event_datetime', 'asc')
             ->get();
-        $mapJson = $mapKajians->toJson(JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+        $mapJson = json_encode($this->slimKajianPayload($mapKajians), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+        $serverCards = $this->serverFirstCards($mapKajians);
 
         $userBookmarks = [];
         if (Auth::check()) {
@@ -173,6 +295,7 @@ class KajianController extends Controller
             'allKajiansJson' => $mapJson,
             'categories' => $categories,
             'userBookmarks' => $userBookmarks,
+            'serverCards' => $serverCards,
         ]);
     }
 
@@ -288,6 +411,36 @@ class KajianController extends Controller
             $response->headers->set('Cache-Control', 'no-store');
         }
 
+        return $response;
+    }
+
+    /**
+     * Detail ringkas satu kajian (B+C 2026-10-26): hanya id + description,
+     * dipakai modal detail untuk mengisi deskripsi yang TIDAK lagi dibawa
+     * JSON beranda. Sama seperti apiList: respons di-cache CDN (s-maxage),
+     * jadi origin hanya menerima <=1 request per masa s-maxage per region.
+     */
+    public function apiShow(int $id): JsonResponse
+    {
+        $service = new SupabaseKajianService();
+        $row = null;
+        if ($service->isConfigured()) {
+            $row = $service->find($id);
+        } else {
+            $k = Kajian::find($id);
+            if ($k) {
+                $row = ['id' => $k->id, 'description' => $k->description];
+            }
+        }
+        if (!$row) {
+            return response()->json(['status' => 'error', 'message' => 'Kajian tidak ditemukan.'], 404);
+        }
+        $response = response()->json(['status' => 'success', 'data' => [
+            'id' => (int) ($row['id'] ?? $id),
+            'description' => (string) ($row['description'] ?? ''),
+        ]]);
+        $response->headers->set('Cache-Control', 'public, max-age=30, s-maxage=120, stale-while-revalidate=600, stale-if-error=86400');
+        $response->headers->set('Vercel-CDN-Cache-Control', 'public, s-maxage=120, stale-while-revalidate=600, stale-if-error=86400');
         return $response;
     }
 
