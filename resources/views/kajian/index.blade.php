@@ -2069,7 +2069,7 @@
   }
 
   // Inisialisasi awal
-  document.addEventListener('DOMContentLoaded', () => {
+  pageReady(() => {
     try {
       const cached = JSON.parse(localStorage.getItem('sk_geo_state') || 'null');
       if (cached && (cached.name || cached.city)) {

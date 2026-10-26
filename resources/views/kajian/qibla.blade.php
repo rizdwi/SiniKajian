@@ -194,7 +194,7 @@
   let isDragging = false;
   let dragStartAngle = 0;
 
-  document.addEventListener('DOMContentLoaded', () => {
+  pageReady(() => {
     // 1. Langsung baca koordinat otomatis dari Geo Engine begitu halaman dibuka
     syncFromGeoEngine();
 

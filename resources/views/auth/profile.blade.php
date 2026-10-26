@@ -612,7 +612,7 @@
   });
 
   // Sinkronisasi otomatis dari localStorage saat halaman siap
-  document.addEventListener('DOMContentLoaded', function() {
+  pageReady(function() {
     // 1. Sinkronisasi Avatar lokal jika server belum merender
     try {
       const localAvatar = localStorage.getItem('sinikajian_user_avatar');

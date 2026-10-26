@@ -139,7 +139,7 @@
   }
 
   // Sinkronisasi otomatis dari localStorage jika server belum merender avatar
-  document.addEventListener('DOMContentLoaded', function() {
+  pageReady(function() {
     try {
       const localAvatar = localStorage.getItem('sinikajian_user_avatar');
       const preview = document.getElementById('avatarPreview');

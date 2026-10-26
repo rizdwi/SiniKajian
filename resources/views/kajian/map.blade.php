@@ -131,7 +131,7 @@
     } catch (e) { return ''; }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  pageReady(() => {
     // Guard Mapbox (audit 2026-10-21, FE-H5): CDN/token gagal TIDAK BOLEH
     // membunuh seluruh halaman — daftar kajian tetap dirender.
     try {
@@ -193,6 +193,10 @@
       }
     }
 
+    // Turbo: halaman peta dikunjungi ulang tanpa muat penuh — bebaskan peta lama
+    // (konteks WebGL) sebelum membuat yang baru.
+    if (window.__skMapInstance) { try { window.__skMapInstance.remove(); } catch (e) {} window.__skMapInstance = null; }
+
     mapInstance = new mapboxgl.Map({
       container: 'fullMap',
       style: 'mapbox://styles/mapbox/streets-v12',
@@ -200,6 +204,7 @@
       zoom: 12,
       attributionControl: false
     });
+    window.__skMapInstance = mapInstance;
 
     mapInstance.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
     mapInstance.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');

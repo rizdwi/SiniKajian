@@ -261,7 +261,7 @@
   const KAJIAN_LAT = {{ $kajian->lat ?: -6.8851 }};
   const KAJIAN_LON = {{ $kajian->lon ?: 107.6136 }};
 
-  document.addEventListener('DOMContentLoaded', () => {
+  pageReady(() => {
     updateCalculatedDistance();
   });
 
@@ -301,7 +301,7 @@
   }
 
   // Sinkronisasi status awal dari localStorage
-  document.addEventListener('DOMContentLoaded', () => {
+  pageReady(() => {
     try {
       const currentId = {{ $kajian->id }};
       const currentMasjid = "{{ addslashes($kajian->masjid) }}";
@@ -503,12 +503,14 @@
   @push('scripts')
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.10.0/mapbox-gl.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    pageReady(() => {
       const container = document.getElementById('miniMap');
       if (!container || !window.mapboxgl) return;
 
       mapboxgl.accessToken = '{{ config("services.mapbox.token") }}';
-      const miniMap = new mapboxgl.Map({
+      // Turbo: bebaskan peta mini lama (konteks WebGL) sebelum membuat yang baru.
+      if (window.__skMiniMap) { try { window.__skMiniMap.remove(); } catch (e) {} window.__skMiniMap = null; }
+      window.__skMiniMap = new mapboxgl.Map({
         container: 'miniMap',
         style: 'mapbox://styles/mapbox/streets-v12',
         center: [{{ (float)$kajian->lon }}, {{ (float)$kajian->lat }}],
@@ -522,7 +524,7 @@
       pinEl.innerHTML = '🕌';
       new mapboxgl.Marker({ element: pinEl })
         .setLngLat([{{ (float)$kajian->lon }}, {{ (float)$kajian->lat }}])
-        .addTo(miniMap);
+        .addTo(window.__skMiniMap);
     });
   </script>
   @endpush

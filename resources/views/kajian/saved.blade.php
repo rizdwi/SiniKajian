@@ -349,7 +349,7 @@
   // Hydrate client-side bookmarks HANYA untuk tamu (belum login). Untuk user
   // login, server adalah sumber kebenaran: localStorage ditimpa dari server
   // dan daftar lokal tidak pernah dipakai menambal tampilan (sumber phantom).
-  document.addEventListener('DOMContentLoaded', () => {
+  pageReady(() => {
     try {
       @auth
       localStorage.setItem('sinikajian_bookmarks', JSON.stringify(@json($savedKajianIds ?? [])));

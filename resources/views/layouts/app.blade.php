@@ -61,6 +61,26 @@
   <link rel="preload" href="{{ asset('fonts/plus-jakarta-sans-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
   @stack('styles')
 
+  <!-- Turbo Drive 8.0.23 (bridging JS, 2026-10-26): navigasi antar halaman tanpa
+       muat ulang penuh. Self-hosted di /js (bukan CDN). UMD build jalan otomatis. -->
+  <script src="{{ asset('js/turbo.es2017-umd.js') }}?v=8.0.23" defer></script>
+  <!-- Turbo snapshot cache DIMATIKAN: data (bookmark/follow/daftar) harus selalu segar
+       dari server — pelajaran 2026-10-20, data basi adalah sumber utama keluhan user.
+       Tombol kembali tetap lewat Turbo (tanpa muat ulang penuh), hanya ambil ulang data. -->
+  <meta name="turbo-cache-control" content="no-cache">
+  <script>
+    // pageReady: pengganti DOMContentLoaded yang juga jalan di navigasi Turbo.
+    // Load penuh: tunggu DOMContentLoaded bila dokumen masih loading.
+    // Navigasi Turbo: skrip halaman jalan ulang saat DOM sudah lengkap -> jalankan langsung.
+    window.pageReady = function(fn) {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', fn);
+      } else {
+        fn();
+      }
+    };
+  </script>
+
   <style>
     * {
       -webkit-tap-highlight-color: transparent;
@@ -216,16 +236,23 @@
 
   <!-- PWA Service Worker Registration -->
   <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        navigator.serviceWorker.register('{{ asset("sw.js") }}')
-          .then(function(reg) {
-            console.log('SiniKajian PWA ServiceWorker aktif:', reg.scope);
-          })
-          .catch(function(err) {
-            console.warn('SiniKajian PWA ServiceWorker error:', err);
-          });
-      });
+    // Turbo: skrip body jalan ulang tiap navigasi — daftarkan listener window
+    // (load/online/offline) hanya sekali agar tidak menumpuk.
+    if (!window.__skLayoutListeners) {
+      window.__skLayoutListeners = true;
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('{{ asset("sw.js") }}')
+            .then(function(reg) {
+              console.log('SiniKajian PWA ServiceWorker aktif:', reg.scope);
+            })
+            .catch(function(err) {
+              console.warn('SiniKajian PWA ServiceWorker error:', err);
+            });
+        });
+      }
+      window.addEventListener('online', updateOnlineStatus);
+      window.addEventListener('offline', updateOnlineStatus);
     }
 
     // Monitor Network Connectivity
@@ -239,8 +266,6 @@
         }
       }
     }
-    window.addEventListener('online', updateOnlineStatus);
-    window.addEventListener('offline', updateOnlineStatus);
     updateOnlineStatus();
 
     // Auto dismiss flash alerts after 5 seconds

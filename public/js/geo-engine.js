@@ -13,6 +13,10 @@
 (function(window) {
   'use strict';
 
+  // Turbo: skrip ini jalan ulang tiap navigasi — cegah watchPosition & listener ganda.
+  if (window.__skGeoEngineLoaded) return;
+  window.__skGeoEngineLoaded = true;
+
   // Ka'bah Coordinates (Mecca, Saudi Arabia)
   const KAABA_COORDS = { lat: 21.4225, lon: 39.8262 };
 
