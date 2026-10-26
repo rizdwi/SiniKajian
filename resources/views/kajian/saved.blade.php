@@ -140,8 +140,8 @@
   // Catat kehadiran via AJAX di tempat (perintah user 2026-10-20): TANPA
   // navigasi/reload — pola lama memakai form HTML biasa sehingga browser
   // membuka respons JSON mentah sebagai unduhan file "kehadiran.json".
-  let attTotal = {{ count($attendances) }};
-  const attTodayLabel = "{{ \Carbon\Carbon::now('Asia/Jakarta')->isoFormat('D MMMM Y') }}";
+  var attTotal = {{ count($attendances) }};
+  var attTodayLabel = "{{ \Carbon\Carbon::now('Asia/Jakarta')->isoFormat('D MMMM Y') }}";
 
   function showSavedToast(msg) {
     const t = document.getElementById('savedToast');

@@ -235,7 +235,7 @@
 
 @section('scripts')
 <script>
-  const CSRF_TOKEN = '{{ csrf_token() }}';
+  var CSRF_TOKEN = '{{ csrf_token() }}';
   // Toast notifikasi halaman detail.
   // PENTING: fungsi ini sebelumnya TIDAK pernah didefinisikan di halaman
   // ini, padahal toggleBookmarkDetailPage & toggleFollowDetailPage
@@ -258,16 +258,19 @@
     window.__detailToastTimeout = setTimeout(() => { toast.style.opacity = '0'; }, 2200);
   }
 
-  const KAJIAN_LAT = {{ $kajian->lat ?: -6.8851 }};
-  const KAJIAN_LON = {{ $kajian->lon ?: 107.6136 }};
+  var KAJIAN_LAT = {{ $kajian->lat ?: -6.8851 }};
+  var KAJIAN_LON = {{ $kajian->lon ?: 107.6136 }};
 
   pageReady(() => {
     updateCalculatedDistance();
   });
 
-  window.addEventListener('sk:location-updated', () => {
+  // Turbo: ganti listener lama (bukan tambah).
+  if (window.__skShowLocHandler) window.removeEventListener('sk:location-updated', window.__skShowLocHandler);
+  window.__skShowLocHandler = () => {
     updateCalculatedDistance();
-  });
+  };
+  window.addEventListener('sk:location-updated', window.__skShowLocHandler);
 
   function updateCalculatedDistance() {
     if (window.SiniKajianGeo) {
@@ -505,26 +508,36 @@
   <script>
     pageReady(() => {
       const container = document.getElementById('miniMap');
-      if (!container || !window.mapboxgl) return;
+      if (!container) return;
+      // Turbo: Mapbox CDN dimuat async saat navigasi Turbo — tunggu
+      // sebentar sebelum menyerah (di load penuh, skrip sudah siap duluan).
+      let tries = 0;
+      const tick = () => {
+        if (window.mapboxgl) { initMiniMap(); return; }
+        if (++tries > 30) return;
+        setTimeout(tick, 100);
+      };
+      const initMiniMap = () => {
+        mapboxgl.accessToken = '{{ config("services.mapbox.token") }}';
+        // Turbo: bebaskan peta mini lama (konteks WebGL) sebelum membuat yang baru.
+        if (window.__skMiniMap) { try { window.__skMiniMap.remove(); } catch (e) {} window.__skMiniMap = null; }
+        window.__skMiniMap = new mapboxgl.Map({
+          container: 'miniMap',
+          style: 'mapbox://styles/mapbox/streets-v12',
+          center: [{{ (float)$kajian->lon }}, {{ (float)$kajian->lat }}],
+          zoom: 14.8,
+          interactive: false,
+          attributionControl: false
+        });
 
-      mapboxgl.accessToken = '{{ config("services.mapbox.token") }}';
-      // Turbo: bebaskan peta mini lama (konteks WebGL) sebelum membuat yang baru.
-      if (window.__skMiniMap) { try { window.__skMiniMap.remove(); } catch (e) {} window.__skMiniMap = null; }
-      window.__skMiniMap = new mapboxgl.Map({
-        container: 'miniMap',
-        style: 'mapbox://styles/mapbox/streets-v12',
-        center: [{{ (float)$kajian->lon }}, {{ (float)$kajian->lat }}],
-        zoom: 14.8,
-        interactive: false,
-        attributionControl: false
-      });
-
-      const pinEl = document.createElement('div');
-      pinEl.className = 'w-7 h-7 rounded-full bg-[#1D4D4F] border-2 border-white shadow-md flex items-center justify-center text-white text-xs pointer-events-none';
-      pinEl.innerHTML = '🕌';
-      new mapboxgl.Marker({ element: pinEl })
-        .setLngLat([{{ (float)$kajian->lon }}, {{ (float)$kajian->lat }}])
-        .addTo(window.__skMiniMap);
+        const pinEl = document.createElement('div');
+        pinEl.className = 'w-7 h-7 rounded-full bg-[#1D4D4F] border-2 border-white shadow-md flex items-center justify-center text-white text-xs pointer-events-none';
+        pinEl.innerHTML = '🕌';
+        new mapboxgl.Marker({ element: pinEl })
+          .setLngLat([{{ (float)$kajian->lon }}, {{ (float)$kajian->lat }}])
+          .addTo(window.__skMiniMap);
+      };
+      tick();
     });
   </script>
   @endpush

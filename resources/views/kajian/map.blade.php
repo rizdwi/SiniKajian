@@ -113,11 +113,11 @@
 @push('scripts')
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.10.0/mapbox-gl.js"></script>
 <script>
-  let mapInstance = null;
-  let userMarker = null;
-  let activeMarkers = [];
-  const rawEvents = @json($events);
-  let currentActiveView = 'map';
+  var mapInstance = null;
+  var userMarker = null;
+  var activeMarkers = [];
+  var rawEvents = @json($events);
+  var currentActiveView = 'map';
 
   // Escape & URL-aman untuk semua field dari DB sebelum masuk innerHTML
   // (audit 2026-10-21, FE-H1: data berasal dari OCR flyer publik).
@@ -131,16 +131,36 @@
     } catch (e) { return ''; }
   }
 
+  // Tunggu Mapbox GL siap (maks ~3 dtk). Di navigasi Turbo, <script src>
+  // CDN dieksekusi async sehingga window.mapboxgl bisa belum ada saat
+  // pageReady jalan — tanpa tunggu ini peta selalu gagal di kunjungan Turbo.
+  function showMapFallback() {
+    const mapEl = document.getElementById('fullMap');
+    if (mapEl) mapEl.innerHTML = '<div class="flex items-center justify-center h-full text-xs text-[#607072] p-4 text-center">Peta tidak dapat dimuat saat ini. Gunakan daftar kajian di bawah.</div>';
+  }
+  function waitForMapbox(done) {
+    let tries = 0;
+    const tick = () => {
+      if (window.mapboxgl) { done(); return; }
+      if (++tries > 30) { showMapFallback(); return; }
+      setTimeout(tick, 100);
+    };
+    tick();
+  }
+
   pageReady(() => {
+    // Turbo: skrip Mapbox CDN dimuat async saat navigasi Turbo — tunggu
+    // sebentar sebelum menyerah (di load penuh, skrip sudah siap duluan).
     // Guard Mapbox (audit 2026-10-21, FE-H5): CDN/token gagal TIDAK BOLEH
     // membunuh seluruh halaman — daftar kajian tetap dirender.
-    try {
-      initMapbox();
-    } catch (e) {
-      console.warn('Mapbox gagal dimuat:', e);
-      const mapEl = document.getElementById('fullMap');
-      if (mapEl) mapEl.innerHTML = '<div class="flex items-center justify-center h-full text-xs text-[#607072] p-4 text-center">Peta tidak dapat dimuat saat ini. Gunakan daftar kajian di bawah.</div>';
-    }
+    waitForMapbox(() => {
+      try {
+        initMapbox();
+      } catch (e) {
+        console.warn('Mapbox gagal dimuat:', e);
+        showMapFallback();
+      }
+    });
     renderListView(rawEvents);
     document.getElementById('mapSearchInput').addEventListener('input', (e) => {
       const q = e.target.value.toLowerCase();
@@ -216,12 +236,15 @@
   }
 
   // Dengarkan pembaruan GPS otomatis dari background
-  window.addEventListener('sk:location-updated', (e) => {
-    if (e.detail && mapInstance) {
-      setUserLocationMarker(e.detail.lat, e.detail.lon);
-      renderListView(rawEvents);
-    }
-  });
+  // Turbo: ganti listener lama (bukan tambah); hanya jalan saat peta tampil.
+  if (window.__skMapLocHandler) window.removeEventListener('sk:location-updated', window.__skMapLocHandler);
+  window.__skMapLocHandler = (e) => {
+    if (!e.detail || !mapInstance) return;
+    if (!document.getElementById('fullMap')) return;
+    setUserLocationMarker(e.detail.lat, e.detail.lon);
+    renderListView(rawEvents);
+  };
+  window.addEventListener('sk:location-updated', window.__skMapLocHandler);
 
   function renderMapMarkers(events) {
     activeMarkers.forEach(m => m.remove());

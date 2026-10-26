@@ -158,7 +158,7 @@
   });
 
   // Simpan sebelum submit
-  const profileForm = document.querySelector('form');
+  var profileForm = document.querySelector('form');
   if (profileForm) {
     profileForm.addEventListener('submit', function() {
       const val = document.getElementById('avatarData').value;

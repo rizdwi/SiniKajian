@@ -415,15 +415,24 @@
     <button id="pwaDismissBtn" style="background:transparent; color:#fff; border:none; font-size:20px; cursor:pointer; padding:4px 8px;">×</button>
   </div>
   <script>
-    let deferredPrompt = null;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      if (!localStorage.getItem('pwaDismissed')) {
-        const banner = document.getElementById('pwaInstallBanner');
-        if (banner) banner.style.display = 'flex';
-      }
-    });
+    // Turbo: skrip layout jalan ulang tiap navigasi — var (bukan let) agar
+    // tak SyntaxError saat dieksekusi ulang; nilai dipertahankan antar kunjungan.
+    var deferredPrompt = window.deferredPrompt || null;
+    // Listener window sekali saja (handler baca DOM segar tiap kejadian).
+    if (!window.__skPwaListeners) {
+      window.__skPwaListeners = true;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (!localStorage.getItem('pwaDismissed')) {
+          const banner = document.getElementById('pwaInstallBanner');
+          if (banner) banner.style.display = 'flex';
+        }
+      });
+      window.addEventListener('appinstalled', () => {
+        document.getElementById('pwaInstallBanner').style.display = 'none';
+      });
+    }
     document.getElementById('pwaInstallBtn')?.addEventListener('click', async () => {
       if (!deferredPrompt) return;
       deferredPrompt.prompt();
@@ -435,9 +444,6 @@
       document.getElementById('pwaInstallBanner').style.display = 'none';
       localStorage.setItem('pwaDismissed', '1');
     });
-    window.addEventListener('appinstalled', () => {
-      document.getElementById('pwaInstallBanner').style.display = 'none';
-    });
   </script>
   <script>
     // Prefetch navigasi (upgrade kecepatan 2026-10-20): muat lebih dulu
@@ -446,6 +452,10 @@
     // hasil prefetch bila <15 detik DAN tidak ada aksi simpan/hapus/
     // login diantaranya — data tidak akan pernah basi karenanya.
     (function () {
+      // Turbo: skrip layout jalan ulang tiap navigasi — pasang listener
+      // sekali saja, kalau tidak tiap kunjungan menambah duplikat.
+      if (window.__skPrefetchInit) return;
+      window.__skPrefetchInit = true;
       const done = new Set();
       function prefetch(href) {
         try {

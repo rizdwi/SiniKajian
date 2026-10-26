@@ -605,11 +605,14 @@
   }
 
   // Dengarkan event pembaruan lokasi dari Geo-Engine
-  window.addEventListener('sk:location-updated', function(e) {
+  // Turbo: ganti listener lama (bukan tambah).
+  if (window.__skProfileLocHandler) window.removeEventListener('sk:location-updated', window.__skProfileLocHandler);
+  window.__skProfileLocHandler = function(e) {
     if (e.detail) {
       updateProfileLocationDisplay(e.detail);
     }
-  });
+  };
+  window.addEventListener('sk:location-updated', window.__skProfileLocHandler);
 
   // Sinkronisasi otomatis dari localStorage saat halaman siap
   pageReady(function() {
@@ -669,14 +672,17 @@
   }
 
   // Tutup modal jika klik di luar area konten
-  window.addEventListener('click', function(e) {
+  // Turbo: ganti listener lama (bukan tambah).
+  if (window.__skProfileClickHandler) window.removeEventListener('click', window.__skProfileClickHandler);
+  window.__skProfileClickHandler = function(e) {
     const helpModal = document.getElementById('helpModal');
     const privacyModal = document.getElementById('privacyModal');
     const locationModal = document.getElementById('locationModal');
     if (e.target === helpModal) closeHelpModal();
     if (e.target === privacyModal) closePrivacyModal();
     if (e.target === locationModal) closeLocationModal();
-  });
+  };
+  window.addEventListener('click', window.__skProfileClickHandler);
 
   // Toggle detail agenda (ekspansi langsung, tanpa pindah halaman)
   window.toggleAgendaDetail = function(id) {
@@ -689,8 +695,8 @@
   };
 
   // Web Push Notification untuk pengingat kajian
-  const VAPID_PUBLIC_KEY = '{{ config("services.vapid.public_key") }}';
-  const reminderToggle = document.getElementById('reminderToggle');
+  var VAPID_PUBLIC_KEY = '{{ config("services.vapid.public_key") }}';
+  var reminderToggle = document.getElementById('reminderToggle');
 
   function urlBase64ToUint8Array(base64String) {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);

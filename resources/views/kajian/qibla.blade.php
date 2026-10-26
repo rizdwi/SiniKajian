@@ -187,12 +187,12 @@
 </div>
 
 <script>
-  let currentLat = -6.8851;
-  let currentLon = 107.6136;
-  let qiblaAzimuth = 295.2;
-  let currentHeading = 0;
-  let isDragging = false;
-  let dragStartAngle = 0;
+  var currentLat = -6.8851;
+  var currentLon = 107.6136;
+  var qiblaAzimuth = 295.2;
+  var currentHeading = 0;
+  var isDragging = false;
+  var dragStartAngle = 0;
 
   pageReady(() => {
     // 1. Langsung baca koordinat otomatis dari Geo Engine begitu halaman dibuka
@@ -243,11 +243,14 @@
   }
 
   // Dengarkan pembaruan GPS otomatis dari background
-  window.addEventListener('sk:location-updated', (e) => {
-    if (e.detail) {
-      applyLocationData(e.detail);
-    }
-  });
+  // Turbo: ganti listener lama (bukan tambah); hanya jalan saat kiblat tampil.
+  if (window.__skQiblaLocHandler) window.removeEventListener('sk:location-updated', window.__skQiblaLocHandler);
+  window.__skQiblaLocHandler = (e) => {
+    if (!e.detail) return;
+    if (!document.getElementById('qiblaLocationName')) return;
+    applyLocationData(e.detail);
+  };
+  window.addEventListener('sk:location-updated', window.__skQiblaLocHandler);
 
   function syncFromGeoEngine() {
     if (window.SiniKajianGeo) {
@@ -301,8 +304,8 @@
   }
 
   // === SENSOR COMPASS LOGIC (robust untuk Android & iOS) ===
-  let hasReceivedSensorData = false;
-  let sensorActive = false;
+  var hasReceivedSensorData = false;
+  var sensorActive = false;
 
   function autoStartCompass() {
     // Reset status
@@ -322,6 +325,15 @@
     }, 3000);
   }
 
+  // Turbo: listener sensor dipasang sekali per sesi — tiap kunjungan
+  // membuat objek fungsi baru, jadi pasang-ulang akan menumpuk handler.
+  function startSensorListeners() {
+    if (window.__skQiblaSensorOn) return;
+    window.__skQiblaSensorOn = true;
+    window.addEventListener('deviceorientationabsolute', onSensorData, true);
+    window.addEventListener('deviceorientation', onSensorData, true);
+  }
+
   function tryStartDeviceOrientation() {
     if (typeof DeviceOrientationEvent === 'undefined') return;
 
@@ -333,9 +345,8 @@
 
     // Android/Desktop: langsung pasang listener
     // deviceorientationabsolute = kompas absolut (prioritas)
-    window.addEventListener('deviceorientationabsolute', onSensorData, true);
     // deviceorientation = fallback
-    window.addEventListener('deviceorientation', onSensorData, true);
+    startSensorListeners();
   }
 
   // Generic Sensor API dinonaktifkan - konflik dengan deviceorientation di beberapa HP Android
@@ -430,20 +441,18 @@
       DeviceOrientationEvent.requestPermission()
         .then(response => {
           if (response === 'granted') {
-            window.addEventListener('deviceorientation', onSensorData, true);
+            startSensorListeners();
             tryStartGenericSensor();
           } else {
             updateSensorStatus('menunggu', 'Izin sensor ditolak');
           }
         })
         .catch(() => {
-          window.addEventListener('deviceorientationabsolute', onSensorData, true);
-          window.addEventListener('deviceorientation', onSensorData, true);
+          startSensorListeners();
           tryStartGenericSensor();
         });
     } else {
-      window.addEventListener('deviceorientationabsolute', onSensorData, true);
-      window.addEventListener('deviceorientation', onSensorData, true);
+      startSensorListeners();
       tryStartGenericSensor();
     }
 
@@ -535,26 +544,35 @@
       dragStartAngle = getAngle(e) - currentHeading;
     });
 
-    window.addEventListener('mousemove', (e) => {
+    // Turbo: setup jalan tiap kunjungan — ganti listener lama (bukan tambah).
+    if (window.__skQiblaMouseMove) window.removeEventListener('mousemove', window.__skQiblaMouseMove);
+    window.__skQiblaMouseMove = (e) => {
       if (!isDragging) return;
       currentHeading = Math.round((getAngle(e) - dragStartAngle + 360) % 360);
       updateCompassDisplay(currentHeading);
-    });
+    };
+    window.addEventListener('mousemove', window.__skQiblaMouseMove);
 
-    window.addEventListener('mouseup', () => { isDragging = false; });
+    if (window.__skQiblaMouseUp) window.removeEventListener('mouseup', window.__skQiblaMouseUp);
+    window.__skQiblaMouseUp = () => { isDragging = false; };
+    window.addEventListener('mouseup', window.__skQiblaMouseUp);
 
     container.addEventListener('touchstart', (e) => {
       isDragging = true;
       dragStartAngle = getAngle(e) - currentHeading;
     }, { passive: true });
 
-    window.addEventListener('touchmove', (e) => {
+    if (window.__skQiblaTouchMove) window.removeEventListener('touchmove', window.__skQiblaTouchMove);
+    window.__skQiblaTouchMove = (e) => {
       if (!isDragging) return;
       currentHeading = Math.round((getAngle(e) - dragStartAngle + 360) % 360);
       updateCompassDisplay(currentHeading);
-    }, { passive: true });
+    };
+    window.addEventListener('touchmove', window.__skQiblaTouchMove, { passive: true });
 
-    window.addEventListener('touchend', () => { isDragging = false; });
+    if (window.__skQiblaTouchEnd) window.removeEventListener('touchend', window.__skQiblaTouchEnd);
+    window.__skQiblaTouchEnd = () => { isDragging = false; };
+    window.addEventListener('touchend', window.__skQiblaTouchEnd);
   }
 
   function promptChangeLocation() {

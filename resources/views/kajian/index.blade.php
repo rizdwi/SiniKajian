@@ -656,8 +656,8 @@
 @section('scripts')
 <script>
   // Seluruh database kajian dari controller Laravel 13
-  const rawKajians = {!! $allKajiansJson !!};
-  const userBookmarkIds = new Set(@json($userBookmarks));
+  var rawKajians = {!! $allKajiansJson !!};
+  var userBookmarkIds = new Set(@json($userBookmarks));
   // Server = sumber kebenaran untuk user login: localStorage MENIRU server.
   // Menggabungkan localStorage ke set server (pola lama) menghidupkan lagi
   // bookmark hantu dari ketukan lama yang gagal tersimpan. Untuk tamu
@@ -672,13 +672,13 @@
     }
     @endauth
   } catch(e) {}
-  const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+  var CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
   // Titik koordinat Ka'bah (Mekkah)
-  const KAABA_COORDS = { lat: 21.4225, lon: 39.8262 };
+  var KAABA_COORDS = { lat: 21.4225, lon: 39.8262 };
 
   // Titik lokasi default (disinkronkan dari SiniKajianGeo atau cache)
-  let userCoords = (() => {
+  var userCoords = (() => {
     try {
       const cached = JSON.parse(localStorage.getItem('sk_geo_state') || 'null');
       if (cached && cached.lat && cached.lon) {
@@ -692,14 +692,14 @@
   })();
 
   // State Filter Aktif
-  let activeSearch = '';
-  let activeCategory = 'Semua';
-  let activeRadius = 25; // km
-  let activeDay = 'Semua';
-  let activeAudience = 'Semua';
-  let activeFavUstadz = false; // filter hanya ustadz favorit
-  let viewMode = 'list'; // 'list' atau 'agenda'
-  let currentDetailEvent = null;
+  var activeSearch = '';
+  var activeCategory = 'Semua';
+  var activeRadius = 25; // km
+  var activeDay = 'Semua';
+  var activeAudience = 'Semua';
+  var activeFavUstadz = false; // filter hanya ustadz favorit
+  var viewMode = 'list'; // 'list' atau 'agenda'
+  var currentDetailEvent = null;
 
   // Ustadz Favorit (localStorage)
   function getFavUstadz() {
@@ -746,7 +746,7 @@
   }
 
   // ===== KALENDER MODAL =====
-  let calendarCursor = new Date();
+  var calendarCursor = new Date();
   calendarCursor.setDate(1);
 
   // Ubah tombol "Kalender" jadi buka modal kalender (bukan toggle agenda)
@@ -1105,6 +1105,9 @@
 
   // Render & Update Waktu Sholat
   function updatePrayerDisplay() {
+    // Turbo: interval/handler dari kunjungan lama bisa jalan saat halaman
+    // lain tampil — jangan sentuh DOM yang tak ada.
+    if (!document.getElementById('time-subuh')) return;
     const now = new Date();
     const times = calculatePrayerTimes(now, userCoords.lat, userCoords.lon);
     
@@ -1159,7 +1162,7 @@
     document.getElementById('nextPrayerCountdown').innerText = `Menuju ${nextPrayer.name}: ${diffH > 0 ? diffH + 'j ' : ''}${diffM}m`;
   }
 
-  const SOURCE_META = {
+  var SOURCE_META = {
     instagram: { label: 'Instagram', style: 'background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)', glyph: 'IG' },
     facebook: { label: 'Facebook', style: 'background:#1877F2', glyph: 'f' },
     threads: { label: 'Threads', style: 'background:#111111', glyph: '@' },
@@ -1187,6 +1190,7 @@
 
   function renderKajianFeed() {
     const container = document.getElementById('kajianCardsList');
+    if (!container) return;
     const emptyState = document.getElementById('emptyStateContainer');
     const heroSpotlight = document.getElementById('heroSpotlightContainer');
     const countDisplay = document.getElementById('filteredCountText');
@@ -1720,14 +1724,18 @@
   }
 
   // Keyboard accessibility: Escape key closes active modal (R-32)
-  window.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-      closeDetailModal();
-      closeFilterModal();
-      closeLocationModal();
-      closeSubmitModal();
-    }
-  });
+  // Turbo: skrip halaman jalan ulang tiap navigasi — ganti listener lama
+  // (bukan tambah) agar tak menumpuk; jangan jalan di halaman lain.
+  if (window.__skIndexKeydown) window.removeEventListener('keydown', window.__skIndexKeydown);
+  window.__skIndexKeydown = function(e) {
+    if (e.key !== 'Escape') return;
+    if (!document.getElementById('kajianCardsList')) return;
+    closeDetailModal();
+    closeFilterModal();
+    closeLocationModal();
+    closeSubmitModal();
+  };
+  window.addEventListener('keydown', window.__skIndexKeydown);
 
   // 5. Filter Actions
   function setCategoryFilter(cat) {
@@ -1850,19 +1858,22 @@
   }
 
   // Dengarkan event pembaruan GPS otomatis dari background
-  window.addEventListener('sk:location-updated', (e) => {
-    if (e.detail) {
-      userCoords = {
-        lat: e.detail.lat,
-        lon: e.detail.lon,
-        name: e.detail.name || 'Lokasi Saya'
-      };
-      const el = document.getElementById('currentLocationName');
-      if (el) el.innerText = userCoords.name;
-      updatePrayerDisplay();
-      renderKajianFeed();
-    }
-  });
+  // Turbo: ganti listener lama (bukan tambah); hanya jalan saat beranda tampil.
+  if (window.__skIndexLocHandler) window.removeEventListener('sk:location-updated', window.__skIndexLocHandler);
+  window.__skIndexLocHandler = (e) => {
+    if (!e.detail) return;
+    if (!document.getElementById('currentLocationName')) return;
+    userCoords = {
+      lat: e.detail.lat,
+      lon: e.detail.lon,
+      name: e.detail.name || 'Lokasi Saya'
+    };
+    const el = document.getElementById('currentLocationName');
+    if (el) el.innerText = userCoords.name;
+    updatePrayerDisplay();
+    renderKajianFeed();
+  };
+  window.addEventListener('sk:location-updated', window.__skIndexLocHandler);
 
   // 7. Rute & Berbagi
   function openGoogleMapsRoute(lat, lon) {
@@ -2044,7 +2055,7 @@
     }
   }
 
-  let toastTimeout = null;
+  var toastTimeout = null;
   function showBookmarkToast(message) {
     let toast = document.getElementById('appBookmarkToast');
     if (!toast) {
@@ -2106,7 +2117,8 @@
 
     updatePrayerDisplay();
     renderKajianFeed();
-    setInterval(updatePrayerDisplay, 60000); // Perbarui waktu sholat tiap menit
+    if (window.__skPrayerInterval) clearInterval(window.__skPrayerInterval);
+    window.__skPrayerInterval = setInterval(updatePrayerDisplay, 60000); // Perbarui waktu sholat tiap menit
   });
 </script>
 @endsection
