@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\View\View;
 
 class KajianController extends Controller
@@ -448,6 +449,56 @@ class KajianController extends Controller
         ]]);
         $response->headers->set('Cache-Control', 'public, max-age=30, s-maxage=120, stale-while-revalidate=600, stale-if-error=86400');
         $response->headers->set('Vercel-CDN-Cache-Control', 'public, s-maxage=120, stale-while-revalidate=600, stale-if-error=86400');
+        return $response;
+    }
+
+    /**
+     * Proxy thumbnail flyer lewat edge Vercel (LCP fix 2026-10-27).
+     * Supabase Storage melayani gambar dengan `Cache-Control: private,
+     * no-cache` (TERBUKTI: metadata cacheControl max-age=31536000 tetap
+     * disajikan no-cache, CF-Cache-Status: DYNAMIC) sehingga CDN tidak
+     * pernah meng-cache gambar — TTFB gambar ~1,5-2 dtk, itulah selisih
+     * FCP 1,1s -> LCP 2,6s. Route ini mengambil transform Supabase
+     * (resize+webp) dari server (sin1, satu region dengan Supabase) lalu
+     * mengembalikannya dengan header cache panjang — edge Vercel meng-cache
+     * respons (s-maxage) sehingga request berikutnya adalah edge HIT.
+     * Flyer bersifat imutabel per id, jadi TTL panjang aman. Bila Supabase
+     * tidak punya flyer itu -> 404 (img onerror di view jatuh ke URL
+     * transform langsung, lalu sembunyikan).
+     */
+    public function thumb(string $id, string $w): \Illuminate\Http\Response
+    {
+        // id harus numerik: host sudah tetap (Supabase), jadi tidak ada SSRF.
+        if (!ctype_digit($id)) {
+            abort(404);
+        }
+        $width = (int) $w;
+        if ($width < 100) {
+            $width = 100;
+        } elseif ($width > 1200) {
+            $width = 1200;
+        }
+
+        $base = rtrim(config('services.supabase.url') ?: 'https://hhcopgprjdjvgfcuqdyf.supabase.co', '/');
+        $src = $base . '/storage/v1/render/image/public/flyers/' . $id . '.jpg'
+            . '?width=' . $width . '&quality=60&format=webp&resize=cover';
+
+        try {
+            $res = Http::timeout(10)->get($src);
+        } catch (\Throwable $e) {
+            abort(502);
+        }
+        if (!$res->successful()) {
+            // Supabase mengembalikan 400 (bukan 404) bila objek tidak ada.
+            abort(in_array($res->status(), [400, 404], true) ? 404 : 502);
+        }
+        $body = $res->body();
+        if ($body === '' || $body === null) {
+            abort(502);
+        }
+        $response = response($body, 200, ['Content-Type' => 'image/webp']);
+        $response->headers->set('Cache-Control', 'public, max-age=86400, immutable');
+        $response->headers->set('Vercel-CDN-Cache-Control', 's-maxage=31536000, stale-while-revalidate=86400');
         return $response;
     }
 

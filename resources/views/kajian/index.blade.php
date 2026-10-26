@@ -168,13 +168,28 @@
       $fg = $diff === 1 ? '#422006' : '#fff';
       return '<span style="background:' . $bg . ';color:' . $fg . ';font-size:9px;font-weight:700;padding:2px 8px;border-radius:9999px;white-space:nowrap;flex-shrink:0;">' . $label . '</span>';
     };
-    $skThumb = function ($url, $w = 200) {
+    // URL transform Supabase langsung (fallback bila proxy /api/thumbs gagal).
+    $skThumbDirect = function ($url, $w = 200) {
       if (!$url) return null;
       $parts = parse_url($url);
       if (!isset($parts['host']) || !str_contains($parts['host'], 'supabase.co')) return $url;
       if (!isset($parts['path']) || !str_contains($parts['path'], '/storage/v1/object/public/')) return $url;
       $path = str_replace('/storage/v1/object/public/', '/storage/v1/render/image/public/', $parts['path']);
       return ($parts['scheme'] ?? 'https') . '://' . $parts['host'] . $path . '?width=' . (int) $w . '&quality=60&format=webp&resize=cover';
+    };
+    // Thumbnail lewat proxy edge Vercel (LCP fix 2026-10-27): Supabase
+    // menyajikan gambar no-cache/DYNAMIC, jadi thumb diarahkan ke
+    // /api/thumbs/{id}-{w}.webp yang di-cache edge. Hanya untuk flyer di
+    // bucket flyers/; URL Supabase lain tetap transform langsung.
+    $skThumb = function ($url, $w = 200) use ($skThumbDirect) {
+      if (!$url) return null;
+      $parts = parse_url($url);
+      if (!isset($parts['host']) || !str_contains($parts['host'], 'supabase.co')) return $url;
+      if (!isset($parts['path']) || !str_contains($parts['path'], '/storage/v1/object/public/')) return $url;
+      if (!str_contains($parts['path'], '/storage/v1/object/public/flyers/')) return $skThumbDirect($url, $w);
+      $fid = preg_replace('/\.[^.]+$/', '', basename($parts['path']));
+      if (!ctype_digit((string) $fid)) return $skThumbDirect($url, $w);
+      return '/api/thumbs/' . $fid . '-' . (int) $w . '.webp';
     };
     $skSourceMeta = function ($source) {
       $map = [
@@ -216,7 +231,7 @@
             $sAddr = !empty($s['address']) ? explode(',', $s['address'])[0] : 'Lokasi belum tersedia';
           @endphp
         <div class="spot-slide relative shrink-0 cursor-pointer overflow-hidden bg-[#153A3B]" style="width:100%;" data-slide-idx="{{ $si }}" data-kajian-id="{{ $s['id'] }}">
-          <img src="{{ $sThumb }}" alt="Kajian Pilihan" class="w-full h-52 object-cover opacity-85" draggable="false" @if($si === 0) fetchpriority="high" @else loading="lazy" @endif decoding="async">
+          <img src="{{ $sThumb }}" data-poster="{{ $s['poster_url'] ?? '' }}" alt="Kajian Pilihan" class="w-full h-52 object-cover opacity-85" draggable="false" @if($si === 0) fetchpriority="high" @else loading="lazy" @endif decoding="async" onerror="thumbFallback(this, 800)">
           <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/30"></div>
           <div class="absolute top-3 inset-x-3 flex items-center justify-between">
             <span class="px-3 py-1 rounded-full text-[10px] font-extrabold tracking-wider uppercase bg-[#E6F4F1] text-[#1D4D4F] shadow-xs">KAJIAN PILIHAN</span>
@@ -295,7 +310,7 @@
           <div class="flex items-start gap-3"@if(!empty($c['is_cancelled'])) style="opacity:0.45;filter:grayscale(0.6);"@endif>
             @if($cThumb)
             <div class="w-16 h-16 rounded-2xl overflow-hidden shrink-0 bg-slate-100 border border-[#E5ECEB] shadow-xs">
-              <img src="{{ $cThumb }}" alt="Flyer" class="w-full h-full object-cover" @if($loop->index >= 2) loading="lazy" @endif decoding="async" onerror="this.parentElement.style.display='none'">
+              <img src="{{ $cThumb }}" data-poster="{{ $c['poster_url'] ?? '' }}" alt="Flyer" class="w-full h-full object-cover" @if($loop->index >= 2) loading="lazy" @endif decoding="async" onerror="thumbFallback(this, 200, true)">
             </div>
             @else
             <div class="w-16 h-16 rounded-2xl overflow-hidden shrink-0 bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center font-bold text-xs border border-[#E5ECEB]">
@@ -1178,9 +1193,8 @@
     return div.innerHTML;
   }
 
-  // Supabase Image Transform beneran untuk thumbnail (hemat bandwidth)
-  // Ubah /storage/v1/object/public/... jadi /storage/v1/render/image/public/...?width=..&quality=..
-  function supabaseThumb(url, width) {
+  // Transform Supabase langsung (fallback bila proxy /api/thumbs gagal).
+  function supabaseThumbDirect(url, width) {
     if (!url) return url;
     try {
       const u = new URL(url);
@@ -1194,6 +1208,41 @@
       }
     } catch (e) {}
     return url;
+  }
+
+  // Thumbnail lewat proxy edge Vercel (LCP fix 2026-10-27): Supabase
+  // menyajikan gambar no-cache/DYNAMIC, jadi thumb flyer diarahkan ke
+  // /api/thumbs/{id}-{w}.webp yang di-cache edge. URL non-flyer tetap
+  // transform langsung seperti sebelumnya.
+  function supabaseThumb(url, width) {
+    if (!url) return url;
+    try {
+      const u = new URL(url);
+      if (u.hostname.includes('supabase.co') && u.pathname.includes('/storage/v1/object/public/flyers/')) {
+        const base = u.pathname.split('/').pop() || '';
+        const fid = base.replace(/\.[^.]+$/, '');
+        if (/^\d+$/.test(fid)) return '/api/thumbs/' + fid + '-' + (width || 200) + '.webp';
+      }
+      if (u.hostname.includes('supabase.co') && u.pathname.includes('/storage/v1/object/public/')) {
+        return supabaseThumbDirect(url, width);
+      }
+    } catch (e) {}
+    return url;
+  }
+
+  // Fallback gambar: sekali coba URL transform langsung, bila itu pun
+  // gagal sembunyikan gambar (kartu: sembunyikan wadah thumb-nya).
+  // Dipakai onerror img server-render + JS-render; poster asli dibaca
+  // dari data-poster agar aman dari kutip di URL.
+  function thumbFallback(img, width, hideParent) {
+    if (!img.dataset.fb) {
+      img.dataset.fb = '1';
+      const poster = img.dataset.poster || '';
+      const direct = poster ? supabaseThumbDirect(poster, width) : '';
+      if (direct && direct !== img.src) { img.src = direct; return; }
+    }
+    if (hideParent && img.parentElement) img.parentElement.style.display = 'none';
+    else img.style.display = 'none';
   }
 
   // 1. Rumus Haversine Presisi
@@ -1402,7 +1451,7 @@
         ).join('');
         return `
         <div class="spot-slide relative shrink-0 cursor-pointer overflow-hidden bg-[#153A3B]" style="width:100%;" data-slide-idx="${i}" data-kajian-id="${item.id}">
-          <img src="${item.poster_url ? supabaseThumb(item.poster_url, 800) : 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=800&q=80'}" alt="Kajian Pilihan" class="w-full h-52 object-cover opacity-85" draggable="false" fetchpriority="high" decoding="async">
+          <img src="${item.poster_url ? supabaseThumb(item.poster_url, 800) : 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=800&q=80'}" data-poster="${item.poster_url || ''}" alt="Kajian Pilihan" class="w-full h-52 object-cover opacity-85" draggable="false" fetchpriority="high" decoding="async" onerror="thumbFallback(this, 800)">
           <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/30"></div>
           <div class="absolute top-3 inset-x-3 flex items-center justify-between">
             <span class="px-3 py-1 rounded-full text-[10px] font-extrabold tracking-wider uppercase bg-[#E6F4F1] text-[#1D4D4F] shadow-xs">KAJIAN PILIHAN</span>
@@ -1612,7 +1661,7 @@
       const thumbUrl = ev.poster_url ? supabaseThumb(ev.poster_url, 200) : null;
       const flyerThumb = thumbUrl
         ? `<div class="w-16 h-16 rounded-2xl overflow-hidden shrink-0 bg-slate-100 border border-[#E5ECEB] shadow-xs">
-             <img src="${thumbUrl}" alt="Flyer" class="w-full h-full object-cover"${i < 2 ? '' : ' loading="lazy"'} decoding="async" onerror="this.parentElement.style.display='none'">
+             <img src="${thumbUrl}" data-poster="${ev.poster_url || ''}" alt="Flyer" class="w-full h-full object-cover"${i < 2 ? '' : ' loading="lazy"'} decoding="async" onerror="thumbFallback(this, 200, true)">
            </div>`
         : `<div class="w-16 h-16 rounded-2xl overflow-hidden shrink-0 bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center font-bold text-xs border border-[#E5ECEB]">
              <span>${(ev.category || 'ILMU').substring(0, 4)}</span>
@@ -1756,6 +1805,10 @@
     const flyerImg = document.getElementById('modalFlyerImg');
     const flyerLink = document.getElementById('modalFlyerFullLink');
     if (ev.poster_url) {
+      flyerImg.dataset.poster = ev.poster_url;
+      delete flyerImg.dataset.fb;
+      flyerImg.style.display = '';
+      flyerImg.onerror = function () { thumbFallback(this, 800); };
       flyerImg.src = supabaseThumb(ev.poster_url, 800);
       flyerLink.href = safeUrl(ev.poster_url);
       flyerWrapper.classList.remove('hidden');

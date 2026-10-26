@@ -15,6 +15,14 @@ Route::get('/kajians', [KajianController::class, 'apiList']);
 // dipakai modal detail beranda. whereNumber agar tidak menabrak /kajian.
 Route::get('/kajian/{id}', [KajianController::class, 'apiShow'])->whereNumber('id')->name('api.kajian.show');
 
+// Thumbnail flyer via edge Vercel (LCP fix 2026-10-27): proxy transform
+// Supabase + header cache panjang agar edge meng-cache (Supabase sendiri
+// menyajikan no-cache/DYNAMIC). Stateless seperti apiShow — tanpa sesi,
+// jadi respons bisa di-cache CDN. where() membatasi id & lebar numerik.
+Route::get('/thumbs/{id}-{w}.webp', [KajianController::class, 'thumb'])
+    ->where(['id' => '[0-9]+', 'w' => '[0-9]+'])
+    ->name('api.kajian.thumb');
+
 // Beacon pageview untuk menu admin Traffic (catat path saja, tanpa PII).
 Route::post('/traffic/hit', [\App\Http\Controllers\TrafficController::class, 'hit']);
 
