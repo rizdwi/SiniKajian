@@ -509,14 +509,29 @@
     pageReady(() => {
       const container = document.getElementById('miniMap');
       if (!container) return;
-      // Turbo: Mapbox CDN dimuat async saat navigasi Turbo — tunggu
-      // sebentar sebelum menyerah (di load penuh, skrip sudah siap duluan).
-      let tries = 0;
-      const tick = () => {
-        if (window.mapboxgl) { initMiniMap(); return; }
-        if (++tries > 30) return;
-        setTimeout(tick, 100);
-      };
+      // Turbo: Mapbox CDN dimuat async saat navigasi Turbo — tunggu event
+      // load skripnya langsung (polling 3 detik terbukti kurang, uji
+      // browser 2026-10-26); bila tag skrip tak ada, suntikkan sendiri.
+      function ensureMiniMapbox(done, fail) {
+        if (window.mapboxgl) { done(); return; }
+        let script = document.querySelector('script[src*="mapbox-gl.js"]');
+        if (!script) {
+          script = document.createElement('script');
+          script.src = 'https://api.mapbox.com/mapbox-gl-js/v3.10.0/mapbox-gl.js';
+          document.head.appendChild(script);
+        }
+        let settled = false;
+        const timer = setTimeout(() => { if (!settled) { settled = true; fail(); } }, 10000);
+        script.addEventListener('load', () => {
+          if (settled) return;
+          settled = true; clearTimeout(timer);
+          if (window.mapboxgl) done(); else fail();
+        });
+        script.addEventListener('error', () => {
+          if (settled) return;
+          settled = true; clearTimeout(timer); fail();
+        });
+      }
       const initMiniMap = () => {
         mapboxgl.accessToken = '{{ config("services.mapbox.token") }}';
         // Turbo: bebaskan peta mini lama (konteks WebGL) sebelum membuat yang baru.
@@ -537,7 +552,7 @@
           .setLngLat([{{ (float)$kajian->lon }}, {{ (float)$kajian->lat }}])
           .addTo(window.__skMiniMap);
       };
-      tick();
+      ensureMiniMapbox(initMiniMap, () => {});
     });
   </script>
   @endpush

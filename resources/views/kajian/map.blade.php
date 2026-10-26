@@ -131,36 +131,47 @@
     } catch (e) { return ''; }
   }
 
-  // Tunggu Mapbox GL siap (maks ~3 dtk). Di navigasi Turbo, <script src>
-  // CDN dieksekusi async sehingga window.mapboxgl bisa belum ada saat
-  // pageReady jalan — tanpa tunggu ini peta selalu gagal di kunjungan Turbo.
+  // Pastikan pustaka Mapbox GL tersedia sebelum init. Di navigasi Turbo,
+  // <script src> CDN dieksekusi async — window.mapboxgl bisa belum ada saat
+  // pageReady jalan, dan polling 3 detik terbukti kurang (uji browser
+  // 2026-10-26: kunjungan Turbo pertama tetap gagal). Karena itu tunggu
+  // event load skripnya langsung; bila tag skrip tak ada, suntikkan sendiri.
   function showMapFallback() {
     const mapEl = document.getElementById('fullMap');
     if (mapEl) mapEl.innerHTML = '<div class="flex items-center justify-center h-full text-xs text-[#607072] p-4 text-center">Peta tidak dapat dimuat saat ini. Gunakan daftar kajian di bawah.</div>';
   }
-  function waitForMapbox(done) {
-    let tries = 0;
-    const tick = () => {
-      if (window.mapboxgl) { done(); return; }
-      if (++tries > 30) { showMapFallback(); return; }
-      setTimeout(tick, 100);
-    };
-    tick();
+  function ensureMapbox(done, fail) {
+    if (window.mapboxgl) { done(); return; }
+    let script = document.querySelector('script[src*="mapbox-gl.js"]');
+    if (!script) {
+      script = document.createElement('script');
+      script.src = 'https://api.mapbox.com/mapbox-gl-js/v3.10.0/mapbox-gl.js';
+      document.head.appendChild(script);
+    }
+    let settled = false;
+    const timer = setTimeout(() => { if (!settled) { settled = true; fail(); } }, 10000);
+    script.addEventListener('load', () => {
+      if (settled) return;
+      settled = true; clearTimeout(timer);
+      if (window.mapboxgl) done(); else fail();
+    });
+    script.addEventListener('error', () => {
+      if (settled) return;
+      settled = true; clearTimeout(timer); fail();
+    });
   }
 
   pageReady(() => {
-    // Turbo: skrip Mapbox CDN dimuat async saat navigasi Turbo — tunggu
-    // sebentar sebelum menyerah (di load penuh, skrip sudah siap duluan).
     // Guard Mapbox (audit 2026-10-21, FE-H5): CDN/token gagal TIDAK BOLEH
     // membunuh seluruh halaman — daftar kajian tetap dirender.
-    waitForMapbox(() => {
+    ensureMapbox(() => {
       try {
         initMapbox();
       } catch (e) {
         console.warn('Mapbox gagal dimuat:', e);
         showMapFallback();
       }
-    });
+    }, showMapFallback);
     renderListView(rawEvents);
     document.getElementById('mapSearchInput').addEventListener('input', (e) => {
       const q = e.target.value.toLowerCase();
