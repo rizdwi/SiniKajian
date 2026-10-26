@@ -165,6 +165,10 @@ class KajianController extends Controller
         // tanpa flyer_url/is_rutin/verified/description (~29% lebih kecil).
         $mapJson = json_encode($this->slimKajianPayload($collection), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
         $serverCards = $this->serverFirstCards($collection);
+        // Spotlight = 3 pertama tampilan default (sama dengan slice(0,3)
+        // hasil hitung JS) — dirender server agar gambar LCP ketemu
+        // saat parse HTML, bukan setelah JS jalan.
+        $serverSpotlight = array_slice($serverCards, 0, 3);
 
         // Filter
         if ($request->filled('kategori') && $request->kategori !== 'Semua') {
@@ -213,6 +217,7 @@ class KajianController extends Controller
             'categories' => $categories,
             'userBookmarks' => $userBookmarks,
             'serverCards' => $serverCards,
+            'serverSpotlight' => $serverSpotlight,
             // Bedakan "gagal memuat" dari "memang kosong" (FE-H6)
             'kajianLoadError' => $service->lastFetchFailed && $collection->isEmpty(),
         ]);
@@ -284,6 +289,7 @@ class KajianController extends Controller
             ->get();
         $mapJson = json_encode($this->slimKajianPayload($mapKajians), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
         $serverCards = $this->serverFirstCards($mapKajians);
+        $serverSpotlight = array_slice($serverCards, 0, 3);
 
         $userBookmarks = [];
         if (Auth::check()) {
@@ -296,6 +302,7 @@ class KajianController extends Controller
             'categories' => $categories,
             'userBookmarks' => $userBookmarks,
             'serverCards' => $serverCards,
+            'serverSpotlight' => $serverSpotlight,
         ]);
     }
 

@@ -149,45 +149,6 @@
     </div>
   </section>
 
-  <!-- Hero Spotlight: Majelis Pilihan Terdekat (Figma Screen 1: KAJIAN PILIHAN) -->
-  <!-- Banner carousel: berdiri sendiri sebagai track horizontal, bisa di-swipe -->
-  <section id="heroSpotlightContainer">
-    <div id="spotlightViewport" class="overflow-hidden rounded-3xl" style="touch-action:pan-y;min-height:208px;">
-      <div id="spotlightTrack" class="flex will-change-transform">
-        <!-- Skeleton: ruang hero dicadangkan sejak paint pertama agar tidak
-             ada lompatan tata letak (CLS) saat JS mengisi carousel (2026-10-25) -->
-        <div class="w-full h-52 bg-[#153A3B] animate-pulse shrink-0" aria-hidden="true"></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Feed Section Header: Luangkan waktu untuk ilmu -->
-  <div class="flex items-center justify-between pt-1">
-    <div>
-      <h2 class="text-sm font-bold text-[#1C2224] dark:text-[#E8EDED]">Luangkan waktu untuk ilmu</h2>
-      <p class="text-[11px] text-[#607072] dark:text-[#9BA8A9]">Kajian sunnah pilihan di sekitarmu</p>
-    </div>
-    <span id="filteredCountText" class="text-xs font-bold text-[#1D4D4F] bg-[#E6F4F1] px-2.5 py-0.5 rounded-full">
-      {{ $kajians->count() }} Kajian
-    </span>
-  </div>
-
-  @if($kajianLoadError ?? false)
-  <!-- Status error muat data (FE-H6): dibedakan dari keadaan memang kosong -->
-  <div class="mb-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center" role="alert">
-    <p class="text-sm font-bold text-red-700">Gagal memuat data kajian</p>
-    <p class="text-xs text-red-600 mt-0.5">Server data sedang tidak terjangkau. Periksa koneksi internetmu lalu coba lagi.</p>
-    <button onclick="location.reload()" class="mt-2 px-4 py-1.5 rounded-full bg-red-600 text-white text-xs font-bold">Muat Ulang</button>
-  </div>
-  @endif
-
-  <!-- Feed Daftar Kajian -->
-  {{-- Kartu server-render (B+C 2026-10-26): 12 kartu pertama tampilan default
-       dirender di server dari koleksi yang sama (tanpa query tambahan),
-       agar cat pertama sudah berisi konten, bukan skeleton. JS
-       (renderKajianFeed) mempertahankan kartu ini bila urutannya sama
-       persis dengan hasil hitungnya; kalau beda, dibangun ulang seperti
-       biasa. Bila $serverCards kosong, skeleton lama dipakai fallback. --}}
   @php
     $skMonths = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
     $skTanggalIndo = function ($date) use ($skMonths) {
@@ -229,6 +190,94 @@
       return in_array($scheme, ['http', 'https'], true) ? $url : '#';
     };
   @endphp
+
+  {{-- Preload gambar LCP: slide pertama carousel (masuk <head> via stack styles) --}}
+  @if(!empty($serverSpotlight))
+    @php $skPreloadImg = $skThumb($serverSpotlight[0]['poster_url'] ?? null, 800) ?: 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=800&q=80'; @endphp
+    @push('styles')
+    <link rel="preload" as="image" fetchpriority="high" href="{{ $skPreloadImg }}">
+    @endpush
+  @endif
+
+  <!-- Hero Spotlight: Majelis Pilihan Terdekat (Figma Screen 1: KAJIAN PILIHAN) -->
+  <!-- Banner carousel: berdiri sendiri sebagai track horizontal, bisa di-swipe -->
+  <section id="heroSpotlightContainer">
+    <div id="spotlightViewport" class="overflow-hidden rounded-3xl" style="touch-action:pan-y;min-height:208px;">
+      <div id="spotlightTrack" class="flex will-change-transform" @if(!empty($serverSpotlight)) data-server-rendered="1" @endif>
+        @if(!empty($serverSpotlight))
+        {{-- Slide server-render (LCP 2026-10-27): 3 slide pertama tampilan default
+             dirender di server agar gambar LCP (slide 1, fetchpriority high)
+             ketemu saat parse HTML, bukan setelah JS jalan. JS (renderKajianFeed)
+             mempertahankan slide ini bila id-nya sama persis dengan hasil
+             hitungnya; kalau beda, dibangun ulang seperti biasa. --}}
+        @foreach($serverSpotlight as $si => $s)
+          @php
+            $sThumb = $skThumb($s['poster_url'] ?? null, 800) ?: 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=800&q=80';
+            $sAddr = !empty($s['address']) ? explode(',', $s['address'])[0] : 'Lokasi belum tersedia';
+          @endphp
+        <div class="spot-slide relative shrink-0 cursor-pointer overflow-hidden bg-[#153A3B]" style="width:100%;" data-slide-idx="{{ $si }}" data-kajian-id="{{ $s['id'] }}">
+          <img src="{{ $sThumb }}" alt="Kajian Pilihan" class="w-full h-52 object-cover opacity-85" draggable="false" @if($si === 0) fetchpriority="high" @else loading="lazy" @endif decoding="async">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/30"></div>
+          <div class="absolute top-3 inset-x-3 flex items-center justify-between">
+            <span class="px-3 py-1 rounded-full text-[10px] font-extrabold tracking-wider uppercase bg-[#E6F4F1] text-[#1D4D4F] shadow-xs">KAJIAN PILIHAN</span>
+          </div>
+          @if(!empty($s['is_cancelled']))
+          <div class="absolute inset-0 flex items-center justify-center pointer-events-none" style="z-index:20;">
+            <span style="border:4px solid #dc2626;color:#dc2626;font-weight:900;font-size:30px;letter-spacing:4px;padding:6px 22px;border-radius:8px;transform:rotate(-12deg);background:rgba(255,255,255,0.78);text-transform:uppercase;">Dibatalkan</span>
+          </div>
+          @endif
+          <div class="absolute bottom-3 inset-x-3 p-3.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-white shadow-sm">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-[#FCD34D]">{{ strtoupper($s['day'] ?? '') }}{{ $s['event_date'] ? ', ' . $skTanggalIndo($s['event_date']) : '' }} • {{ $s['time'] ?? '' }}</span>
+              <span class="text-white/40">•</span>
+              <span data-dist class="text-[10px] text-white/90 font-medium">{{ isset($s['distance']) ? number_format((float) $s['distance'], 1) . ' km' : '— km' }}</span>
+              <span class="flex-1"></span>
+              <span class="flex items-center gap-1.5">@foreach($serverSpotlight as $sj => $_)<span style="width:{{ $sj === $si ? '20px' : '8px' }};height:8px;border-radius:99px;background:{{ $sj === $si ? '#FCD34D' : 'rgba(255,255,255,0.4)' }};display:inline-block;"></span>@endforeach</span>
+            </div>
+            <h2 class="text-sm sm:text-base font-bold text-white leading-snug line-clamp-1">{{ $s['title'] }}</h2>
+            <p class="text-xs text-white/85 mt-0.5 flex items-center gap-1 truncate">
+              <svg class="w-3.5 h-3.5 text-[#E6F4F1] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+              <span>{{ $s['masjid'] }} • {{ $sAddr }}</span>
+            </p>
+          </div>
+        </div>
+        @endforeach
+        @else
+        <!-- Skeleton: ruang hero dicadangkan sejak paint pertama agar tidak
+             ada lompatan tata letak (CLS) saat JS mengisi carousel (2026-10-25) -->
+        <div class="w-full h-52 bg-[#153A3B] animate-pulse shrink-0" aria-hidden="true"></div>
+        @endif
+      </div>
+    </div>
+  </section>
+
+  <!-- Feed Section Header: Luangkan waktu untuk ilmu -->
+  <div class="flex items-center justify-between pt-1">
+    <div>
+      <h2 class="text-sm font-bold text-[#1C2224] dark:text-[#E8EDED]">Luangkan waktu untuk ilmu</h2>
+      <p class="text-[11px] text-[#607072] dark:text-[#9BA8A9]">Kajian sunnah pilihan di sekitarmu</p>
+    </div>
+    <span id="filteredCountText" class="text-xs font-bold text-[#1D4D4F] bg-[#E6F4F1] px-2.5 py-0.5 rounded-full">
+      {{ $kajians->count() }} Kajian
+    </span>
+  </div>
+
+  @if($kajianLoadError ?? false)
+  <!-- Status error muat data (FE-H6): dibedakan dari keadaan memang kosong -->
+  <div class="mb-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-center" role="alert">
+    <p class="text-sm font-bold text-red-700">Gagal memuat data kajian</p>
+    <p class="text-xs text-red-600 mt-0.5">Server data sedang tidak terjangkau. Periksa koneksi internetmu lalu coba lagi.</p>
+    <button onclick="location.reload()" class="mt-2 px-4 py-1.5 rounded-full bg-red-600 text-white text-xs font-bold">Muat Ulang</button>
+  </div>
+  @endif
+
+  <!-- Feed Daftar Kajian -->
+  {{-- Kartu server-render (B+C 2026-10-26): 12 kartu pertama tampilan default
+       dirender di server dari koleksi yang sama (tanpa query tambahan),
+       agar cat pertama sudah berisi konten, bukan skeleton. JS
+       (renderKajianFeed) mempertahankan kartu ini bila urutannya sama
+       persis dengan hasil hitungnya; kalau beda, dibangun ulang seperti
+       biasa. Bila $serverCards kosong, skeleton lama dipakai fallback. --}}
   <section class="space-y-3" id="kajianCardsList" @if(!empty($serverCards)) data-server-rendered="1" @endif>
     @if(!empty($serverCards))
       @foreach($serverCards as $c)
@@ -246,7 +295,7 @@
           <div class="flex items-start gap-3"@if(!empty($c['is_cancelled'])) style="opacity:0.45;filter:grayscale(0.6);"@endif>
             @if($cThumb)
             <div class="w-16 h-16 rounded-2xl overflow-hidden shrink-0 bg-slate-100 border border-[#E5ECEB] shadow-xs">
-              <img src="{{ $cThumb }}" alt="Flyer" class="w-full h-full object-cover" loading="lazy" decoding="async" onerror="this.parentElement.style.display='none'">
+              <img src="{{ $cThumb }}" alt="Flyer" class="w-full h-full object-cover" @if($loop->index >= 2) loading="lazy" @endif decoding="async" onerror="this.parentElement.style.display='none'">
             </div>
             @else
             <div class="w-16 h-16 rounded-2xl overflow-hidden shrink-0 bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center font-bold text-xs border border-[#E5ECEB]">
@@ -1352,7 +1401,7 @@
           `<span style="width:${j===i?'20px':'8px'};height:8px;border-radius:99px;background:${j===i?'#FCD34D':'rgba(255,255,255,0.4)'};display:inline-block;"></span>`
         ).join('');
         return `
-        <div class="spot-slide relative shrink-0 cursor-pointer overflow-hidden bg-[#153A3B]" style="width:100%;" data-slide-idx="${i}">
+        <div class="spot-slide relative shrink-0 cursor-pointer overflow-hidden bg-[#153A3B]" style="width:100%;" data-slide-idx="${i}" data-kajian-id="${item.id}">
           <img src="${item.poster_url ? supabaseThumb(item.poster_url, 800) : 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=800&q=80'}" alt="Kajian Pilihan" class="w-full h-52 object-cover opacity-85" draggable="false" fetchpriority="high" decoding="async">
           <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/30"></div>
           <div class="absolute top-3 inset-x-3 flex items-center justify-between">
@@ -1363,7 +1412,7 @@
             <div class="flex items-center gap-2 mb-1">
               <span class="text-[10px] font-bold uppercase tracking-wider text-[#FCD34D]">${(item.day || '').toUpperCase()}${item.event_date ? ', ' + formatTanggalIndo(item.event_date) : ''} • ${item.time || ''}</span>
               <span class="text-white/40">•</span>
-              <span class="text-[10px] text-white/90 font-medium">${item.distance != null ? item.distance.toFixed(1) + ' km' : '— km'}</span>
+              <span data-dist class="text-[10px] text-white/90 font-medium">${item.distance != null ? item.distance.toFixed(1) + ' km' : '— km'}</span>
               <span class="flex-1"></span>
               <span class="flex items-center gap-1.5">${dots}</span>
             </div>
@@ -1376,7 +1425,27 @@
         </div>`;
       };
 
-      track.innerHTML = spotlightItems.map(slideHTML).join('');
+      // Slide server-render (LCP 2026-10-27): pertahankan bila id-nya
+      // sudah sama persis dengan hasil hitung JS. Kalau beda (mis. lokasi
+      // tersimpan user bukan titik default / filter aktif), bangun ulang.
+      // Jarak di slide server ikut diperbarui dari hitungan JS.
+      let keptServerSpotlight = false;
+      if (track.dataset.serverRendered === '1') {
+        const serverSlides = [...track.querySelectorAll('.spot-slide')];
+        const serverIds = serverSlides.map(el => Number(el.dataset.kajianId));
+        const wantIds = spotlightItems.map(ev => Number(ev.id));
+        if (serverIds.length === wantIds.length && serverIds.every((id, i) => id === wantIds[i])) {
+          keptServerSpotlight = true;
+          spotlightItems.forEach((ev, i) => {
+            const span = serverSlides[i].querySelector('[data-dist]');
+            if (span) span.textContent = ev.distance != null ? ev.distance.toFixed(1) + ' km' : '— km';
+          });
+        }
+        delete track.dataset.serverRendered;
+      }
+      if (!keptServerSpotlight) {
+        track.innerHTML = spotlightItems.map(slideHTML).join('');
+      }
 
       // Klik slide -> detail (kecuali tombol bookmark)
       track.querySelectorAll('.spot-slide').forEach(slide => {
@@ -1535,7 +1604,7 @@
 
     if (!keptServerCards) {
     container.innerHTML = '';
-    toShow.forEach(ev => {
+    toShow.forEach((ev, i) => {
       const isSaved = userBookmarkIds.has(ev.id);
       const srcMeta = SOURCE_META[ev.source] || SOURCE_META.facebook;
       const hasSource = ev.source_url && ev.source_url !== '#';
@@ -1543,7 +1612,7 @@
       const thumbUrl = ev.poster_url ? supabaseThumb(ev.poster_url, 200) : null;
       const flyerThumb = thumbUrl
         ? `<div class="w-16 h-16 rounded-2xl overflow-hidden shrink-0 bg-slate-100 border border-[#E5ECEB] shadow-xs">
-             <img src="${thumbUrl}" alt="Flyer" class="w-full h-full object-cover" loading="lazy" decoding="async" onerror="this.parentElement.style.display='none'">
+             <img src="${thumbUrl}" alt="Flyer" class="w-full h-full object-cover"${i < 2 ? '' : ' loading="lazy"'} decoding="async" onerror="this.parentElement.style.display='none'">
            </div>`
         : `<div class="w-16 h-16 rounded-2xl overflow-hidden shrink-0 bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center font-bold text-xs border border-[#E5ECEB]">
              <span>${(ev.category || 'ILMU').substring(0, 4)}</span>
