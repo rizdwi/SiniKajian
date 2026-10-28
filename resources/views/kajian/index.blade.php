@@ -5,160 +5,101 @@
 @section('content')
 <div class="max-w-md mx-auto px-4 pt-4 pb-8 space-y-5">
   
-  <!-- Header Area Sesuai Desain Figma (Assalamu'alaikum & Lokasi) -->
-  <header class="flex items-center justify-between pt-2">
-    <div>
-      <p class="text-xs text-[#607072] dark:text-[#9BA8A9] font-medium">Assalamu'alaikum, {{ Auth::check() ? Auth::user()->name : 'Tamu' }}</p>
-      <h1 class="text-xl font-extrabold text-[#1D4D4F] tracking-tight mt-0.5">Yuk, kita ngaji.</h1>
-      <p class="text-[11px] text-[#607072] dark:text-[#9BA8A9] mt-0.5">Jadwal kajian Sunnah terdekat &amp; paling update — dari flyer resmi majelis.</p>
-      <button type="button" onclick="openLocationModal()" class="inline-flex items-center gap-1 text-[11px] font-semibold text-[#1D4D4F] bg-[#E6F4F1] hover:bg-[#D1EAE5] px-2.5 py-0.5 rounded-full mt-1.5 transition">
-        <svg class="w-3 h-3 text-[#1D4D4F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
-        <span id="currentLocationName">Mendeteksi Lokasi...</span>
-        <svg class="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+    <!-- Header Area (desain mockup 2026-10-29: lokasi + sholat berikutnya di
+       baris atas, salam + judul + avatar di bawahnya) -->
+  <header class="pt-2">
+    <div class="flex items-center gap-2">
+      <button type="button" onclick="openLocationModal()" class="inline-flex items-center gap-1.5 bg-[#1D4D4F] text-white text-xs font-bold px-3.5 py-2 rounded-full shadow-xs touch-btn transition shrink-0 max-w-[45%]">
+        <span>📍</span>
+        <span id="currentLocationName" class="truncate">Mendeteksi Lokasi...</span>
       </button>
+      <a href="{{ route('kajian.sholat') }}" class="inline-flex items-center justify-center gap-1.5 bg-[#E6F4F1] dark:bg-[#162526] text-[#1D4D4F] dark:text-[#E8EDED] text-xs font-bold px-3.5 py-2 rounded-full shadow-xs touch-btn transition flex-1 min-w-0">
+        <span>🕌</span>
+        <span id="nextPrayerName" class="whitespace-nowrap">—</span>
+        <span id="nextPrayerTime" class="whitespace-nowrap">—</span>
+        <span class="text-[#607072] dark:text-[#9BA8A9]">•</span>
+        <span id="nextPrayerCountdown" class="whitespace-nowrap">—</span>
+      </a>
     </div>
 
-    <div class="flex items-center gap-2">
-      <!-- Tombol Masukan Info Kajian -->
-      <button type="button" onclick="openSubmitModal()" title="Masukan Info Kajian" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#E6F4F1] hover:bg-[#D1EAE5] text-[#1D4D4F] text-xs font-bold border border-[#D1ECE7] shadow-2xs touch-btn transition" aria-label="Masukan Info Kajian">
-        <svg class="w-4 h-4 text-[#1D4D4F] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 4v16m8-8H4"></path>
-        </svg>
-        <span class="text-[11px] font-bold whitespace-nowrap hidden xs:inline">Info Kajian</span>
-      </button>
+    <div class="flex items-start justify-between gap-3 mt-3">
+      <div class="min-w-0">
+        <p class="text-xs text-[#607072] dark:text-[#9BA8A9] font-medium">Assalamu'alaikum, {{ Auth::check() ? Auth::user()->name : 'Tamu' }} 👋</p>
+        <h1 class="text-[26px] leading-tight font-extrabold text-[#1D4D4F] dark:text-[#E8EDED] tracking-tight mt-0.5">Temukan Majelis Ilmu</h1>
+      </div>
 
-      <!-- Tombol Foto Profil (Langsung ke Halaman Profil) -->
-      <a href="{{ route('profile') }}" title="Lihat Profil Saya" class="w-10 h-10 rounded-full overflow-hidden bg-[#1D4D4F] text-white flex items-center justify-center font-extrabold text-sm border-2 border-white shadow-xs ring-2 ring-[#1D4D4F]/20 touch-btn hover:opacity-90 transition shrink-0 relative" aria-label="Profil Saya">
-        <img id="headerUserAvatarImg" src="{{ Auth::check() && !empty(Auth::user()->avatar) ? Auth::user()->avatar : '' }}" alt="{{ Auth::check() ? Auth::user()->name : 'Tamu' }}" class="w-full h-full object-cover {{ Auth::check() && !empty(Auth::user()->avatar) ? '' : 'hidden' }}">
-        <span id="headerUserAvatarInitial" class="{{ Auth::check() && !empty(Auth::user()->avatar) ? 'hidden' : '' }}">
-          @auth
-            {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
-          @else
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-            </svg>
-          @endauth
-        </span>
-      </a>
+      <div class="flex items-center gap-2 shrink-0">
+        <!-- Tombol Masukan Info Kajian (tetap: fitur kirim info kajian) -->
+        <button type="button" onclick="openSubmitModal()" title="Masukan Info Kajian" class="w-10 h-10 rounded-full bg-white dark:bg-[#162526] border border-[#E5ECEB] dark:border-[#1E2E2F] text-[#1D4D4F] flex items-center justify-center shadow-xs touch-btn transition" aria-label="Masukan Info Kajian">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 4v16m8-8H4"></path>
+          </svg>
+        </button>
+
+        <!-- Tombol Foto Profil (Langsung ke Halaman Profil) -->
+        <a href="{{ route('profile') }}" title="Lihat Profil Saya" class="w-10 h-10 rounded-full overflow-hidden bg-[#1D4D4F] text-white flex items-center justify-center font-extrabold text-sm border-2 border-white shadow-xs ring-2 ring-[#1D4D4F]/20 touch-btn hover:opacity-90 transition shrink-0 relative" aria-label="Profil Saya">
+          <img id="headerUserAvatarImg" src="{{ Auth::check() && !empty(Auth::user()->avatar) ? Auth::user()->avatar : '' }}" alt="{{ Auth::check() ? Auth::user()->name : 'Tamu' }}" class="w-full h-full object-cover {{ Auth::check() && !empty(Auth::user()->avatar) ? '' : 'hidden' }}">
+          <span id="headerUserAvatarInitial" class="{{ Auth::check() && !empty(Auth::user()->avatar) ? 'hidden' : '' }}">
+            @auth
+              {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+            @else
+              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+              </svg>
+            @endauth
+          </span>
+        </a>
+      </div>
     </div>
   </header>
 
-  <!-- Waktu Sholat Astronomis Surya Presisi (Spruce Teal Aesthetic) -->
-  <section class="bg-gradient-to-br from-[#1D4D4F] to-[#153A3B] text-white p-3.5 rounded-2xl shadow-xs border border-[#1D4D4F]/80">
-    <div class="flex items-center justify-between mb-2.5 border-b border-white/15 pb-2">
-      <div class="flex items-center space-x-1.5">
-        <span class="w-2 h-2 rounded-full bg-[#FCD34D] animate-pulse"></span>
-        <span class="text-[11px] font-bold text-[#E6F4F1] tracking-wider uppercase">JADWAL SHOLAT ASTRONOMIS</span>
-      </div>
-      <div id="nextPrayerCountdown" class="text-[11px] font-semibold text-[#FCD34D]">
-        Menghitung jadwal...
-      </div>
-    </div>
+  
 
-    <div class="grid grid-cols-6 gap-1 text-center" id="prayerTimesGrid">
-      <div class="bg-white/10 p-1.5 rounded-xl border border-white/10" id="prayer-subuh">
-        <p class="text-[9px] text-[#A4D3CC] font-medium">Subuh</p>
-        <p class="text-xs font-bold text-white font-mono mt-0.5" id="time-subuh">--:--</p>
-      </div>
-      <div class="bg-white/5 p-1.5 rounded-xl border border-white/5" id="prayer-terbit">
-        <p class="text-[9px] text-[#A4D3CC] font-medium">Terbit</p>
-        <p class="text-xs font-medium text-white/80 font-mono mt-0.5" id="time-terbit">--:--</p>
-      </div>
-      <div class="bg-white/10 p-1.5 rounded-xl border border-white/10" id="prayer-dzuhur">
-        <p class="text-[9px] text-[#A4D3CC] font-medium">Dzuhur</p>
-        <p class="text-xs font-bold text-white font-mono mt-0.5" id="time-dzuhur">--:--</p>
-      </div>
-      <div class="bg-white/10 p-1.5 rounded-xl border border-white/10" id="prayer-ashar">
-        <p class="text-[9px] text-[#A4D3CC] font-medium">Ashar</p>
-        <p class="text-xs font-bold text-white font-mono mt-0.5" id="time-ashar">--:--</p>
-      </div>
-      <div class="bg-white/10 p-1.5 rounded-xl border border-white/10" id="prayer-maghrib">
-        <p class="text-[9px] text-[#A4D3CC] font-medium">Maghrib</p>
-        <p class="text-xs font-bold text-white font-mono mt-0.5" id="time-maghrib">--:--</p>
-      </div>
-      <div class="bg-white/10 p-1.5 rounded-xl border border-white/10" id="prayer-isya">
-        <p class="text-[9px] text-[#A4D3CC] font-medium">Isya</p>
-        <p class="text-xs font-bold text-white font-mono mt-0.5" id="time-isya">--:--</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- Kolom Pencarian & Aksi Filter (Figma Screen 1: Search Pill & Slider Button) -->
-  <section class="space-y-3">
+    <!-- Kolom Pencarian (desain mockup 2026-10-29: pill + tombol filter + kalender) -->
+  <section>
     <div class="flex items-center gap-2">
       <div class="relative flex-1">
-        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#607072] dark:text-[#9BA8A9]">
+        <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#607072] dark:text-[#9BA8A9]">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
           </svg>
         </span>
-        <input 
-          type="text" 
+        <input
+          type="text"
           id="searchInput"
-          placeholder="Cari tema kajian, ustadz, atau masjid" 
-          class="w-full pl-10 pr-9 py-2.5 bg-white dark:bg-[#162526] border border-[#E5ECEB] dark:border-[#1E2E2F] rounded-2xl text-xs sm:text-sm text-[#1C2224] dark:text-[#E8EDED] placeholder-[#607072] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F] focus:border-[#1D4D4F] shadow-xs"
+          placeholder="Cari kajian, ustadz, masjid..."
+          class="w-full pl-11 pr-10 py-3 bg-white dark:bg-[#162526] border border-[#E5ECEB] dark:border-[#1E2E2F] rounded-full text-sm text-[#1C2224] dark:text-[#E8EDED] placeholder-[#607072] focus:outline-none focus:ring-2 focus:ring-[#1D4D4F] focus:border-[#1D4D4F] shadow-xs"
           oninput="onSearchFilterChange()"
         >
-        <button 
+        <button
           id="clearSearchBtn"
           onclick="clearSearchInput()"
-          class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-[#607072] dark:text-[#9BA8A9] hover:text-[#1C2224] dark:text-[#E8EDED]"
+          class="hidden absolute inset-y-0 right-0 pr-4 flex items-center text-[#607072] dark:text-[#9BA8A9] hover:text-[#1C2224] dark:text-[#E8EDED]"
           aria-label="Bersihkan pencarian"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
-    </div>
-
-    <!-- Quick Chips: Kategori Kajian (Figma Screen 1: Filter Chips) -->
-    <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 text-xs">
-      <button onclick="setCategoryFilter('Semua')" class="category-chip whitespace-nowrap px-4 py-2 rounded-full font-bold transition-all bg-[#1D4D4F] text-white shadow-xs" data-cat="Semua">
-        Untukmu
+      <button type="button" onclick="document.getElementById('filterChipsSection').scrollIntoView({behavior:'smooth',block:'center'})" title="Filter" aria-label="Filter" class="w-11 h-11 rounded-2xl bg-white dark:bg-[#162526] border border-[#E5ECEB] dark:border-[#1E2E2F] text-[#1D4D4F] flex items-center justify-center shrink-0 shadow-xs touch-btn transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
       </button>
-      @foreach($categories as $cat)
-      @if(!preg_match('/^kajian/i', trim($cat)))
-      <button onclick="setCategoryFilter('{{ $cat }}')" class="category-chip whitespace-nowrap px-4 py-2 rounded-full font-medium transition-all bg-white dark:bg-[#162526] text-[#607072] dark:text-[#9BA8A9] border border-[#E5ECEB] hover:border-[#1D4D4F] hover:text-[#1D4D4F]" data-cat="{{ $cat }}">
-        {{ $cat }}
-      </button>
-      @endif
-      @endforeach
-    </div>
-
-    <!-- Quick Chips: Radius Jarak -->
-    <div class="flex items-center gap-2 text-xs text-[#607072] dark:text-[#9BA8A9] pt-0.5 overflow-x-auto no-scrollbar">
-      <span class="text-[11px] font-medium text-[#607072] dark:text-[#9BA8A9] whitespace-nowrap shrink-0">Radius:</span>
-      <button onclick="setRadiusFilter(5)" class="radius-chip px-3.5 py-1.5 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] whitespace-nowrap shrink-0" data-radius="5">5 km</button>
-      <button onclick="setRadiusFilter(15)" class="radius-chip px-3.5 py-1.5 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] whitespace-nowrap shrink-0" data-radius="15">15 km</button>
-      <button onclick="setRadiusFilter(25)" class="radius-chip px-3.5 py-1.5 rounded-xl border border-[#1D4D4F] bg-[#E6F4F1] text-[#1D4D4F] font-bold whitespace-nowrap shrink-0" data-radius="25">25 km</button>
-      <button onclick="setRadiusFilter(999)" class="radius-chip px-3.5 py-1.5 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] whitespace-nowrap shrink-0" data-radius="999">Semua</button>
-    </div>
-
-    <!-- Quick Chips: Urutkan (Segmen No.3 — Terdekat dari saya, 2026-10-28) -->
-    <div class="flex items-center gap-2 text-xs text-[#607072] dark:text-[#9BA8A9] pt-0.5 overflow-x-auto no-scrollbar">
-      <span class="text-[11px] font-medium text-[#607072] dark:text-[#9BA8A9] whitespace-nowrap shrink-0">Urutkan:</span>
-      <button onclick="setSortMode('tanggal')" class="sort-chip px-3.5 py-1.5 rounded-xl border border-[#1D4D4F] bg-[#E6F4F1] text-[#1D4D4F] font-bold whitespace-nowrap shrink-0" data-sort="tanggal">Tanggal</button>
-      <button onclick="setSortMode('jarak')" class="sort-chip px-3.5 py-1.5 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] whitespace-nowrap shrink-0" data-sort="jarak">Terdekat</button>
-    </div>
-
-    <!-- Baris aksi: Kalender, Favorit, Jumlah -->
-    <div class="flex items-center gap-2 text-xs pt-1">
-      <button id="viewModeToggle" onclick="openCalendarModal()" class="px-3 py-1.5 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] flex items-center gap-1.5 transition" title="Buka kalender">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <button id="viewModeToggle" onclick="openCalendarModal()" class="w-11 h-11 rounded-2xl bg-white dark:bg-[#162526] border border-[#E5ECEB] dark:border-[#1E2E2F] text-[#1D4D4F] flex items-center justify-center shrink-0 shadow-xs touch-btn transition" title="Buka kalender">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
         </svg>
-        <span class="text-[11px]" id="viewModeLabel">Kalender</span>
-      </button>
-      <button id="favUstadzToggle" onclick="toggleFavUstadzFilter()" class="px-3 py-1.5 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-amber-500 flex items-center gap-1.5 transition" title="Hanya ustadz favorit">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
-        </svg>
-        <span class="text-[11px]">Favorit</span>
+        <span class="hidden" id="viewModeLabel">Kalender</span>
       </button>
     </div>
   </section>
 
   @php
     $skMonths = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    $skTanggalNoYear = function ($date) use ($skMonths) {
+      if (!$date) return '';
+      $p = explode('-', substr((string) $date, 0, 10));
+      if (count($p) !== 3) return '';
+      return ((int) $p[2]) . ' ' . ($skMonths[((int) $p[1]) - 1] ?? '');
+    };
     $skTanggalIndo = function ($date) use ($skMonths) {
       if (!$date) return '';
       $p = explode('-', substr((string) $date, 0, 10));
@@ -172,8 +113,8 @@
       $diff = $today->diffInDays($target, false);
       if ($diff < 0) return '';
       $label = $diff === 0 ? 'Hari ini' : ($diff === 1 ? 'Besok' : $diff . ' hari lagi');
-      $bg = $diff === 0 ? '#DC2626' : ($diff === 1 ? '#EAB308' : '#15803D');
-      $fg = $diff === 1 ? '#422006' : '#fff';
+      $bg = $diff === 0 ? '#FEE2E2' : ($diff === 1 ? '#FEF3C7' : '#DCFCE7');
+      $fg = $diff === 0 ? '#DC2626' : ($diff === 1 ? '#92400E' : '#166534');
       return '<span style="background:' . $bg . ';color:' . $fg . ';font-size:9px;font-weight:700;padding:2px 8px;border-radius:9999px;white-space:nowrap;flex-shrink:0;">' . $label . '</span>';
     };
     // URL transform Supabase langsung (fallback bila proxy /api/thumbs gagal).
@@ -225,7 +166,7 @@
   <!-- Hero Spotlight: Majelis Pilihan Terdekat (Figma Screen 1: KAJIAN PILIHAN) -->
   <!-- Banner carousel: berdiri sendiri sebagai track horizontal, bisa di-swipe -->
   <section id="heroSpotlightContainer">
-    <div id="spotlightViewport" class="overflow-hidden rounded-3xl" style="touch-action:pan-y;min-height:208px;">
+    <div id="spotlightViewport" class="overflow-hidden rounded-3xl" style="touch-action:pan-y;min-height:240px;">
       <div id="spotlightTrack" class="flex will-change-transform" @if(!empty($serverSpotlight)) data-server-rendered="1" @endif>
         @if(!empty($serverSpotlight))
         {{-- Slide server-render (LCP 2026-10-27): 3 slide pertama tampilan default
@@ -239,29 +180,22 @@
             $sAddr = !empty($s['address']) ? explode(',', $s['address'])[0] : 'Lokasi belum tersedia';
           @endphp
         <div class="spot-slide relative shrink-0 cursor-pointer overflow-hidden bg-[#153A3B]" style="width:100%;" data-slide-idx="{{ $si }}" data-kajian-id="{{ $s['id'] }}">
-          <img src="{{ $sThumb }}" data-poster="{{ $s['poster_url'] ?? '' }}" alt="Kajian Pilihan" class="w-full h-52 object-cover opacity-85" draggable="false" @if($si === 0) fetchpriority="high" @else loading="lazy" @endif decoding="async" onerror="thumbFallback(this, 800)">
-          <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/30"></div>
-          <div class="absolute top-3 inset-x-3 flex items-center justify-between">
-            <span class="px-3 py-1 rounded-full text-[10px] font-extrabold tracking-wider uppercase bg-[#E6F4F1] text-[#1D4D4F] shadow-xs">KAJIAN PILIHAN</span>
+          <img src="{{ $sThumb }}" data-poster="{{ $s['poster_url'] ?? '' }}" alt="Kajian Pilihan" class="w-full h-60 object-cover opacity-90" draggable="false" @if($si === 0) fetchpriority="high" @else loading="lazy" @endif decoding="async" onerror="thumbFallback(this, 800)">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/20"></div>
+          <div class="absolute top-3 inset-x-3 flex items-center justify-between gap-2">
+            <span class="px-3 py-1.5 rounded-full text-[10px] font-extrabold tracking-wider uppercase bg-black/70 text-white shadow-xs">⭐ KAJIAN PILIHAN</span>
+            <span data-dist class="px-3 py-1.5 rounded-full text-[10px] font-bold bg-black/60 text-white shadow-xs whitespace-nowrap">{{ isset($s['distance']) ? number_format((float) $s['distance'], 1) . ' km' : '— km' }}</span>
           </div>
           @if(!empty($s['is_cancelled']))
           <div class="absolute inset-0 flex items-center justify-center pointer-events-none" style="z-index:20;">
             <span style="border:4px solid #dc2626;color:#dc2626;font-weight:900;font-size:30px;letter-spacing:4px;padding:6px 22px;border-radius:8px;transform:rotate(-12deg);background:rgba(255,255,255,0.78);text-transform:uppercase;">Dibatalkan</span>
           </div>
           @endif
-          <div class="absolute bottom-3 inset-x-3 p-3.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-white shadow-sm">
-            <div class="flex items-center gap-2 mb-1">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-[#FCD34D]">{{ strtoupper($s['day'] ?? '') }}{{ $s['event_date'] ? ', ' . $skTanggalIndo($s['event_date']) : '' }} • {{ $s['time'] ?? '' }}</span>
-              <span class="text-white/40">•</span>
-              <span data-dist class="text-[10px] text-white/90 font-medium">{{ isset($s['distance']) ? number_format((float) $s['distance'], 1) . ' km' : '— km' }}</span>
-              <span class="flex-1"></span>
-              <span class="flex items-center gap-1.5">@foreach($serverSpotlight as $sj => $_)<span style="width:{{ $sj === $si ? '20px' : '8px' }};height:8px;border-radius:99px;background:{{ $sj === $si ? '#FCD34D' : 'rgba(255,255,255,0.4)' }};display:inline-block;"></span>@endforeach</span>
-            </div>
-            <h2 class="text-sm sm:text-base font-bold text-white leading-snug line-clamp-1">{{ $s['title'] }}</h2>
-            <p class="text-xs text-white/85 mt-0.5 flex items-center gap-1 truncate">
-              <svg class="w-3.5 h-3.5 text-[#E6F4F1] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
-              <span>{{ $s['masjid'] }} • {{ $sAddr }}</span>
-            </p>
+          <div class="absolute bottom-0 inset-x-0 p-4">
+            <h2 class="text-lg font-extrabold text-white leading-snug line-clamp-2">{{ $s['title'] }}</h2>
+            <p class="text-sm font-bold text-amber-300 mt-1 truncate">{{ $s['ustadz'] ?? '' }}</p>
+            <p class="text-xs text-white/90 mt-1 truncate">{{ $s['day'] ?? '' }}{{ $s['event_date'] ? ', ' . $skTanggalNoYear($s['event_date']) : '' }} • {{ $s['time'] ?? '' }} • {{ $s['masjid'] }}</p>
+            <span class="inline-flex items-center gap-1 mt-3 px-4 py-2 rounded-full bg-white text-[#1D4D4F] text-xs font-extrabold shadow">Lihat Detail Kajian →</span>
           </div>
         </div>
         @endforeach
@@ -274,15 +208,50 @@
     </div>
   </section>
 
-  <!-- Feed Section Header: Luangkan waktu untuk ilmu -->
-  <div class="flex items-center justify-between pt-1">
-    <div>
-      <h2 class="text-sm font-bold text-[#1C2224] dark:text-[#E8EDED]">Luangkan waktu untuk ilmu</h2>
-      <p class="text-[11px] text-[#607072] dark:text-[#9BA8A9]">Kajian sunnah pilihan di sekitarmu</p>
+  <!-- Filter Chips (desain mockup 2026-10-29: di bawah spotlight, bisa di-scroll) -->
+  <section id="filterChipsSection" class="space-y-2.5">
+    <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 text-xs">
+      <button onclick="setCategoryFilter('Semua')" class="category-chip whitespace-nowrap px-4 py-2 rounded-full font-bold transition-all bg-[#1D4D4F] text-white shadow-xs" data-cat="Semua">
+        Untukmu
+      </button>
+      <div class="relative shrink-0">
+        <select id="radiusSelect" onchange="setRadiusFilter(parseInt(this.value, 10))" aria-label="Radius pencarian" class="appearance-none whitespace-nowrap pl-4 pr-8 py-2 rounded-full font-bold bg-white dark:bg-[#162526] text-[#1D4D4F] dark:text-[#E8EDED] border border-[#E5ECEB] dark:border-[#1E2E2F] transition cursor-pointer">
+          <option value="5">Radius: 5 km</option>
+          <option value="15">Radius: 15 km</option>
+          <option value="25" selected>Radius: 25 km</option>
+          <option value="999">Radius: Semua</option>
+        </select>
+        <span class="absolute inset-y-0 right-3 flex items-center pointer-events-none text-[#1D4D4F] text-[10px]">▾</span>
+      </div>
+      <button id="todayToggle" onclick="setTodayFilter()" class="whitespace-nowrap px-4 py-2 rounded-full font-medium transition-all bg-white text-[#607072] dark:text-[#9BA8A9] border border-[#E5ECEB] hover:border-[#1D4D4F] hover:text-[#1D4D4F] shrink-0">
+        Hari Ini
+      </button>
+      @foreach($categories as $cat)
+      @if(!preg_match('/^kajian/i', trim($cat)))
+      <button onclick="setCategoryFilter('{{ $cat }}')" class="category-chip whitespace-nowrap px-4 py-2 rounded-full font-medium transition-all bg-white dark:bg-[#162526] text-[#607072] dark:text-[#9BA8A9] border border-[#E5ECEB] hover:border-[#1D4D4F] hover:text-[#1D4D4F]" data-cat="{{ $cat }}">
+        {{ $cat }}
+      </button>
+      @endif
+      @endforeach
     </div>
-    <span id="filteredCountText" class="text-xs font-bold text-[#1D4D4F] bg-[#E6F4F1] px-2.5 py-0.5 rounded-full">
-      {{ $kajians->count() }} Kajian
-    </span>
+
+    <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 text-xs text-[#607072] dark:text-[#9BA8A9]">
+      <span class="text-[11px] font-medium whitespace-nowrap shrink-0">Urutkan:</span>
+      <button onclick="setSortMode('tanggal')" class="sort-chip px-3.5 py-1.5 rounded-xl border border-[#1D4D4F] bg-[#E6F4F1] text-[#1D4D4F] font-bold whitespace-nowrap shrink-0" data-sort="tanggal">Tanggal</button>
+      <button onclick="setSortMode('jarak')" class="sort-chip px-3.5 py-1.5 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] whitespace-nowrap shrink-0" data-sort="jarak">Terdekat</button>
+      <button id="favUstadzToggle" onclick="toggleFavUstadzFilter()" class="px-2.5 py-1 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-amber-500 flex items-center gap-1 transition" title="Hanya ustadz favorit">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+        </svg>
+        <span class="text-[11px]">Favorit</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Feed Section Header (desain mockup 2026-10-29) -->
+  <div class="flex items-center justify-between pt-1">
+    <h2 class="text-base font-extrabold text-[#1C2224] dark:text-[#E8EDED]">Kajian Terdekat <span id="filteredCountText" class="text-[#607072] dark:text-[#9BA8A9] font-bold">({{ $kajians->count() }})</span></h2>
+    <button onclick="resetAllFilters()" class="text-xs font-bold text-[#1D4D4F] hover:underline shrink-0">Lihat Semua</button>
   </div>
 
   @if($kajianLoadError ?? false)
@@ -309,44 +278,38 @@
           $cMeta = $skSourceMeta($c['source'] ?? 'instagram');
           $cHasSource = !empty($c['source_url']) && $c['source_url'] !== '#';
         @endphp
-        <article data-kajian-id="{{ $c['id'] }}" class="bg-white dark:bg-[#162526] rounded-2xl p-3.5 border border-[#E5ECEB] dark:border-[#1E2E2F] shadow-xs hover:border-[#1D4D4F]/50 transition-all cursor-pointer{{ !empty($c['is_cancelled']) ? ' !border-red-300' : '' }}" style="position:relative;overflow:hidden;">
+        <article data-kajian-id="{{ $c['id'] }}" class="bg-white dark:bg-[#162526] rounded-3xl p-3 border border-[#E5ECEB] dark:border-[#1E2E2F] shadow-xs hover:border-[#1D4D4F]/50 transition-all cursor-pointer{{ !empty($c['is_cancelled']) ? ' !border-red-300' : '' }}" style="position:relative;overflow:hidden;">
           @if(!empty($c['is_cancelled']))
           <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:10;">
-            <span style="border:4px solid #dc2626;color:#dc2626;font-weight:900;font-size:28px;letter-spacing:4px;padding:6px 20px;border-radius:8px;transform:rotate(-12deg);background:rgba(255,255,255,0.75);text-transform:uppercase;font-family:system-ui;">Dibatalkan</span>
+            <span style="border:4px solid #dc2626;color:#dc2626;font-weight:900;font-size:28px;letter-spacing:4px;padding:6px 20px;border-radius:8px;transform:rotate(-12deg);background:rgba(255,255,255,0.75);text-transform:uppercase;">Dibatalkan</span>
           </div>
           @endif
           <div class="flex items-start gap-3"@if(!empty($c['is_cancelled'])) style="opacity:0.45;filter:grayscale(0.6);"@endif>
             @if($cThumb)
-            <div class="w-16 h-16 rounded-2xl overflow-hidden shrink-0 bg-slate-100 border border-[#E5ECEB] shadow-xs">
+            <div class="w-[88px] h-[88px] rounded-2xl overflow-hidden shrink-0 bg-slate-100 border border-[#E5ECEB] shadow-xs">
               <img src="{{ $cThumb }}" data-poster="{{ $c['poster_url'] ?? '' }}" alt="Flyer" class="w-full h-full object-cover" @if($loop->index >= 2) loading="lazy" @endif decoding="async" onerror="thumbFallback(this, 200, true)">
             </div>
             @else
-            <div class="w-16 h-16 rounded-2xl overflow-hidden shrink-0 bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center font-bold text-xs border border-[#E5ECEB]">
+            <div class="w-[88px] h-[88px] rounded-2xl overflow-hidden shrink-0 bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center font-bold text-xs border border-[#E5ECEB]">
               <span>{{ mb_substr($c['category'] ?: 'ILMU', 0, 4) }}</span>
             </div>
             @endif
             <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-1 flex-wrap mb-1">
-                <span class="text-[10px] font-bold text-[#1D4D4F] bg-[#E6F4F1] px-2 py-0.5 rounded-full whitespace-nowrap">{{ $c['day'] }}{{ $c['event_date'] ? ', ' . $skTanggalIndo($c['event_date']) : '' }} • {{ $c['time'] }}</span>
+              <div class="flex items-center justify-between gap-2">
                 {!! $skHariLagi($c['event_date']) !!}
+                <span data-dist class="text-[11px] font-bold text-[#607072] dark:text-[#9BA8A9] whitespace-nowrap ml-auto">{{ isset($c['distance']) ? number_format((float) $c['distance'], 1) . ' km' : '— km' }}</span>
               </div>
-              <h3 class="text-xs sm:text-sm font-bold text-[#1C2224] dark:text-[#E8EDED] leading-snug line-clamp-2 hover:text-[#1D4D4F]">{{ $c['title'] }}</h3>
+              <p class="text-[11px] text-[#607072] dark:text-[#9BA8A9] mt-1 truncate">{{ $c['day'] }}{{ $c['event_date'] ? ', ' . $skTanggalNoYear($c['event_date']) : '' }} • {{ $c['time'] }}</p>
+              <h3 class="text-sm font-bold text-[#1C2224] dark:text-[#E8EDED] leading-snug line-clamp-2 hover:text-[#1D4D4F] mt-0.5">{{ $c['title'] }}</h3>
               <p class="text-[11px] text-[#607072] dark:text-[#9BA8A9] mt-0.5 truncate">{{ $c['ustadz'] }} • {{ $c['masjid'] }}</p>
               <div class="flex items-center gap-1.5 mt-2 flex-wrap" onclick="event.stopPropagation();">
-                <span class="text-[9px] font-medium text-[#607072] dark:text-[#9BA8A9] bg-[#F8FAF9] border border-[#E5ECEB] px-2 py-0.5 rounded-md">{{ $c['category'] ?: 'Umum' }}</span>
+                <span class="text-[10px] font-bold text-[#1D4D4F] bg-[#E6F4F1] px-2 py-0.5 rounded-full">{{ $c['category'] ?: 'Umum' }}</span>
                 @if($cHasSource)
-                <a href="{{ $skSafeUrl($c['source_url']) }}" target="_blank" rel="noopener noreferrer" title="Buka sumber asli di {{ $cMeta['label'] }}" aria-label="Buka sumber asli di {{ $cMeta['label'] }} — kajian #{{ $c['id'] }}" class="inline-flex items-center gap-1 text-[9px] font-bold text-white px-2 py-0.5 rounded-full shadow-xs no-underline transition hover:opacity-90 cursor-pointer" style="{{ $cMeta['style'] }}">
-                  <span class="font-extrabold text-[9px]">{{ $cMeta['glyph'] }}</span>
+                <a href="{{ $skSafeUrl($c['source_url']) }}" target="_blank" rel="noopener noreferrer" title="Buka sumber asli di {{ $cMeta['label'] }}" aria-label="Buka sumber asli di {{ $cMeta['label'] }} — kajian #{{ $c['id'] }}" class="inline-flex items-center text-[10px] font-bold text-[#1C2224] bg-[#F3F4F6] px-2 py-0.5 rounded-full no-underline transition hover:opacity-90 cursor-pointer">
                   <span>{{ $cMeta['label'] }} ↗</span>
                 </a>
                 @endif
               </div>
-            </div>
-            <div class="self-center flex flex-col items-center gap-1.5 pl-1 shrink-0">
-              <span data-dist class="text-[10px] font-bold text-[#1D4D4F] dark:text-[#7FC4BC] whitespace-nowrap">{{ isset($c['distance']) ? number_format((float) $c['distance'], 1) . ' km' : '— km' }}</span>
-              <svg class="w-4 h-4 text-[#607072] dark:text-[#9BA8A9]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-              </svg>
             </div>
           </div>
         </article>
@@ -356,7 +319,7 @@
     <div id="feedSkeleton" class="space-y-3" aria-hidden="true">
       <div class="bg-white dark:bg-[#162526] rounded-2xl p-3.5 border border-[#E5ECEB] dark:border-[#1E2E2F]">
         <div class="flex items-start gap-3">
-          <div class="w-16 h-16 rounded-2xl bg-slate-200 dark:bg-[#2A3F40] animate-pulse shrink-0"></div>
+          <div class="w-[88px] h-[88px] rounded-2xl bg-slate-200 dark:bg-[#2A3F40] animate-pulse shrink-0"></div>
           <div class="flex-1 space-y-2">
             <div class="h-3 bg-slate-200 rounded-full animate-pulse w-2/3"></div>
             <div class="h-4 bg-slate-200 rounded animate-pulse w-full"></div>
@@ -366,7 +329,7 @@
       </div>
       <div class="bg-white dark:bg-[#162526] rounded-2xl p-3.5 border border-[#E5ECEB] dark:border-[#1E2E2F]">
         <div class="flex items-start gap-3">
-          <div class="w-16 h-16 rounded-2xl bg-slate-200 dark:bg-[#2A3F40] animate-pulse shrink-0"></div>
+          <div class="w-[88px] h-[88px] rounded-2xl bg-slate-200 dark:bg-[#2A3F40] animate-pulse shrink-0"></div>
           <div class="flex-1 space-y-2">
             <div class="h-3 bg-slate-200 rounded-full animate-pulse w-1/2"></div>
             <div class="h-4 bg-slate-200 rounded animate-pulse w-5/6"></div>
@@ -376,7 +339,7 @@
       </div>
       <div class="bg-white dark:bg-[#162526] rounded-2xl p-3.5 border border-[#E5ECEB] dark:border-[#1E2E2F]">
         <div class="flex items-start gap-3">
-          <div class="w-16 h-16 rounded-2xl bg-slate-200 dark:bg-[#2A3F40] animate-pulse shrink-0"></div>
+          <div class="w-[88px] h-[88px] rounded-2xl bg-slate-200 dark:bg-[#2A3F40] animate-pulse shrink-0"></div>
           <div class="flex-1 space-y-2">
             <div class="h-3 bg-slate-200 rounded-full animate-pulse w-3/5"></div>
             <div class="h-4 bg-slate-200 rounded animate-pulse w-full"></div>
@@ -868,6 +831,7 @@
   var activeDay = 'Semua';
   var activeAudience = 'Semua';
   var activeFavUstadz = false; // filter hanya ustadz favorit
+  var todayOnly = false; // filter hanya kajian hari ini (chip Hari Ini)
   var sortMode = 'tanggal'; // 'tanggal' (tanggal → jarak) atau 'jarak' (jarak → tanggal) — Segmen No.3, 2026-10-28
   var viewMode = 'list'; // 'list' atau 'agenda'
   var currentDetailEvent = null;
@@ -1190,8 +1154,8 @@
     // Kontras aksesibilitas (Lighthouse 2026-10-25): teks putih di kuning
     // #EAB308 (1,6:1) dan hijau #16A34A (3,0:1) gagal 4,5:1 untuk teks kecil.
     // Besok = teks gelap di kuning; 2+ hari = hijau lebih gelap + teks putih.
-    let bg = diff === 0 ? '#DC2626' : diff === 1 ? '#EAB308' : '#15803D';
-    let fg = diff === 1 ? '#422006' : '#fff';
+    let bg = diff === 0 ? '#FEE2E2' : diff === 1 ? '#FEF3C7' : '#DCFCE7';
+    let fg = diff === 0 ? '#DC2626' : diff === 1 ? '#92400E' : '#166534';
     return `<span style="background:${bg};color:${fg};font-size:9px;font-weight:700;padding:2px 8px;border-radius:9999px;white-space:nowrap;flex-shrink:0;">${label}</span>`;
   }
 
@@ -1319,22 +1283,14 @@
     };
   }
 
-  // Render & Update Waktu Sholat
+  // Render & Update Waktu Sholat — pill header (desain mockup 2026-10-29):
+  // hanya nama + jam sholat berikutnya + hitung mundur; daftar lengkap
+  // 6 waktu tidak lagi tampil di dashboard (ada di halaman /sholat).
   function updatePrayerDisplay() {
-    // Turbo: interval/handler dari kunjungan lama bisa jalan saat halaman
-    // lain tampil — jangan sentuh DOM yang tak ada.
-    if (!document.getElementById('time-subuh')) return;
+    if (!document.getElementById('nextPrayerName')) return;
     const now = new Date();
     const times = calculatePrayerTimes(now, userCoords.lat, userCoords.lon);
-    
-    document.getElementById('time-subuh').innerText = times.subuh;
-    document.getElementById('time-terbit').innerText = times.terbit;
-    document.getElementById('time-dzuhur').innerText = times.dzuhur;
-    document.getElementById('time-ashar').innerText = times.ashar;
-    document.getElementById('time-maghrib').innerText = times.maghrib;
-    document.getElementById('time-isya').innerText = times.isya;
 
-    // Hitung waktu sholat berikutnya
     const currentMins = now.getHours() * 60 + now.getMinutes();
     function toMins(tStr) {
       const parts = tStr.split(':');
@@ -1342,40 +1298,25 @@
     }
 
     const prayerList = [
-      { name: 'Subuh', mins: toMins(times.subuh), el: 'prayer-subuh' },
-      { name: 'Dzuhur', mins: toMins(times.dzuhur), el: 'prayer-dzuhur' },
-      { name: 'Ashar', mins: toMins(times.ashar), el: 'prayer-ashar' },
-      { name: 'Maghrib', mins: toMins(times.maghrib), el: 'prayer-maghrib' },
-      { name: 'Isya', mins: toMins(times.isya), el: 'prayer-isya' },
+      { name: 'Subuh', time: times.subuh, mins: toMins(times.subuh) },
+      { name: 'Dzuhur', time: times.dzuhur, mins: toMins(times.dzuhur) },
+      { name: 'Ashar', time: times.ashar, mins: toMins(times.ashar) },
+      { name: 'Maghrib', time: times.maghrib, mins: toMins(times.maghrib) },
+      { name: 'Isya', time: times.isya, mins: toMins(times.isya) },
     ];
 
     let nextPrayer = null;
     for (let p of prayerList) {
-      if (p.mins > currentMins) {
-        nextPrayer = p;
-        break;
-      }
+      if (p.mins > currentMins) { nextPrayer = p; break; }
     }
     if (!nextPrayer) nextPrayer = prayerList[0]; // Besok Subuh
-
-    // Highlight slot sholat berikutnya
-    prayerList.forEach(p => {
-      const box = document.getElementById(p.el);
-      if (box) {
-        if (p.name === nextPrayer.name) {
-          box.classList.remove('bg-emerald-800/50');
-          box.classList.add('bg-amber-500/30', 'border-amber-400');
-        } else {
-          box.classList.remove('bg-amber-500/30', 'border-amber-400');
-          box.classList.add('bg-emerald-800/50');
-        }
-      }
-    });
 
     const diffMins = nextPrayer.mins > currentMins ? (nextPrayer.mins - currentMins) : (1440 - currentMins + nextPrayer.mins);
     const diffH = Math.floor(diffMins / 60);
     const diffM = diffMins % 60;
-    document.getElementById('nextPrayerCountdown').innerText = `Menuju ${nextPrayer.name}: ${diffH > 0 ? diffH + 'j ' : ''}${diffM}m`;
+    document.getElementById('nextPrayerName').innerText = nextPrayer.name;
+    document.getElementById('nextPrayerTime').innerText = nextPrayer.time;
+    document.getElementById('nextPrayerCountdown').innerText = `-${diffH > 0 ? diffH + 'j ' : ''}${diffM}m`;
   }
 
   var SOURCE_META = {
@@ -1445,6 +1386,11 @@
       if (activeDay !== 'Semua' && item.day !== activeDay) return false;
       if (activeAudience !== 'Semua' && item.audience !== activeAudience) return false;
       if (activeFavUstadz && !isFavUstadz(item.ustadz)) return false;
+      if (todayOnly) {
+        const t = new Date();
+        const todayStr = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+        if (String(item.event_date || '').split('T')[0] !== todayStr) return false;
+      }
       if (activeRadius < 900 && item.distance > activeRadius) return false;
       if (activeSearch) {
         const q = activeSearch.toLowerCase();
@@ -1457,7 +1403,7 @@
       return true;
     });
 
-    countDisplay.innerText = filtered.length;
+    countDisplay.innerText = '(' + filtered.length + ')';
 
     // Spotlight carousel: track horizontal berdiri sendiri, swipe menggeser track
     if (filtered.length > 0 && !activeSearch) {
@@ -1473,30 +1419,20 @@
           <div class="absolute inset-0 flex items-center justify-center pointer-events-none" style="z-index:20;">
             <span style="border:4px solid #dc2626;color:#dc2626;font-weight:900;font-size:30px;letter-spacing:4px;padding:6px 22px;border-radius:8px;transform:rotate(-12deg);background:rgba(255,255,255,0.78);text-transform:uppercase;">Dibatalkan</span>
           </div>` : '';
-        const dots = spotlightItems.map((_, j) =>
-          `<span style="width:${j===i?'20px':'8px'};height:8px;border-radius:99px;background:${j===i?'#FCD34D':'rgba(255,255,255,0.4)'};display:inline-block;"></span>`
-        ).join('');
         return `
         <div class="spot-slide relative shrink-0 cursor-pointer overflow-hidden bg-[#153A3B]" style="width:100%;" data-slide-idx="${i}" data-kajian-id="${item.id}">
-          <img src="${item.poster_url ? supabaseThumb(item.poster_url, 800) : 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=800&q=80'}" data-poster="${item.poster_url || ''}" alt="Kajian Pilihan" class="w-full h-52 object-cover opacity-85" draggable="false" fetchpriority="high" decoding="async" onerror="thumbFallback(this, 800)">
-          <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/30"></div>
-          <div class="absolute top-3 inset-x-3 flex items-center justify-between">
-            <span class="px-3 py-1 rounded-full text-[10px] font-extrabold tracking-wider uppercase bg-[#E6F4F1] text-[#1D4D4F] shadow-xs">KAJIAN PILIHAN</span>
+          <img src="${item.poster_url ? supabaseThumb(item.poster_url, 800) : 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=800&q=80'}" data-poster="${item.poster_url || ''}" alt="Kajian Pilihan" class="w-full h-60 object-cover opacity-90" draggable="false" fetchpriority="high" decoding="async" onerror="thumbFallback(this, 800)">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/20"></div>
+          <div class="absolute top-3 inset-x-3 flex items-center justify-between gap-2">
+            <span class="px-3 py-1.5 rounded-full text-[10px] font-extrabold tracking-wider uppercase bg-black/70 text-white shadow-xs">⭐ KAJIAN PILIHAN</span>
+            <span data-dist class="px-3 py-1.5 rounded-full text-[10px] font-bold bg-black/60 text-white shadow-xs whitespace-nowrap">${item.distance != null ? item.distance.toFixed(1) + ' km' : '— km'}</span>
           </div>
           ${cancelStamp}
-          <div class="absolute bottom-3 inset-x-3 p-3.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-white shadow-sm">
-            <div class="flex items-center gap-2 mb-1">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-[#FCD34D]">${(item.day || '').toUpperCase()}${item.event_date ? ', ' + formatTanggalIndo(item.event_date) : ''} • ${item.time || ''}</span>
-              <span class="text-white/40">•</span>
-              <span data-dist class="text-[10px] text-white/90 font-medium">${item.distance != null ? item.distance.toFixed(1) + ' km' : '— km'}</span>
-              <span class="flex-1"></span>
-              <span class="flex items-center gap-1.5">${dots}</span>
-            </div>
-            <h2 class="text-sm sm:text-base font-bold text-white leading-snug line-clamp-1">${(item.title || '').replace(/</g, '&lt;')}</h2>
-            <p class="text-xs text-white/85 mt-0.5 flex items-center gap-1 truncate">
-              <svg class="w-3.5 h-3.5 text-[#E6F4F1] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
-              <span>${(item.masjid || '').replace(/</g, '&lt;')} • ${item.address ? item.address.split(',')[0].replace(/</g, '&lt;') : 'Lokasi belum tersedia'}</span>
-            </p>
+          <div class="absolute bottom-0 inset-x-0 p-4">
+            <h2 class="text-lg font-extrabold text-white leading-snug line-clamp-2">${(item.title || '').replace(/</g, '&lt;')}</h2>
+            <p class="text-sm font-bold text-amber-300 mt-1 truncate">${(item.ustadz || '').replace(/</g, '&lt;')}</p>
+            <p class="text-xs text-white/90 mt-1 truncate">${item.day || ''}${item.event_date ? ', ' + formatTanggalIndo(item.event_date).replace(/\s\d{4}$/, '') : ''} • ${item.time || ''} • ${(item.masjid || '').replace(/</g, '&lt;')}</p>
+            <span class="inline-flex items-center gap-1 mt-3 px-4 py-2 rounded-full bg-white text-[#1D4D4F] text-xs font-extrabold shadow">Lihat Detail Kajian →</span>
           </div>
         </div>`;
       };
@@ -1687,21 +1623,21 @@
       // Supabase Image Transform beneran (bukan query string palsu)
       const thumbUrl = ev.poster_url ? supabaseThumb(ev.poster_url, 200) : null;
       const flyerThumb = thumbUrl
-        ? `<div class="w-16 h-16 rounded-2xl overflow-hidden shrink-0 bg-slate-100 border border-[#E5ECEB] shadow-xs">
+        ? `<div class="w-[88px] h-[88px] rounded-2xl overflow-hidden shrink-0 bg-slate-100 border border-[#E5ECEB] shadow-xs">
              <img src="${thumbUrl}" data-poster="${ev.poster_url || ''}" alt="Flyer" class="w-full h-full object-cover"${i < 2 ? '' : ' loading="lazy"'} decoding="async" onerror="thumbFallback(this, 200, true)">
            </div>`
-        : `<div class="w-16 h-16 rounded-2xl overflow-hidden shrink-0 bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center font-bold text-xs border border-[#E5ECEB]">
+        : `<div class="w-[88px] h-[88px] rounded-2xl overflow-hidden shrink-0 bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center font-bold text-xs border border-[#E5ECEB]">
              <span>${(ev.category || 'ILMU').substring(0, 4)}</span>
            </div>`;
       
       const card = document.createElement('article');
       card.setAttribute('data-kajian-id', ev.id);
-      card.className = 'bg-white dark:bg-[#162526] rounded-2xl p-3.5 border border-[#E5ECEB] dark:border-[#1E2E2F] shadow-xs hover:border-[#1D4D4F]/50 transition-all cursor-pointer' + (ev.is_cancelled ? ' !border-red-300' : '');
+      card.className = 'bg-white dark:bg-[#162526] rounded-3xl p-3 border border-[#E5ECEB] dark:border-[#1E2E2F] shadow-xs hover:border-[#1D4D4F]/50 transition-all cursor-pointer' + (ev.is_cancelled ? ' !border-red-300' : '');
       card.style.position = 'relative';
       card.style.overflow = 'hidden';
       const cancelledStamp = ev.is_cancelled ? `
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:10;">
-          <span style="border:4px solid #dc2626;color:#dc2626;font-weight:900;font-size:28px;letter-spacing:4px;padding:6px 20px;border-radius:8px;transform:rotate(-12deg);background:rgba(255,255,255,0.75);text-transform:uppercase;font-family:system-ui;">Dibatalkan</span>
+          <span style="border:4px solid #dc2626;color:#dc2626;font-weight:900;font-size:28px;letter-spacing:4px;padding:6px 20px;border-radius:8px;transform:rotate(-12deg);background:rgba(255,255,255,0.75);text-transform:uppercase;">Dibatalkan</span>
         </div>` : '';
       const cancelledDim = ev.is_cancelled ? ' style="opacity:0.45;filter:grayscale(0.6);"' : '';
       card.innerHTML = `
@@ -1709,40 +1645,30 @@
         <div class="flex items-start gap-3"${cancelledDim}>
           ${flyerThumb}
           <div class="min-w-0 flex-1">
-            <div class="flex items-center gap-1 flex-wrap mb-1">
-              <span class="text-[10px] font-bold text-[#1D4D4F] bg-[#E6F4F1] px-2 py-0.5 rounded-full whitespace-nowrap">
-                ${ev.day}${ev.event_date ? ', ' + formatTanggalIndo(ev.event_date) : ''} • ${ev.time}
-              </span>
+            <div class="flex items-center justify-between gap-2">
               ${hariLagiBadge(ev.event_date)}
+              <span data-dist class="text-[11px] font-bold text-[#607072] dark:text-[#9BA8A9] whitespace-nowrap ml-auto">${ev.distance != null ? ev.distance.toFixed(1) + ' km' : '— km'}</span>
             </div>
-            
-            <h3 class="text-xs sm:text-sm font-bold text-[#1C2224] dark:text-[#E8EDED] leading-snug line-clamp-2 hover:text-[#1D4D4F]">
+            <p class="text-[11px] text-[#607072] dark:text-[#9BA8A9] mt-1 truncate">
+              ${ev.day}${ev.event_date ? ', ' + formatTanggalIndo(ev.event_date).replace(/\s\d{4}$/, '') : ''} • ${ev.time}
+            </p>
+            <h3 class="text-sm font-bold text-[#1C2224] dark:text-[#E8EDED] leading-snug line-clamp-2 hover:text-[#1D4D4F] mt-0.5">
               ${escapeHtml(ev.title)}
             </h3>
-            
             <p class="text-[11px] text-[#607072] dark:text-[#9BA8A9] mt-0.5 truncate">
               ${escapeHtml(ev.ustadz)} • ${escapeHtml(ev.masjid)}
             </p>
-            
             <div class="flex items-center gap-1.5 mt-2 flex-wrap" onclick="event.stopPropagation();">
-              <span class="text-[9px] font-medium text-[#607072] dark:text-[#9BA8A9] bg-[#F8FAF9] border border-[#E5ECEB] px-2 py-0.5 rounded-md">
+              <span class="text-[10px] font-bold text-[#1D4D4F] bg-[#E6F4F1] px-2 py-0.5 rounded-full">
                 ${escapeHtml(ev.category || 'Umum')}
               </span>
               ${hasSource ? `
-                <a href="${safeUrl(ev.source_url)}" target="_blank" rel="noopener noreferrer" title="Buka sumber asli di ${escapeHtml(srcMeta.label)}" aria-label="Buka sumber asli di ${escapeHtml(srcMeta.label)} — kajian #${ev.id}" class="inline-flex items-center gap-1 text-[9px] font-bold text-white px-2 py-0.5 rounded-full shadow-xs no-underline transition hover:opacity-90 cursor-pointer" style="${srcMeta.style}">
-                  <span class="font-extrabold text-[9px]">${srcMeta.glyph}</span>
+                <a href="${safeUrl(ev.source_url)}" target="_blank" rel="noopener noreferrer" title="Buka sumber asli di ${escapeHtml(srcMeta.label)}" aria-label="Buka sumber asli di ${escapeHtml(srcMeta.label)} — kajian #${ev.id}" class="inline-flex items-center text-[10px] font-bold text-[#1C2224] bg-[#F3F4F6] px-2 py-0.5 rounded-full no-underline transition hover:opacity-90 cursor-pointer">
                   <span>${escapeHtml(srcMeta.label)} ↗</span>
                 </a>
               ` : ''}
               ${ev.status === 'batal' ? '<span class="px-2 py-0.5 rounded text-[9px] font-bold bg-rose-50 text-rose-700">Dibatalkan</span>' : ''}
             </div>
-          </div>
-          
-          <div class="self-center flex flex-col items-center gap-1.5 pl-1 shrink-0">
-            <span data-dist class="text-[10px] font-bold text-[#1D4D4F] dark:text-[#7FC4BC] whitespace-nowrap">${ev.distance != null ? ev.distance.toFixed(1) + ' km' : '— km'}</span>
-            <svg class="w-4 h-4 text-[#607072] dark:text-[#9BA8A9]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-            </svg>
           </div>
         </div>
       `;
@@ -2033,14 +1959,28 @@
       if (btn.getAttribute('data-cat') === cat) {
         btn.className = 'category-chip whitespace-nowrap px-4 py-2 rounded-full font-bold transition-all bg-[#1D4D4F] text-white shadow-xs';
       } else {
-        btn.className = 'category-chip whitespace-nowrap px-4 py-2 rounded-full font-medium transition-all bg-white text-[#607072] dark:text-[#9BA8A9] border border-[#E5ECEB] hover:border-[#1D4D4F] hover:text-[#1D4D4F]';
+        btn.className = 'category-chip whitespace-nowrap px-4 py-2 rounded-full font-medium transition-all bg-white dark:bg-[#162526] text-[#607072] dark:text-[#9BA8A9] border border-[#E5ECEB] hover:border-[#1D4D4F] hover:text-[#1D4D4F]';
       }
     });
     renderKajianFeed();
   }
 
+  function setTodayFilter() {
+    todayOnly = !todayOnly;
+    window.kajianDisplayLimit = 12; // Reset pagination
+    const btn = document.getElementById('todayToggle');
+    if (btn) {
+      btn.className = todayOnly
+        ? 'whitespace-nowrap px-4 py-2 rounded-full font-bold transition-all bg-[#1D4D4F] text-white shadow-xs shrink-0'
+        : 'whitespace-nowrap px-4 py-2 rounded-full font-medium transition-all bg-white text-[#607072] dark:text-[#9BA8A9] border border-[#E5ECEB] hover:border-[#1D4D4F] hover:text-[#1D4D4F] shrink-0';
+    }
+    renderKajianFeed();
+  }
+
   function setRadiusFilter(r) {
     activeRadius = r;
+    const rs = document.getElementById('radiusSelect');
+    if (rs) rs.value = String(r);
     document.querySelectorAll('.radius-chip').forEach(btn => {
       if (parseInt(btn.getAttribute('data-radius')) === r) {
         btn.classList.remove('bg-white', 'text-slate-500', 'border-slate-200');
@@ -2092,6 +2032,9 @@
     activeRadius = 25;
     activeDay = 'Semua';
     activeAudience = 'Semua';
+    todayOnly = false;
+    const todayBtn = document.getElementById('todayToggle');
+    if (todayBtn) todayBtn.className = 'whitespace-nowrap px-4 py-2 rounded-full font-medium transition-all bg-white text-[#607072] dark:text-[#9BA8A9] border border-[#E5ECEB] hover:border-[#1D4D4F] hover:text-[#1D4D4F] shrink-0';
     
     document.getElementById('searchInput').value = '';
     document.getElementById('clearSearchBtn').classList.add('hidden');

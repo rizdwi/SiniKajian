@@ -10,7 +10,7 @@
   <!-- 1. Header -->
   <header class="flex items-center justify-between">
     <div>
-      <h1 class="text-xl font-extrabold text-[#1D4D4F] tracking-tight">Jadwal Sholat</h1>
+      <h1 class="text-2xl font-extrabold text-[#1D4D4F] tracking-tight">Jadwal Sholat</h1>
       <p class="text-xs text-[#607072] mt-0.5">
         {{ $gregorian ?? \Carbon\Carbon::now('Asia/Jakarta')->translatedFormat('l, d F Y') }}
         @if($hijri) • {{ $hijri }} @endif
@@ -22,32 +22,96 @@
   </header>
 
   <!-- 2. Lokasi -->
-  <div class="rounded-2xl bg-[#E8F5F3] border border-[#D1ECE7] p-3 flex items-center justify-between gap-3 shadow-2xs">
+  <div class="rounded-full bg-[#E8F5F3] border border-[#D1ECE7] px-3 py-2.5 flex items-center justify-between gap-3 shadow-2xs">
     <div class="flex items-center gap-2.5 min-w-0">
       <div class="w-8 h-8 rounded-full bg-[#1D4D4F] text-white flex items-center justify-center shrink-0 shadow-2xs">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
       </div>
       <div class="min-w-0">
         <h3 id="sholatLocationName" class="text-xs font-bold text-[#1C2224] truncate">{{ $city }}</h3>
-        <p id="sholatCoordinates" class="text-[10px] text-[#607072] font-mono truncate">{{ number_format($lat, 4) }}, {{ number_format($lon, 4) }}</p>
+        <p id="sholatCoordinates" class="text-[10px] text-[#607072] truncate">{{ number_format($lat, 4) }}, {{ number_format($lon, 4) }}</p>
       </div>
     </div>
     <button onclick="refreshSholatGps()" class="text-xs font-bold text-[#1D4D4F] hover:underline px-2 py-1 shrink-0">GPS Saya</button>
   </div>
 
-  <!-- 3. Sholat berikutnya + hitung mundur -->
-  <div class="rounded-3xl bg-[#1D4D4F] text-white p-5 shadow-md">
-    <p class="text-[11px] text-white/70 font-medium">Sholat berikutnya</p>
-    <div class="flex items-end justify-between gap-3 mt-1">
-      <h2 id="nextPrayerName" class="text-2xl font-black leading-none">—</h2>
-      <span id="nextPrayerTime" class="text-lg font-bold text-amber-300">—</span>
+  <!-- Hero Card Sholat (desain mockup 2026-10-29) -->
+  <div class="relative rounded-[28px] bg-gradient-to-br from-[#1D4D4F] to-[#0F292A] text-white p-5 shadow-md overflow-hidden">
+    <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image:radial-gradient(circle at 85% 15%, rgba(255,255,255,0.5) 0, transparent 45%), radial-gradient(circle at 90% 85%, rgba(252,211,77,0.5) 0, transparent 40%);"></div>
+    <div class="relative">
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <p class="text-[11px] text-white/70 font-medium">Sholat berikutnya</p>
+          <h2 id="nextPrayerName" class="text-4xl font-black leading-none mt-1.5">—</h2>
+          <p class="text-sm text-white/85 mt-1.5">(<span id="nextPrayerTime">—</span> WIB)</p>
+          <p class="mt-2 text-sm font-bold tracking-wide"><span id="nextPrayerCountdown">—</span></p>
+          <p id="nextPrayerNote" class="text-[11px] text-white/60 mt-1"></p>
+        </div>
+        <div class="text-[64px] leading-none shrink-0 opacity-90">🕌</div>
+      </div>
+      <button type="button" onclick="document.getElementById('prayerListSection').scrollIntoView({behavior:'smooth',block:'start'})" class="inline-flex items-center gap-1 mt-4 px-4 py-2 rounded-full bg-white text-[#1D4D4F] text-xs font-extrabold shadow touch-btn transition">Lihat Semua Jadwal Sholat</button>
     </div>
-    <p class="mt-2 text-sm font-mono font-bold tracking-wider"><span id="nextPrayerCountdown">—</span></p>
-    <p id="nextPrayerNote" class="text-[11px] text-white/60 mt-1"></p>
   </div>
 
-  <!-- 4. Daftar waktu sholat -->
-  <div class="rounded-2xl bg-white border border-[#E5ECEB] shadow-2xs overflow-hidden">
+  <!-- Akses & Pengingat (desain mockup 2026-10-29: grid 2 kolom) -->
+  <div>
+    <h3 class="text-sm font-bold text-[#1C2224] px-1 mb-2">Akses & Pengingat</h3>
+    <div class="grid grid-cols-2 gap-3">
+      @if($isLoggedIn)
+      <!-- Pengingat Ibadah: adzan -->
+      <div class="rounded-3xl bg-white border border-[#E5ECEB] shadow-2xs p-3.5">
+        <div class="text-2xl leading-none">🔔</div>
+        <h4 class="text-sm font-bold text-[#1C2224] mt-2">Pengingat Ibadah</h4>
+        <div class="flex items-center justify-between gap-2 mt-2.5">
+          <span class="text-[11px] font-bold text-[#1C2224] leading-tight">Adzan 5 Waktu</span>
+          <button data-pref="adzan" onclick="togglePref(this)" class="pref-btn px-2.5 py-1 rounded-full text-[11px] font-bold transition shrink-0 {{ ($prefs['adzan'] ?? false) ? 'bg-[#1D4D4F] text-white' : 'bg-[#F1F5F4] text-[#607072]' }}">{{ ($prefs['adzan'] ?? false) ? 'Aktif' : 'Mati' }}</button>
+        </div>
+      </div>
+      <!-- Dzikir & Puasa -->
+      <div class="rounded-3xl bg-white border border-[#E5ECEB] shadow-2xs p-3.5">
+        <div class="text-2xl leading-none">📿</div>
+        <h4 class="text-sm font-bold text-[#1C2224] mt-2">Dzikir & Puasa</h4>
+        <div class="flex items-center justify-between gap-2 mt-2.5">
+          <span class="text-[11px] font-bold text-[#1C2224] leading-tight">Dzikir Pagi & Petang</span>
+          <button data-pref="dzikir" onclick="togglePref(this)" class="pref-btn px-2.5 py-1 rounded-full text-[11px] font-bold transition shrink-0 {{ ($prefs['dzikir'] ?? false) ? 'bg-[#1D4D4F] text-white' : 'bg-[#F1F5F4] text-[#607072]' }}">{{ ($prefs['dzikir'] ?? false) ? 'Aktif' : 'Mati' }}</button>
+        </div>
+        <div class="flex items-center justify-between gap-2 mt-2">
+          <span class="text-[11px] font-bold text-[#1C2224] leading-tight">Puasa Senin & Kamis</span>
+          <button data-pref="puasa" onclick="togglePref(this)" class="pref-btn px-2.5 py-1 rounded-full text-[11px] font-bold transition shrink-0 {{ ($prefs['puasa'] ?? false) ? 'bg-[#1D4D4F] text-white' : 'bg-[#F1F5F4] text-[#607072]' }}">{{ ($prefs['puasa'] ?? false) ? 'Aktif' : 'Mati' }}</button>
+        </div>
+        <a href="{{ route('kajian.dzikir') }}" class="block mt-2.5 text-[11px] font-bold text-[#1D4D4F]">Baca dzikir pagi & petang →</a>
+      </div>
+      @else
+      <div class="col-span-2 rounded-3xl bg-white border border-[#E5ECEB] shadow-2xs p-4">
+        <p class="text-sm text-[#607072]">Masuk dulu untuk mengaktifkan pengingat adzan, dzikir, dan puasa di perangkat Anda.</p>
+        <a href="{{ route('login') }}" class="inline-block mt-3 px-4 py-2 rounded-xl bg-[#1D4D4F] text-white text-xs font-bold">Masuk / Daftar</a>
+      </div>
+      @endif
+      <!-- Suara Adzan -->
+      <div class="rounded-3xl bg-white border border-[#E5ECEB] shadow-2xs p-3.5">
+        <div class="text-2xl leading-none">🔊</div>
+        <h4 class="text-sm font-bold text-[#1C2224] mt-2">Suara Adzan</h4>
+        <label for="adzanVoiceSelect" class="block text-[11px] font-bold text-[#607072] mt-2.5 mb-1.5">Pilih muazin</label>
+        <div class="flex gap-1.5">
+          <select id="adzanVoiceSelect" onchange="selectAdzanVoice(this.value)" class="flex-1 min-w-0 border border-[#E5ECEB] rounded-xl px-2 py-2 text-xs font-bold text-[#1C2224] bg-white"></select>
+          <button id="adzanPreviewBtn" onclick="previewAdzanSelected()" class="w-10 h-10 rounded-xl bg-[#E8F5F3] text-[#1D4D4F] flex items-center justify-center shrink-0 text-sm font-bold">▶</button>
+        </div>
+        <p id="adzanVoiceStatus" class="pt-1.5 text-[11px] text-[#607072] leading-snug"></p>
+      </div>
+      <!-- CTA kuning -->
+      <a href="{{ route('kajian.index') }}" class="block rounded-3xl bg-amber-400 text-[#1D4D4F] p-3.5 shadow-2xs">
+        <div class="flex items-start justify-between gap-2">
+          <p class="text-sm font-black leading-snug">Selesai sholat, lanjut ngaji →</p>
+          <span class="text-xl leading-none shrink-0">💬</span>
+        </div>
+        <p class="text-[11px] font-medium mt-1 leading-snug">Lihat kajian Sunnah terdekat di lokasi Anda hari ini.</p>
+      </a>
+    </div>
+    <p id="prefStatus" class="px-1 py-2 text-[11px] text-[#607072]"></p>
+  </div>
+
+  <!-- Daftar waktu sholat (di bawah grid; dibuka tombol hero) -->
+  <div id="prayerListSection" class="rounded-2xl bg-white border border-[#E5ECEB] shadow-2xs overflow-hidden">
     <div class="px-4 py-3 border-b border-[#E5ECEB] flex items-center justify-between">
       <h3 class="text-sm font-bold text-[#1C2224]">Waktu Sholat Hari Ini</h3>
       <span class="text-[10px] font-medium text-[#607072]">Metode Kemenag RI</span>
@@ -56,7 +120,7 @@
       @forelse($timings as $name => $time)
         <div data-prayer="{{ $name }}" data-time="{{ $time }}" class="prayer-row flex items-center justify-between px-4 py-3 border-b border-[#F1F5F4] last:border-b-0">
           <span class="text-sm font-bold text-[#1C2224]">{{ $name }}</span>
-          <span class="text-sm font-mono font-bold text-[#1D4D4F]">{{ $time ?: '—' }}</span>
+          <span class="text-sm font-bold text-[#1D4D4F]">{{ $time ?: '—' }}</span>
         </div>
       @empty
         <p class="p-4 text-sm text-[#607072]">Jadwal sholat tidak dapat dimuat. Periksa koneksi lalu segarkan halaman.</p>
@@ -64,67 +128,20 @@
     </div>
   </div>
 
-  <!-- 5. Pengingat ibadah -->
-  <div class="rounded-2xl bg-white border border-[#E5ECEB] shadow-2xs overflow-hidden">
-    <div class="px-4 py-3 border-b border-[#E5ECEB]">
-      <h3 class="text-sm font-bold text-[#1C2224]">Pengingat Ibadah</h3>
-      <p class="text-[11px] text-[#607072] mt-0.5">Notifikasi push ke perangkat Anda — sama seperti pengingat kajian.</p>
-    </div>
-    @if($isLoggedIn)
-      <div class="divide-y divide-[#F1F5F4]">
-        <div class="flex items-center justify-between px-4 py-3">
-          <div>
-            <p class="text-sm font-bold text-[#1C2224]">Adzan 5 Waktu</p>
-            <p class="text-[11px] text-[#607072]">Diingatkan tepat saat masuk waktu sholat.</p>
-          </div>
-          <button data-pref="adzan" onclick="togglePref(this)" class="pref-btn px-3.5 py-1.5 rounded-full text-xs font-bold transition {{ ($prefs['adzan'] ?? false) ? 'bg-[#1D4D4F] text-white' : 'bg-[#F1F5F4] text-[#607072]' }}">{{ ($prefs['adzan'] ?? false) ? 'Aktif' : 'Mati' }}</button>
-        </div>
-        <div class="flex items-center justify-between px-4 py-3">
-          <div>
-            <p class="text-sm font-bold text-[#1C2224]">Dzikir Pagi &amp; Petang</p>
-            <p class="text-[11px] text-[#607072]">Setelah Subuh dan setelah Ashar.</p>
-          </div>
-          <button data-pref="dzikir" onclick="togglePref(this)" class="pref-btn px-3.5 py-1.5 rounded-full text-xs font-bold transition {{ ($prefs['dzikir'] ?? false) ? 'bg-[#1D4D4F] text-white' : 'bg-[#F1F5F4] text-[#607072]' }}">{{ ($prefs['dzikir'] ?? false) ? 'Aktif' : 'Mati' }}</button>
-        </div>
-        <div class="flex items-center justify-between px-4 py-3">
-          <div>
-            <p class="text-sm font-bold text-[#1C2224]">Puasa Senin &amp; Kamis</p>
-            <p class="text-[11px] text-[#607072]">Diingatkan malam sebelumnya (Ahad &amp; Rabu, 20.00).</p>
-          </div>
-          <button data-pref="puasa" onclick="togglePref(this)" class="pref-btn px-3.5 py-1.5 rounded-full text-xs font-bold transition {{ ($prefs['puasa'] ?? false) ? 'bg-[#1D4D4F] text-white' : 'bg-[#F1F5F4] text-[#607072]' }}">{{ ($prefs['puasa'] ?? false) ? 'Aktif' : 'Mati' }}</button>
+  <!-- Bantuan & Privasi -->
+  <div>
+    <h3 class="text-sm font-bold text-[#1C2224] px-1 mb-2">Bantuan & Privasi</h3>
+    <a href="{{ route('profile') }}" class="flex items-center justify-between rounded-3xl bg-white border border-[#E5ECEB] p-3.5 shadow-2xs">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-9 h-9 rounded-xl bg-[#EDF5F3] text-[#1D4D4F] flex items-center justify-center shrink-0 border border-[#D1ECE7] text-base font-bold">?</div>
+        <div class="min-w-0">
+          <span class="text-xs sm:text-sm font-bold text-[#1C2224] block">Bantuan & tentang Majelisku</span>
+          <span class="text-[11px] text-[#607072] block truncate">Privasi, keamanan & kirim pesan ke owner</span>
         </div>
       </div>
-      <p id="prefStatus" class="px-4 py-2 text-[11px] text-[#607072]"></p>
-    @else
-      <div class="p-4">
-        <p class="text-sm text-[#607072]">Masuk dulu untuk mengaktifkan pengingat adzan, dzikir, dan puasa di perangkat Anda.</p>
-        <a href="{{ route('login') }}" class="inline-block mt-3 px-4 py-2 rounded-xl bg-[#1D4D4F] text-white text-xs font-bold">Masuk / Daftar</a>
-      </div>
-    @endif
-    <a href="{{ route('kajian.dzikir') }}" class="block px-4 py-3 border-t border-[#E5ECEB] text-sm font-bold text-[#1D4D4F]">📿 Baca dzikir pagi &amp; petang →</a>
+      <svg class="w-4 h-4 text-[#607072] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+    </a>
   </div>
-
-  <!-- 5b. Suara adzan -->
-  <div class="rounded-2xl bg-white border border-[#E5ECEB] overflow-hidden">
-    <div class="px-4 py-3 border-b border-[#E5ECEB]">
-      <h3 class="text-sm font-bold text-[#1C2224]">Suara Adzan</h3>
-      <p class="text-[11px] text-[#607072] mt-0.5">Diputar saat waktu sholat tiba (halaman ini terbuka) dan saat pratinjau di bawah. Pilihan tersimpan di perangkat ini.</p>
-    </div>
-    <div class="p-4">
-      <label for="adzanVoiceSelect" class="block text-[11px] font-bold text-[#607072] mb-2">Pilih muazin</label>
-      <div class="flex gap-2">
-        <select id="adzanVoiceSelect" onchange="selectAdzanVoice(this.value)" class="flex-1 min-w-0 border border-[#E5ECEB] rounded-xl px-3 py-2 text-sm font-bold text-[#1C2224] bg-white"></select>
-        <button id="adzanPreviewBtn" onclick="previewAdzanSelected()" class="w-11 h-11 rounded-xl bg-[#E8F5F3] text-[#1D4D4F] flex items-center justify-center shrink-0 text-base font-bold">▶</button>
-      </div>
-      <p id="adzanVoiceStatus" class="pt-2 text-[11px] text-[#607072]"></p>
-    </div>
-  </div>
-
-  <!-- 6. Lanjut ke kajian -->
-  <a href="{{ route('kajian.index') }}" class="block rounded-2xl bg-amber-400 text-[#1D4D4F] p-4 shadow-2xs">
-    <p class="text-sm font-black">Selesai sholat, lanjut ngaji →</p>
-    <p class="text-[11px] font-medium mt-0.5">Lihat kajian Sunnah terdekat dari lokasi Anda hari ini.</p>
-  </a>
 </div>
 @endsection
 
@@ -190,7 +207,7 @@
     list.innerHTML = order.filter(function (n) { return timings[n]; }).map(function (name) {
       return '<div data-prayer="' + name + '" class="prayer-row flex items-center justify-between px-4 py-3 border-b border-[#F1F5F4] last:border-b-0">'
         + '<span class="text-sm font-bold text-[#1C2224]">' + name + '</span>'
-        + '<span class="text-sm font-mono font-bold text-[#1D4D4F]">' + timings[name] + '</span></div>';
+        + '<span class="text-sm font-bold text-[#1D4D4F]">' + timings[name] + '</span></div>';
     }).join('');
     updateNextPrayer();
   }

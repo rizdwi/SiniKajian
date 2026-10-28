@@ -22,69 +22,34 @@
   </div>
 @else
   
-  <!-- 1. Header Area (Figma Screen 5) -->
-  <header class="flex items-center justify-between">
-    <div>
-      <h1 class="text-xl font-extrabold text-[#1D4D4F] tracking-tight">Profil</h1>
-      <p class="text-xs text-[#607072] mt-0.5">Langkah kecil, kebaikan setiap hari.</p>
-    </div>
-  </header>
-
-  <!-- 2. Profile Summary Card (Figma Screen 5: Soft Mint Background, Avatar, 3 Stats) -->
-  <div class="rounded-3xl bg-[#EDF5F3] border border-[#D1ECE7] p-5 text-center shadow-2xs">
-    
-    <!-- Circular Avatar with Deep Teal & Initials or Photo -->
-    <div class="relative w-14 h-14 mx-auto">
-      <img id="userProfileAvatarImg" src="{{ $user->avatar ?? '' }}" alt="{{ $user->name ?? 'User' }}" class="w-14 h-14 rounded-full object-cover shadow-sm ring-4 ring-white/60 {{ !empty($user->avatar) ? '' : 'hidden' }}">
-      <div id="userProfileAvatarInitial" class="w-14 h-14 rounded-full bg-[#1D4D4F] text-white flex items-center justify-center font-extrabold text-base shadow-sm ring-4 ring-white/60 {{ !empty($user->avatar) ? 'hidden' : '' }}">
-        {{ strtoupper(substr($user->name, 0, 2)) }}
+  <!-- Hero Agenda Saya (desain mockup 2026-10-29) -->
+  <div class="relative rounded-[28px] bg-gradient-to-br from-[#1D4D4F] to-[#0F292A] text-white p-5 shadow-md overflow-hidden">
+    <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image:radial-gradient(circle at 85% 15%, rgba(255,255,255,0.5) 0, transparent 45%), radial-gradient(circle at 90% 85%, rgba(252,211,77,0.5) 0, transparent 40%);"></div>
+    <div class="relative flex items-start justify-between gap-3">
+      <div class="min-w-0">
+        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/20 text-white text-[11px] font-bold">📅 Agenda Saya</span>
+        <h1 class="text-[22px] leading-snug font-extrabold mt-2.5">Siap Menuntut Ilmu Hari Ini?</h1>
+        @if(($agendaCount ?? 0) > 0)
+        <p class="text-xs text-white/80 mt-1.5 leading-relaxed">Kamu punya {{ $agendaCount }} agenda kajian. Semoga Allah mudahkan langkahmu menuntut ilmu.</p>
+        @else
+        <p class="text-xs text-white/80 mt-1.5 leading-relaxed">Belum ada agenda kajian yang tersimpan. Temukan majelis ilmu di sekitarmu sekarang.</p>
+        @endif
+        <a href="{{ route('kajian.index') }}" class="inline-flex items-center gap-1 mt-3.5 px-4 py-2 rounded-full bg-white text-[#1D4D4F] text-xs font-extrabold shadow">Jelajahi Kajian →</a>
       </div>
+      <div class="text-[56px] leading-none shrink-0 opacity-90">📖</div>
     </div>
-
-    <!-- User Information -->
-    <h2 class="text-base font-extrabold text-[#1C2224] mt-2.5">
-      {{ $user->name }}
-    </h2>
-    <p class="text-xs text-[#607072] mt-0.5">
-      {{ $user->email }}
-    </p>
-
-    <div class="flex items-center justify-center gap-1 text-xs text-[#607072] mt-1.5">
-      <svg class="w-3.5 h-3.5 text-[#1D4D4F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-      </svg>
-      <span id="userProfileLocationBadge">Mendeteksi Lokasi...</span>
-    </div>
-
-    <hr class="border-[#D1ECE7] my-4">
-
-    <!-- 3-Column Metrics Row: Disimpan, Agenda saya, Majelis diikuti (Figma Screen 5 Dinamis) -->
-    <div class="grid grid-cols-3 divide-x divide-[#D1ECE7] text-center">
-      <div class="px-2">
-        <span id="profileSavedCount" class="text-lg font-black text-[#1D4D4F] block leading-tight">{{ $savedCount ?? 0 }}</span>
-        <span class="text-[11px] font-medium text-[#607072] block mt-0.5">Disimpan</span>
-      </div>
-      <div class="px-2">
-        <span id="profileAgendaCount" class="text-lg font-black text-[#1D4D4F] block leading-tight">{{ $agendaCount ?? 0 }}</span>
-        <span class="text-[11px] font-medium text-[#607072] block mt-0.5">Agenda saya</span>
-      </div>
-      <div class="px-2">
-        <span id="profileFollowedCount" class="text-lg font-black text-[#1D4D4F] block leading-tight">{{ $majelisCount ?? 0 }}</span>
-        <span class="text-[11px] font-medium text-[#607072] block mt-0.5">Majelis diikuti</span>
-      </div>
-    </div>
-
   </div>
 
   <!-- 3. Agenda Terdekat Section (Figma Screen 5 Dinamis) -->
   <div class="space-y-2">
+    @if(($agendaCount ?? 0) > 0)
     <div class="flex items-center justify-between px-1">
       <h3 class="text-sm font-bold text-[#1C2224]">Agenda terdekat</h3>
       <a href="{{ route('kajian.saved') }}" class="text-xs font-bold text-[#1D4D4F] hover:underline">
         Lihat semua
       </a>
     </div>
+    @endif
 
     <div id="agendaListContainer" class="space-y-2">
     @php
@@ -118,7 +83,8 @@
       $allAgendaKajians = $allAgendaKajians->unique('id')->sortBy('event_datetime')->take(3);
     @endphp
 
-    @forelse($allAgendaKajians as $agenda)
+    @if($allAgendaKajians->isNotEmpty())
+    @foreach($allAgendaKajians as $agenda)
       @php
         $dt = $agenda->event_datetime ? \Carbon\Carbon::parse($agenda->event_datetime) : \Carbon\Carbon::now();
         $dateNum = $dt->format('d');
@@ -178,14 +144,8 @@
           </div>
         </div>
       </div>
-    @empty
-      <div id="emptyAgendaCard" class="p-4 rounded-2xl bg-white border border-[#E5ECEB] text-center space-y-2">
-        <p class="text-xs text-[#607072]">Belum ada agenda kajian yang tersimpan.</p>
-        <a href="{{ route('kajian.index') }}" class="inline-block px-4 py-2 rounded-xl bg-[#1D4D4F] text-white text-xs font-bold shadow-2xs hover:bg-[#153A3B] transition">
-          Jelajahi Kajian
-        </a>
-      </div>
-    @endforelse
+    @endforeach
+    @endif
     </div>
 
     <!-- Ustadz Favorit (di dalam Agenda) -->
@@ -203,7 +163,7 @@
         <p class="px-1 text-[11px] font-bold text-[#607072] uppercase tracking-wide mb-1.5">Sering muncul di kajian</p>
         <div class="flex flex-wrap gap-1.5">
           @foreach($topUstadz as $tu)
-          <button onclick="addFavUstadz('{{ addslashes($tu) }}')" class="fav-chip px-2.5 py-1.5 rounded-full bg-[#F8FAF9] border border-[#E5ECEB] text-[11px] font-bold text-[#1D4D4F] hover:border-amber-500 hover:bg-amber-50 transition" data-ustadz="{{ $tu }}">+ {{ $tu }}</button>
+          <button onclick="addFavUstadz('{{ addslashes($tu) }}')" class="fav-chip px-2.5 py-1.5 rounded-full bg-white border border-[#E5ECEB] text-[11px] font-bold text-[#1D4D4F] hover:border-amber-500 hover:bg-amber-50 transition" data-ustadz="{{ $tu }}">+ {{ $tu }}</button>
           @endforeach
         </div>
       </div>
@@ -297,7 +257,57 @@
         </label>
       </div>
 
-      <!-- Item 4: Privasi & Keamanan (Modal Informasi Keamanan & Enkripsi) -->
+    </div>
+  </div>
+
+  <!-- Akses & Pengaturan (desain mockup 2026-10-29; grid dibuat sedikit lebih kecil dari mockup) -->
+  <div class="space-y-2">
+    <div class="px-1">
+      <h3 class="text-sm font-bold text-[#1C2224]">Akses & Pengaturan</h3>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      @auth
+        @if(Auth::user()->isAdmin())
+      <a href="{{ route('admin.kajian.index') }}" class="relative rounded-3xl bg-[#1D4D4F] text-white p-3.5 shadow-2xs overflow-hidden">
+        <span class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-amber-400 text-[#1D4D4F] text-[9px] font-extrabold">Perlu Verifikasi</span>
+        <div class="text-2xl leading-none">📱</div>
+        <h4 class="text-sm font-bold mt-2">Panel Moderasi</h4>
+        <p class="text-[11px] text-white/75 mt-0.5">Kelola & verifikasi jadwal</p>
+        <span class="absolute bottom-2.5 right-2.5 text-white/80 text-sm">→</span>
+      </a>
+        @endif
+      @endauth
+      <a href="{{ route('profile.edit') }}" class="relative rounded-3xl bg-[#2E7A7D] text-white p-3.5 shadow-2xs overflow-hidden">
+        <div class="text-2xl leading-none">🪪</div>
+        <h4 class="text-sm font-bold mt-2">Edit Profil</h4>
+        <p class="text-[11px] text-white/75 mt-0.5">Perbarui data & foto</p>
+        <span class="absolute bottom-2.5 right-2.5 text-white/80 text-sm">→</span>
+      </a>
+      <button type="button" onclick="openLocationModal()" class="relative rounded-3xl bg-[#3A7CA5] text-white p-3.5 shadow-2xs overflow-hidden text-left">
+        <div class="text-2xl leading-none">📍</div>
+        <h4 class="text-sm font-bold mt-2">Lokasi & Radius</h4>
+        <p id="gridLocationRadius" class="text-[11px] text-white/75 mt-0.5 truncate">Mendeteksi Lokasi...</p>
+        <span class="absolute bottom-2.5 right-2.5 text-white/80 text-sm">→</span>
+      </button>
+      <div class="relative rounded-3xl bg-[#2E7D5B] text-white p-3.5 shadow-2xs overflow-hidden">
+        <div class="text-2xl leading-none">🔔</div>
+        <h4 class="text-sm font-bold mt-2">Pengingat</h4>
+        <p class="text-[11px] text-white/75 mt-0.5">30 menit sebelum mulai</p>
+        <label class="absolute bottom-2.5 right-2.5 inline-flex items-center cursor-pointer">
+          <input type="checkbox" checked class="sr-only peer" id="reminderToggleMirror">
+          <div class="w-9 h-5 bg-white/30 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-white/50 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-white/40"></div>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bantuan & Privasi -->
+  <div class="space-y-2">
+    <div class="px-1">
+      <h3 class="text-sm font-bold text-[#1C2224]">Bantuan & Privasi</h3>
+    </div>
+    <div class="rounded-3xl bg-white border border-[#E5ECEB] divide-y divide-[#E5ECEB] overflow-hidden shadow-2xs">
+      <!-- Privasi & Keamanan (Modal Informasi Keamanan & Enkripsi) -->
       <button type="button" onclick="openPrivacyModal()" class="w-full flex items-center justify-between p-3.5 hover:bg-[#F8FAF9] text-left transition">
         <div class="flex items-center gap-3 min-w-0">
           <div class="w-9 h-9 rounded-xl bg-[#EDF5F3] text-[#1D4D4F] flex items-center justify-center shrink-0 border border-[#D1ECE7]">
@@ -315,7 +325,7 @@
         </svg>
       </button>
 
-      <!-- Item 5: Bantuan & Tentang Majelisku (Kirim Pesan Langsung ke Email Owner) -->
+      <!-- Bantuan & Tentang Majelisku (Kirim Pesan Langsung ke Email Owner) -->
       @php
         $ownerEmail = config('app.admin_email');
         $userName = Auth::check() ? Auth::user()->name : 'Jamaah Pengguna Majelisku';
@@ -340,11 +350,10 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
         </svg>
       </button>
-
     </div>
   </div>
 
-  <!-- 5. Session Actions (Masuk / Keluar) -->
+  <!-- 5. Session Actions (Masuk / Keluar) -->  <!-- 5. Session Actions (Masuk / Keluar) -->
   <div class="pt-2">
     @auth
       <form action="{{ route('logout') }}" method="POST">
@@ -403,7 +412,7 @@
         <span class="text-[11px] font-bold text-[#1D4D4F] uppercase tracking-wider">Email Resmi Pengembang</span>
         <span class="text-[10px] font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">Owner</span>
       </div>
-      <p class="text-xs font-mono font-bold text-[#1C2224] break-all select-all">
+      <p class="text-xs font-bold text-[#1C2224] break-all select-all">
         {{ $ownerEmail }}
       </p>
       <p class="text-[11px] text-[#607072] leading-relaxed">
@@ -602,6 +611,11 @@
       const radius = localStorage.getItem('sk_search_radius') || '5 km';
       radiusText.innerText = `${geo.name || 'Lokasi GPS'} • ${radius}`;
     }
+    const gridRadius = document.getElementById('gridLocationRadius');
+    if (gridRadius) {
+      const radiusGrid = localStorage.getItem('sk_search_radius') || '5 km';
+      gridRadius.innerText = `${geo.name || 'Lokasi GPS'} • ${radiusGrid}`;
+    }
   }
 
   // Dengarkan event pembaruan lokasi dari Geo-Engine
@@ -774,6 +788,7 @@
         const reg = await navigator.serviceWorker.ready;
         const sub = await reg.pushManager.getSubscription();
         reminderToggle.checked = !!sub;
+        syncReminderMirror();
       }
     })();
 
@@ -785,6 +800,24 @@
       } else {
         await unsubscribePush();
       }
+      syncReminderMirror();
+    });
+  }
+
+
+  // Cermin toggle di kartu Pengingat grid (desain mockup 2026-10-29):
+  // satu sumber kebenaran tetap #reminderToggle; cermin hanya memicu
+  // klik yang sama dan mengikuti hasil akhirnya (termasuk rollback gagal).
+  function syncReminderMirror() {
+    const mirror = document.getElementById('reminderToggleMirror');
+    if (mirror && reminderToggle) mirror.checked = reminderToggle.checked;
+  }
+  const reminderMirror = document.getElementById('reminderToggleMirror');
+  if (reminderMirror) {
+    reminderMirror.addEventListener('change', () => {
+      if (!reminderToggle) return;
+      reminderToggle.checked = reminderMirror.checked;
+      reminderToggle.dispatchEvent(new Event('change'));
     });
   }
 

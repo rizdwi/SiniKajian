@@ -54,7 +54,7 @@
   <!-- Tailwind CSS: build statis (public/css/app.css, dikompilasi dari
        tailwind.config.js) menggantikan runtime CDN — browser tak lagi
        mengompilasi utility di setiap halaman (upgrade kecepatan 2026-10-20) -->
-  <link rel="stylesheet" href="{{ asset('css/app.css') }}?v=20261028a">
+  <link rel="stylesheet" href="{{ asset('css/app.css') }}?v=20261029a">
   <!-- Font self-hosted (2026-10-25): Plus Jakarta Sans dari /fonts, bukan
        Google Fonts — menghapus rantai render-blocking ke fonts.googleapis.com
        (Lighthouse: hemat ~750 md di 4G lambat). Preload agar FCP tidak menunggu. -->
@@ -193,7 +193,7 @@
         <div style="font-size:13px; opacity:.9; margin-bottom:14px; line-height:1.5;">Infaq Anda membantu kami menjaga layanan tetap gratis dan terus berkembang menyebarkan info kajian sunnah.</div>
         <div style="background:rgba(255,255,255,.15); border-radius:10px; padding:12px; margin-bottom:12px;">
           <div style="font-size:12px; opacity:.8; margin-bottom:4px;">Bank Syariah Indonesia (BSI)</div>
-          <div style="font-size:20px; font-weight:700; letter-spacing:1px; font-family:monospace;">7182045556</div>
+          <div style="font-size:20px; font-weight:700; letter-spacing:1px;">7182045556</div>
           <div style="font-size:11px; opacity:.7; margin-top:4px;">a.n. Yayasan Insan Muslim</div>
         </div>
         <div style="font-size:11px; opacity:.7; margin-top:10px;">"Perumpamaan orang yang menginfakkan hartanya di jalan Allah seperti sebutir biji yang menumbuhkan tujuh tangkai" (QS. Al-Baqarah: 261)</div>
@@ -201,6 +201,24 @@
     </div>
     @endauth
   </main>
+
+  <!-- Tombol dark mode melayang (desain mockup 2026-10-29): di kanan bawah,
+       tepat di atas bottom nav. Pakai toggleTheme() yang sudah ada di <head>;
+       ikon disinkronkan tiap render (Turbo) lewat syncThemeFab(). -->
+  <button type="button" id="themeFab" onclick="toggleTheme();syncThemeFab();" aria-label="Ganti tema gelap atau terang" class="fixed right-4 z-40 w-11 h-11 rounded-full bg-white dark:bg-[#162526] border border-[#E5ECEB] dark:border-[#1E2E2F] shadow-lg flex items-center justify-center text-base touch-btn" style="bottom:calc(84px + env(safe-area-inset-bottom, 0px));">
+    <span id="themeFabMoon">🌙</span>
+    <span id="themeFabSun" class="hidden">☀️</span>
+  </button>
+  <script>
+    function syncThemeFab() {
+      var dark = document.documentElement.classList.contains('dark');
+      var moon = document.getElementById('themeFabMoon');
+      var sun = document.getElementById('themeFabSun');
+      if (moon) moon.classList.toggle('hidden', dark);
+      if (sun) sun.classList.toggle('hidden', !dark);
+    }
+    syncThemeFab();
+  </script>
 
   <!-- Bottom Navigation Bar Native PWA (5 Destinasi: Sholat ditambahkan 2026-10-28, Segmen No.2) -->
   <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#0F1B1C]/95 backdrop-blur-md border-t border-[#E5ECEB] dark:border-[#1E2E2F] safe-bottom shadow-lg" aria-label="Navigasi Utama">
