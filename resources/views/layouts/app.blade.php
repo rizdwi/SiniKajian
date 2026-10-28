@@ -443,17 +443,6 @@
     }
   </script>
 
-  <!-- Dark Mode Toggle (floating) -->
-  <button onclick="toggleTheme()" aria-label="Mode gelap/terang"
-    class="fixed bottom-28 right-4 z-40 w-11 h-11 rounded-full bg-white dark:bg-[#1E2E2F] border border-[#E5ECEB] dark:border-[#2A3F40] shadow-lg flex items-center justify-center text-[#1D4D4F] dark:text-[#FCD34D] touch-btn">
-    <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
-    </svg>
-    <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.002 9.002 0 0012 21a9.002 9.002 0 008.354-5.646z"></path>
-    </svg>
-  </button>
-
   <!-- PWA Install Prompt -->
   <div id="pwaInstallBanner" style="display:none; position:fixed; bottom:20px; left:16px; right:16px; z-index:9999; background:#1D4D4F; color:#fff; border-radius:16px; padding:16px; box-shadow:0 8px 24px rgba(0,0,0,.25); align-items:center; gap:12px;">
     <div style="flex:1;">
