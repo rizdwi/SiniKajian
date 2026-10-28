@@ -101,6 +101,17 @@
         <a href="{{ route('login') }}" class="inline-block mt-3 px-4 py-2 rounded-xl bg-[#1D4D4F] text-white text-xs font-bold">Masuk / Daftar</a>
       </div>
     @endif
+    <a href="{{ route('kajian.dzikir') }}" class="block px-4 py-3 border-t border-[#E5ECEB] text-sm font-bold text-[#1D4D4F]">📿 Baca dzikir pagi &amp; petang →</a>
+  </div>
+
+  <!-- 5b. Suara adzan -->
+  <div class="rounded-2xl bg-white border border-[#E5ECEB] overflow-hidden">
+    <div class="px-4 py-3 border-b border-[#E5ECEB]">
+      <h3 class="text-sm font-bold text-[#1C2224]">Suara Adzan</h3>
+      <p class="text-[11px] text-[#607072] mt-0.5">Diputar saat waktu sholat tiba (halaman ini terbuka) dan saat pratinjau di bawah. Pilihan tersimpan di perangkat ini.</p>
+    </div>
+    <div id="adzanVoiceList" class="divide-y divide-[#F1F5F4]"></div>
+    <p id="adzanVoiceStatus" class="px-4 py-2 text-[11px] text-[#607072]"></p>
   </div>
 
   <!-- 6. Lanjut ke kajian -->
@@ -358,6 +369,151 @@
     if (info.isIOS && !info.isStandalone) { showPrefStatus(PREF_MESSAGES['ios-not-installed'], true); return; }
     if (Notification.permission === 'denied') { showPrefStatus(PREF_MESSAGES['denied'], true); return; }
   })();
+
+    // --- Pilihan suara adzan (2026-10-29): 24 suara terverifikasi.
+  // Aladhan (6) + muazin Masjidil Haram via archive.org (13) +
+  // nada/maqam Ali Mullah (5). a11 Aladhan (Mansour Al-Zahrani)
+  // MATI 403 per 2026-10-28 — diganti Ahmed Basnawi (Makkah).
+  // Suara diputar dari CDN saat pratinjau / waktu sholat tiba;
+  // notifikasi push tetap memakai bunyi default perangkat.
+  var ADZAN_BASE_ARCHIVE = 'https://archive.org/download/MuadhinsMakkah/';
+  var ADZAN_VOICES = [
+    { id: 'a9', group: 'Aladhan', name: 'Mishary Rashid Alafasy', note: 'Nada klasik — paling dikenal', url: 'https://cdn.aladhan.com/audio/adhans/a9.mp3' },
+    { id: 'a1', group: 'Aladhan', name: 'Ahmad al-Nafees', note: 'Aladhan', url: 'https://cdn.aladhan.com/audio/adhans/a1.mp3' },
+    { id: 'a2', group: 'Aladhan', name: 'Hafiz Mustafa Özcan', note: 'Muazin Turki', url: 'https://cdn.aladhan.com/audio/adhans/a2.mp3' },
+    { id: 'a3', group: 'Aladhan', name: 'Karl Jenkins', note: 'Mass for Peace', url: 'https://cdn.aladhan.com/audio/adhans/a3.mp3' },
+    { id: 'a4', group: 'Aladhan', name: 'Mishary Rashid Alafasy', note: 'Versi Dubai One TV', url: 'https://cdn.aladhan.com/audio/adhans/a4.mp3' },
+    { id: 'a7', group: 'Aladhan', name: 'Mishary Rashid Alafasy', note: 'Versi lain', url: 'https://cdn.aladhan.com/audio/adhans/a7.mp3' },
+    { id: 'm-ali-mullah', group: 'Muazin Masjidil Haram', name: 'Ali Ahmed Mullah', note: 'Masjidil Haram, Makkah', url: ADZAN_BASE_ARCHIVE + 'ADHAAN/Sheikh%20Ali%20Mullah/Ali%20Ahmed%20Mullah.mp3' },
+    { id: 'm-basnawi', group: 'Muazin Masjidil Haram', name: 'Ahmed Abdullah Basnawi', note: 'Masjidil Haram, Makkah', url: ADZAN_BASE_ARCHIVE + 'ADHAAN/Sheikh%20Ahmed%20Basnawi/Ahmed%20Abdullah%20Basnawi.mp3' },
+    { id: 'm-naif', group: 'Muazin Masjidil Haram', name: 'Naif Saleh Faydah', note: 'Masjidil Haram, Makkah', url: ADZAN_BASE_ARCHIVE + 'ADHAAN/Sheikh%20Naif%20Faydah/Naif%20Saleh%20Faydah.mp3' },
+    { id: 'm-majid', group: 'Muazin Masjidil Haram', name: 'Majid Ibrahim Abbas', note: 'Masjidil Haram, Makkah', url: ADZAN_BASE_ARCHIVE + 'ADHAAN/Sheikh%20Majid%20Abbas/Majid%20Ibrahim%20Abbas.mp3' },
+    { id: 'm-maghribi', group: 'Muazin Masjidil Haram', name: 'Muhammad Maghribi', note: 'Masjidil Haram, Makkah', url: ADZAN_BASE_ARCHIVE + 'ADHAAN/Sheikh%20Muhammad%20Maghribi/Muhammad%20Maghribi.mp3' },
+    { id: 'm-hamd', group: 'Muazin Masjidil Haram', name: 'Hamd Daghreeree', note: 'Masjidil Haram, Makkah', url: ADZAN_BASE_ARCHIVE + 'ADHAAN/Sheikh%20Hamd%20Daghreeree/Hamd%20Daghreeree.mp3' },
+    { id: 'm-hashim', group: 'Muazin Masjidil Haram', name: 'Hashim Muhammad Saqaf', note: 'Masjidil Haram, Makkah', url: ADZAN_BASE_ARCHIVE + 'ADHAAN/Sheikh%20Hashim%20Saqaf/Hashim%20Muhammad%20Saqaf.mp3' },
+    { id: 'm-hussain', group: 'Muazin Masjidil Haram', name: 'Hussain Hassan Shahat', note: 'Masjidil Haram, Makkah', url: ADZAN_BASE_ARCHIVE + 'ADHAAN/Sheikh%20Hussain%20Shahat/Hussain%20Hassan%20Shahat.mp3' },
+    { id: 'm-emad', group: 'Muazin Masjidil Haram', name: 'Emad Ismaeel Baqree', note: 'Masjidil Haram, Makkah', url: ADZAN_BASE_ARCHIVE + 'ADHAAN/Sheikh%20Emad%20Baqree/Emad%20Ismaeel%20Baqree.mp3' },
+    { id: 'm-khoja', group: 'Muazin Masjidil Haram', name: 'Ahmed Yunus Khoja', note: 'Masjidil Haram, Makkah', url: ADZAN_BASE_ARCHIVE + 'ADHAAN/Sheikh%20Ahmed%20Khoja/Ahmed%20Yunus%20Khoja.mp3' },
+    { id: 'm-saeed', group: 'Muazin Masjidil Haram', name: 'Saeed Umar Fullatah', note: 'Masjidil Haram, Makkah', url: ADZAN_BASE_ARCHIVE + 'ADHAAN/Sheikh%20Saeed%20Fullatah/Saeed%20Umar%20Fullatah.mp3' },
+    { id: 'm-suhail', group: 'Muazin Masjidil Haram', name: 'Suhail Abdul Malik Hafiz', note: 'Masjidil Haram, Makkah', url: ADZAN_BASE_ARCHIVE + 'ADHAAN/Sheikh%20Suhail%20Hafiz/Suhail%20Abdul%20Malik%20Hafiz.mp3' },
+    { id: 'm-taufiq', group: 'Muazin Masjidil Haram', name: 'Taufiq Abdul Hafeez Koj', note: 'Masjidil Haram, Makkah', url: ADZAN_BASE_ARCHIVE + 'ADHAAN/Sheikh%20Taufiq%20Koj/Taufiq%20Abdul%20Hafeez%20Koj.mp3' },
+    { id: 'q-hijaz-kar', group: 'Nada & Maqam — Ali Mullah', name: 'Hijaz Kar', note: 'Maqam Hijaz', url: ADZAN_BASE_ARCHIVE + 'Tableegh%20Styles/Sheikh%20Ali%20Mullah/Hijaz%20Kar.mp3' },
+    { id: 'q-sika', group: 'Nada & Maqam — Ali Mullah', name: 'Sika', note: 'Maqam Sika', url: ADZAN_BASE_ARCHIVE + 'Tableegh%20Styles/Sheikh%20Ali%20Mullah/Sika.mp3' },
+    { id: 'q-husaini', group: 'Nada & Maqam — Ali Mullah', name: 'Husaini', note: 'Maqam Husaini', url: ADZAN_BASE_ARCHIVE + 'Tableegh%20Styles/Sheikh%20Ali%20Mullah/Husaini.mp3' },
+    { id: 'q-jaharka', group: 'Nada & Maqam — Ali Mullah', name: 'Jaharka', note: 'Maqam Jaharka', url: ADZAN_BASE_ARCHIVE + 'Tableegh%20Styles/Sheikh%20Ali%20Mullah/Jaharka.mp3' },
+    { id: 'q-maya', group: 'Nada & Maqam — Ali Mullah', name: 'Maya', note: 'Maqam Maya', url: ADZAN_BASE_ARCHIVE + 'Tableegh%20Styles/Sheikh%20Ali%20Mullah/Maya.mp3' }
+  ];
+
+  var ADZAN_VOICE_KEY = 'majelisku_adzan_voice';
+  var ADZAN_DEFAULT = 'a9';
+  var adzanAudio = null;
+  var adzanPlayingId = null;
+
+  function adzanVoiceId() {
+    try {
+      var v = localStorage.getItem(ADZAN_VOICE_KEY);
+      if (v && ADZAN_VOICES.some(function (x) { return x.id === v; })) return v;
+    } catch (e) {}
+    return ADZAN_DEFAULT;
+  }
+
+  function adzanVoiceById(id) {
+    for (var i = 0; i < ADZAN_VOICES.length; i++) {
+      if (ADZAN_VOICES[i].id === id) return ADZAN_VOICES[i];
+    }
+    return ADZAN_VOICES[0];
+  }
+
+  function adzanStop() {
+    if (adzanAudio) { try { adzanAudio.pause(); } catch (e) {} }
+    adzanPlayingId = null;
+    document.querySelectorAll('.voice-play-btn').forEach(function (b) { b.textContent = '▶'; });
+  }
+
+  function renderAdzanVoices() {
+    var list = document.getElementById('adzanVoiceList');
+    if (!list) return;
+    var sel = adzanVoiceId();
+    var html = '';
+    var lastGroup = '';
+    ADZAN_VOICES.forEach(function (v) {
+      if (v.group !== lastGroup) {
+        html += '<div class="px-4 pt-3 pb-1 text-[11px] font-bold text-[#607072]">' + v.group + '</div>';
+        lastGroup = v.group;
+      }
+      var isSel = v.id === sel;
+      html += '<div class="flex items-center gap-2.5 px-4 py-2.5 cursor-pointer" onclick="selectAdzanVoice(\'' + v.id + '\')">'
+        + '<button onclick="event.stopPropagation(); previewAdzan(\'' + v.id + '\')" class="voice-play-btn w-9 h-9 rounded-full bg-[#E8F5F3] text-[#1D4D4F] flex items-center justify-center shrink-0 text-sm font-bold" data-voice="' + v.id + '">▶</button>'
+        + '<div class="min-w-0 flex-1"><p class="text-sm font-bold text-[#1C2224] truncate">' + v.name + '</p><p class="text-[11px] text-[#607072] truncate">' + v.note + '</p></div>'
+        + (isSel ? '<span class="text-[11px] font-bold text-[#1D4D4F] px-2 py-0.5 rounded-full shrink-0" style="background:#E8F5F3">✓ Dipakai</span>' : '')
+        + '</div>';
+    });
+    list.innerHTML = html;
+  }
+
+  function previewAdzan(id) {
+    var v = adzanVoiceById(id);
+    if (!adzanAudio) {
+      adzanAudio = new Audio();
+      adzanAudio.preload = 'none';
+      adzanAudio.addEventListener('ended', adzanStop);
+      adzanAudio.addEventListener('error', function () {
+        var st = document.getElementById('adzanVoiceStatus');
+        if (st) st.textContent = 'Suara tidak dapat diputar saat ini. Periksa koneksi lalu coba lagi.';
+        adzanStop();
+      });
+    }
+    if (adzanPlayingId === id && !adzanAudio.paused) { adzanStop(); return; }
+    adzanStop();
+    adzanAudio.src = v.url;
+    adzanPlayingId = id;
+    var btn = document.querySelector('.voice-play-btn[data-voice="' + id + '"]');
+    if (btn) btn.textContent = '⏸';
+    adzanAudio.play().catch(function () {
+      var st = document.getElementById('adzanVoiceStatus');
+      if (st) st.textContent = 'Suara tidak dapat diputar saat ini. Periksa koneksi lalu coba lagi.';
+      adzanStop();
+    });
+  }
+
+  function selectAdzanVoice(id) {
+    try { localStorage.setItem(ADZAN_VOICE_KEY, id); } catch (e) {}
+    renderAdzanVoices();
+    var v = adzanVoiceById(id);
+    var st = document.getElementById('adzanVoiceStatus');
+    if (st) st.textContent = 'Suara adzan: ' + v.name + ' (' + v.group + '). Tersimpan di perangkat ini.';
+  }
+
+  // Putar adzan saat waktu sholat tiba (halaman terbuka + pengingat
+  // adzan Aktif). Sekali per sholat per hari.
+  function checkAdzanAutoPlay() {
+    var adzanBtn = document.querySelector('[data-pref="adzan"]');
+    if (!adzanBtn || adzanBtn.textContent.trim() !== 'Aktif') return;
+    var now = new Date();
+    var hhmm = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2);
+    var today = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2) + '-' + ('0' + now.getDate()).slice(-2);
+    PRAYER_ORDER.forEach(function (name) {
+      if (SHOLAT_TIMINGS[name] !== hhmm) return;
+      var playedKey = 'majelisku_adzan_played_' + today + '_' + name;
+      try {
+        if (localStorage.getItem(playedKey)) return;
+        localStorage.setItem(playedKey, '1');
+      } catch (e) {}
+      var v = adzanVoiceById(adzanVoiceId());
+      if (!adzanAudio) {
+        adzanAudio = new Audio();
+        adzanAudio.preload = 'none';
+        adzanAudio.addEventListener('ended', adzanStop);
+      }
+      adzanStop();
+      adzanAudio.src = v.url;
+      adzanPlayingId = v.id;
+      adzanAudio.play().catch(function () {});
+    });
+  }
+
+  renderAdzanVoices();
+  setInterval(checkAdzanAutoPlay, 15000);
 
   updateNextPrayer();
   setInterval(updateNextPrayer, 30000);

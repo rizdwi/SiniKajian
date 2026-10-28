@@ -17,6 +17,7 @@ Route::get('/ustadz/{name}', [KajianController::class, 'ustadz'])->name('kajian.
 Route::get('/peta', [KajianController::class, 'map'])->name('kajian.map');
 Route::get('/kiblat', [KajianController::class, 'qibla'])->name('kajian.qibla');
 Route::get('/sholat', [KajianController::class, 'sholat'])->name('kajian.sholat');
+Route::get('/dzikir', [KajianController::class, 'dzikir'])->name('kajian.dzikir');
 Route::get('/api/sholat', [KajianController::class, 'apiSholat'])->middleware('throttle:30,1')->name('api.sholat');
 Route::get('/tersimpan', [KajianController::class, 'saved'])->name('kajian.saved');
 

@@ -630,6 +630,19 @@ class KajianController extends Controller
     }
 
     /**
+     * Dzikir pagi & petang — teks dari buku Ustadz Yazid bin Abdul
+     * Qadir Jawas rahimahullah (perintah user 2026-10-28). Halaman
+     * statis: tanpa login, tanpa DB — data dari App\Data\DzikirData.
+     */
+    public function dzikir(): View
+    {
+        return view('kajian.dzikir', [
+            'pagi' => \App\Data\DzikirData::pagi(),
+            'petang' => \App\Data\DzikirData::petang(),
+        ]);
+    }
+
+    /**
      * JSON jadwal sholat — dipakai halaman /sholat saat GPS perangkat
      * tersedia (geo engine) agar waktu menyesuaikan lokasi akurat user
      * tanpa reload penuh.
