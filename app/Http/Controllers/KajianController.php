@@ -753,7 +753,7 @@ class KajianController extends Controller
         ];
 
         if (!$svc->upsertNotificationPrefs($payload)) {
-            return response()->json(['error' => 'Gagal menyimpan — tabel pengingat belum disiapkan.'], 503);
+            return response()->json(['error' => 'Gagal menyimpan pengingat di server. Coba lagi sebentar lagi.'], 503);
         }
 
         return response()->json(['status' => 'success', 'prefs' => $payload]);

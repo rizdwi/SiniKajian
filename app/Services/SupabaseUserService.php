@@ -443,7 +443,7 @@ class SupabaseUserService
         try {
             $res = Http::withHeaders(array_merge($this->headers(), ['Prefer' => 'resolution=ignore-duplicates']))
                 ->timeout(10)
-                ->post("{$this->url}/rest/v1/ustadz_follows", $data);
+                ->post("{$this->url}/rest/v1/ustadz_follows?on_conflict=user_id,ustadz", $data);
 
             return $res->successful();
         } catch (\Exception $e) {
@@ -483,7 +483,7 @@ class SupabaseUserService
         try {
             $res = Http::withHeaders(array_merge($this->headers(), ['Prefer' => 'resolution=merge-duplicates']))
                 ->timeout(10)
-                ->post("{$this->url}/rest/v1/notification_prefs", $data);
+                ->post("{$this->url}/rest/v1/notification_prefs?on_conflict=user_id", $data);
 
             return $res->successful();
         } catch (\Exception $e) {
