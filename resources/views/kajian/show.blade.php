@@ -204,8 +204,8 @@
     @endif
   </div>
 
-  <!-- 8. Sticky Bottom Action Bar (Kajian Tersimpan & Majelis Diikuti) -->
-  <div class="fixed bottom-16 left-0 right-0 z-30 p-3 bg-white/95 backdrop-blur-md border-t border-[#E5ECEB]">
+  <!-- 8. Action Bar (statis di akhir konten, bukan floating — 2026-10-29) -->
+  <div class="p-3 bg-white border border-[#E5ECEB] rounded-3xl shadow-2xs">
     <div class="max-w-md mx-auto space-y-1.5">
       <div class="grid grid-cols-2 gap-2">
         <!-- Tombol 1: Simpan Kajian -->

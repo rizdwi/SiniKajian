@@ -172,94 +172,6 @@
   </div>
 
   <!-- 4. Akun & Preferensi Grouped Card (Figma Screen 5) -->
-  <div class="space-y-2">
-    <div class="px-1">
-      <h3 class="text-sm font-bold text-[#1C2224]">Akun & preferensi</h3>
-    </div>
-
-    <div class="rounded-3xl bg-white border border-[#E5ECEB] divide-y divide-[#E5ECEB] overflow-hidden shadow-2xs">
-      
-      @auth
-        @if(Auth::user()->isAdmin())
-          <!-- Item Admin: Panel Moderasi Kajian -->
-          <a href="{{ route('admin.kajian.index') }}" class="flex items-center justify-between p-3.5 hover:bg-[#F8FAF9] transition bg-[#E6F4F1]/30">
-            <div class="flex items-center gap-3 min-w-0">
-              <div class="w-9 h-9 rounded-xl bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center shrink-0 border border-[#D1EAE5]">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-              </div>
-              <div class="min-w-0">
-                <span class="text-xs sm:text-sm font-bold text-[#1D4D4F] block">Panel Moderasi Kajian</span>
-                <span class="text-[11px] text-[#607072] block truncate">Kelola & verifikasi jadwal pengajuan</span>
-              </div>
-            </div>
-            <svg class="w-4 h-4 text-[#1D4D4F] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-            </svg>
-          </a>
-        @endif
-      @endauth
-
-      <!-- Item 1: Edit Profil -->
-      <a href="{{ route('profile.edit') }}" class="flex items-center justify-between p-3.5 hover:bg-[#F8FAF9] transition">
-        <div class="flex items-center gap-3 min-w-0">
-          <div class="w-9 h-9 rounded-xl bg-[#EDF5F3] text-[#1D4D4F] flex items-center justify-center shrink-0 border border-[#D1ECE7]">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-            </svg>
-          </div>
-          <div class="min-w-0">
-            <span class="text-xs sm:text-sm font-bold text-[#1C2224] block">Edit profil</span>
-            <span class="text-[11px] text-[#607072] block truncate">Nama dan informasi pribadi</span>
-          </div>
-        </div>
-        <svg class="w-4 h-4 text-[#607072] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-        </svg>
-      </a>
-
-      <!-- Item 2: Lokasi & Radius Pencarian -->
-      <button type="button" onclick="openLocationModal()" class="w-full flex items-center justify-between p-3.5 hover:bg-[#F8FAF9] transition text-left">
-        <div class="flex items-center gap-3 min-w-0">
-          <div class="w-9 h-9 rounded-xl bg-[#EDF5F3] text-[#1D4D4F] flex items-center justify-center shrink-0 border border-[#D1ECE7]">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-            </svg>
-          </div>
-          <div class="min-w-0">
-            <span class="text-xs sm:text-sm font-bold text-[#1C2224] block">Lokasi & radius pencarian</span>
-            <span id="userProfileLocationRadius" class="text-[11px] text-[#607072] block truncate">Mendeteksi Lokasi...</span>
-          </div>
-        </div>
-        <svg class="w-4 h-4 text-[#607072] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-        </svg>
-      </button>
-
-      <!-- Item 3: Pengingat Kajian dengan Toggle Switch -->
-      <div class="flex items-center justify-between p-3.5 hover:bg-[#F8FAF9] transition">
-        <div class="flex items-center gap-3 min-w-0">
-          <div class="w-9 h-9 rounded-xl bg-[#EDF5F3] text-[#1D4D4F] flex items-center justify-center shrink-0 border border-[#D1ECE7]">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-            </svg>
-          </div>
-          <div class="min-w-0">
-            <span class="text-xs sm:text-sm font-bold text-[#1C2224] block">Pengingat kajian</span>
-            <span class="text-[11px] text-[#607072] block truncate">30 menit sebelum dimulai</span>
-          </div>
-        </div>
-        
-        <!-- Toggle Switch ON (Teal) -->
-        <label class="relative inline-flex items-center cursor-pointer shrink-0">
-          <input type="checkbox" checked class="sr-only peer" id="reminderToggle">
-          <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#1D4D4F]"></div>
-        </label>
-      </div>
-
-    </div>
-  </div>
-
   <!-- Akses & Pengaturan (desain mockup 2026-10-29; grid dibuat sedikit lebih kecil dari mockup) -->
   <div class="space-y-2">
     <div class="px-1">
@@ -294,7 +206,7 @@
         <h4 class="text-sm font-bold mt-2">Pengingat</h4>
         <p class="text-[11px] text-white/75 mt-0.5">30 menit sebelum mulai</p>
         <label class="absolute bottom-2.5 right-2.5 inline-flex items-center cursor-pointer">
-          <input type="checkbox" checked class="sr-only peer" id="reminderToggleMirror">
+          <input type="checkbox" checked class="sr-only peer" id="reminderToggle">
           <div class="w-9 h-5 bg-white/30 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-white/50 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-white/40"></div>
         </label>
       </div>
@@ -788,7 +700,6 @@
         const reg = await navigator.serviceWorker.ready;
         const sub = await reg.pushManager.getSubscription();
         reminderToggle.checked = !!sub;
-        syncReminderMirror();
       }
     })();
 
@@ -800,24 +711,6 @@
       } else {
         await unsubscribePush();
       }
-      syncReminderMirror();
-    });
-  }
-
-
-  // Cermin toggle di kartu Pengingat grid (desain mockup 2026-10-29):
-  // satu sumber kebenaran tetap #reminderToggle; cermin hanya memicu
-  // klik yang sama dan mengikuti hasil akhirnya (termasuk rollback gagal).
-  function syncReminderMirror() {
-    const mirror = document.getElementById('reminderToggleMirror');
-    if (mirror && reminderToggle) mirror.checked = reminderToggle.checked;
-  }
-  const reminderMirror = document.getElementById('reminderToggleMirror');
-  if (reminderMirror) {
-    reminderMirror.addEventListener('change', () => {
-      if (!reminderToggle) return;
-      reminderToggle.checked = reminderMirror.checked;
-      reminderToggle.dispatchEvent(new Event('change'));
     });
   }
 

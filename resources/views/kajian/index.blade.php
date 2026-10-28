@@ -374,9 +374,11 @@
 
 <!-- Modal Bottom Sheet: Detail Kajian (Sesuai Desain Figma Screen 2) -->
 <div id="detailModal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 transition-opacity">
-  <div class="bg-white dark:bg-[#162526] w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto overscroll-contain no-scrollbar shadow-2xl p-4 sm:p-5 space-y-4" style="touch-action: pan-y; -webkit-overflow-scrolling: touch;">
-    <!-- Mobile Drag Handle -->
-    <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto sm:hidden mb-1"></div>
+  <div class="bg-white dark:bg-[#162526] w-full max-w-lg rounded-t-3xl sm:rounded-3xl overflow-y-auto overscroll-contain no-scrollbar shadow-2xl p-4 sm:p-5 space-y-4" style="touch-action: pan-y; -webkit-overflow-scrolling: touch; max-height:92vh; max-height:92dvh;">
+    <!-- Mobile Drag Handle (juga gagang swipe-down untuk menutup modal) -->
+    <div id="detailDragHandle" class="mx-auto sm:hidden py-2" style="touch-action:none;">
+      <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto"></div>
+    </div>
     
     <!-- Top Navigation Bar: Back Chevron, Title, Bookmark & Share Buttons -->
     <div class="flex items-center justify-between border-b border-[#E5ECEB] pb-3">
@@ -507,7 +509,7 @@
     </div>
 
     <!-- Tombol Sumber Asli Meta (Facebook / Instagram / Threads) -->
-    <a id="modalSourceBtn" href="#" target="_blank" rel="noopener noreferrer" class="hidden w-full touch-btn py-2.5 rounded-2xl text-white font-bold text-xs flex items-center justify-center gap-2 no-underline shadow-xs transition hover:opacity-90">
+    <a id="modalSourceBtn" href="#" target="_blank" rel="noopener noreferrer" class="hidden w-full touch-btn py-2.5 rounded-2xl text-white font-bold text-xs flex items-center justify-center gap-2 no-underline transition hover:opacity-90">
       <span id="modalSourceGlyph" class="font-extrabold text-sm"></span>
       <span id="modalSourceLabel">Buka Sumber Asli di Facebook ↗</span>
     </a>
@@ -1706,6 +1708,10 @@
     // Tampilkan modal DULU agar selalu merespons klik
     const modal = document.getElementById('detailModal');
     if (modal) modal.classList.remove('hidden');
+    // Reset posisi sheet (habis swipe-down sebelumnya) agar modal
+    // selalu terbuka penuh, bukan tertinggal bergeser.
+    var dh = document.getElementById('detailDragHandle');
+    if (dh && dh.parentElement) { dh.parentElement.style.transform = ''; dh.parentElement.style.transition = ''; }
     // Kunci scroll latar: tanpa ini gestur scroll di dalam modal ikut
     // menggerakkan halaman di belakangnya (keluhan: background ikut
     // terswipe sehingga detail terasa tidak bisa di-scroll).
@@ -1913,6 +1919,42 @@
     document.getElementById('detailModal').classList.add('hidden');
     document.body.style.overflow = '';
   }
+
+  // Tutup modal dengan swipe-down dari drag handle (2026-10-29):
+  // seret handle ke bawah >110px → sheet meluncur turun lalu modal
+  // tertutup; kurang dari itu sheet kembali ke posisi awal.
+  // touch-action:none di handle mencegah scroll konten saat menyeret.
+  (function initDetailSwipeClose() {
+    var handle = document.getElementById('detailDragHandle');
+    var modal = document.getElementById('detailModal');
+    if (!handle || !modal) return;
+    var sheet = handle.parentElement;
+    if (!sheet) return;
+    var startY = 0, dy = 0, dragging = false;
+    handle.addEventListener('pointerdown', function (e) {
+      dragging = true; startY = e.clientY; dy = 0;
+      sheet.style.transition = 'none';
+      try { handle.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+    handle.addEventListener('pointermove', function (e) {
+      if (!dragging) return;
+      dy = e.clientY - startY;
+      if (dy > 0) sheet.style.transform = 'translateY(' + dy + 'px)';
+    });
+    function endDrag() {
+      if (!dragging) return;
+      dragging = false;
+      sheet.style.transition = 'transform 0.18s ease';
+      if (dy > 110) {
+        sheet.style.transform = 'translateY(100%)';
+        setTimeout(closeDetailModal, 180);
+      } else {
+        sheet.style.transform = '';
+      }
+    }
+    handle.addEventListener('pointerup', endDrag);
+    handle.addEventListener('pointercancel', endDrag);
+  })();
 
   function openFilterModal() {
     document.getElementById('filterModal').classList.remove('hidden');
