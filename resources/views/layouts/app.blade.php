@@ -54,7 +54,7 @@
   <!-- Tailwind CSS: build statis (public/css/app.css, dikompilasi dari
        tailwind.config.js) menggantikan runtime CDN — browser tak lagi
        mengompilasi utility di setiap halaman (upgrade kecepatan 2026-10-20) -->
-  <link rel="stylesheet" href="{{ asset('css/app.css') }}?v=20261025a">
+  <link rel="stylesheet" href="{{ asset('css/app.css') }}?v=20261028a">
   <!-- Font self-hosted (2026-10-25): Plus Jakarta Sans dari /fonts, bukan
        Google Fonts — menghapus rantai render-blocking ke fonts.googleapis.com
        (Lighthouse: hemat ~750 md di 4G lambat). Preload agar FCP tidak menunggu. -->
