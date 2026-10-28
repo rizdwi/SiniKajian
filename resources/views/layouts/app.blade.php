@@ -125,6 +125,15 @@
     .safe-bottom {
       padding-bottom: env(safe-area-inset-bottom, 16px);
     }
+
+    /* Bottom nav: paksa compositing layer sendiri agar tidak "nyangkut"
+       di posisi lama saat toolbar browser HP (Chrome Android / Safari iOS)
+       mengembang-menciut (insiden 2026-10-28: nav mengambang ~70px di atas
+       bawah viewport di HP user, padahal di desktop menempel normal). */
+    nav[aria-label="Navigasi Utama"] {
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+    }
     .safe-top {
       padding-top: env(safe-area-inset-top, 0px);
     }
@@ -261,6 +270,20 @@
       }
       window.addEventListener('online', updateOnlineStatus);
       window.addEventListener('offline', updateOnlineStatus);
+
+      // Bottom nav: paksa reflow saat ukuran visual viewport berubah
+      // (toolbar HP mengembang/menciut) agar nav fixed tidak tertinggal
+      // di posisi lama. Hanya pada resize — bukan tiap scroll — supaya
+      // tidak memaksa layout berulang saat pengguna menggulir.
+      (function () {
+        var nav = document.querySelector('nav[aria-label="Navigasi Utama"]');
+        if (!nav) return;
+        var reflowNav = function () { void nav.offsetHeight; };
+        if (window.visualViewport) {
+          window.visualViewport.addEventListener('resize', reflowNav);
+        }
+        window.addEventListener('resize', reflowNav);
+      })();
     }
 
     // Monitor Network Connectivity

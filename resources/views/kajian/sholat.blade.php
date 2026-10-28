@@ -223,11 +223,60 @@
     return outputArray;
   }
 
-  async function ensurePushSholat() {
+  // --- Diagnosa pengingat push (2026-10-28): tiap kegagalan mengembalikan
+  // alasan + pesan solusi yang spesifik, bukan sekadar "tidak bisa".
+  // Gejala pemicu: ketuk toggle -> status "Aktifkan izin notifikasi dulu"
+  // -> tombol tetap Mati, tanpa petunjuk apa yang salah.
+  function pushSupportInfo() {
+    var ua = navigator.userAgent || '';
+    var isIOS = /iPhone|iPad|iPod/.test(ua) && !window.MSStream;
+    var isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+    var inApp = /FBAN|FBAV|Instagram|WhatsApp|Line\/|MiuiBrowser|VivoBrowser/.test(ua);
+    return { isIOS: isIOS, isStandalone: isStandalone, inApp: inApp };
+  }
+
+  function requestPermissionCompat() {
+    // iOS lama: requestPermission callback-based, bukan Promise.
     try {
-      if (!('Notification' in window) || !('serviceWorker' in navigator)) return false;
-      var permission = await Notification.requestPermission();
-      if (permission !== 'granted') { alert('Izin notifikasi ditolak.'); return false; }
+      var p = Notification.requestPermission();
+      if (p && typeof p.then === 'function') return p;
+    } catch (e) {}
+    return new Promise(function (resolve) {
+      try { Notification.requestPermission(function (res) { resolve(res); }); }
+      catch (e2) { resolve(Notification.permission || 'default'); }
+    });
+  }
+
+  var PREF_MESSAGES = {
+    'unsupported': 'Browser ini tidak mendukung notifikasi push. Coba Chrome terbaru di Android, atau Safari 16.4+ (iPhone) setelah memasang Majelisku ke layar utama.',
+    'in-app': 'Kamu membuka Majelisku dari dalam aplikasi lain (mis. WhatsApp) — notifikasi tidak bisa diaktifkan dari sini. Buka majelisku.web.id langsung di Chrome/Safari, lalu aktifkan pengingat.',
+    'ios-not-installed': 'Di iPhone, pengingat hanya bisa aktif bila Majelisku dipasang ke layar utama. Di Safari ketuk tombol Bagikan, pilih "Tambah ke Layar Utama", buka Majelisku dari ikonnya, lalu aktifkan pengingat di sini.',
+    'denied': 'Izin notifikasi untuk Majelisku sedang diblokir di browser ini. Ketuk ikon gembok di address bar, pilih Izin situs, ubah Notifikasi menjadi Izinkan, lalu muat ulang halaman dan coba lagi.',
+    'dismissed': 'Izin notifikasi belum diberikan. Ketuk lagi tombol pengingat, lalu pilih "Izinkan" saat browser bertanya.',
+    'subscribe-failed': 'Gagal mendaftarkan perangkat untuk notifikasi. Periksa koneksi, lalu coba lagi. Bila tetap gagal, tutup dan buka lagi Majelisku.',
+    'server': 'Gagal menyimpan pengingat di server. Coba lagi sebentar lagi.'
+  };
+
+  async function ensurePushSholat() {
+    // return {ok:true} atau {ok:false, reason:'...'}
+    if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+      return { ok: false, reason: 'unsupported' };
+    }
+    var info = pushSupportInfo();
+    if (info.inApp) return { ok: false, reason: 'in-app' };
+    if (info.isIOS && !info.isStandalone) {
+      // iOS Safari: web push hanya untuk PWA yang dipasang ke layar utama.
+      return { ok: false, reason: 'ios-not-installed' };
+    }
+    if (Notification.permission === 'denied') return { ok: false, reason: 'denied' };
+    var permission = Notification.permission;
+    if (permission !== 'granted') {
+      permission = await requestPermissionCompat();
+      if (permission !== 'granted') {
+        return { ok: false, reason: permission === 'denied' ? 'denied' : 'dismissed' };
+      }
+    }
+    try {
       var reg = await navigator.serviceWorker.ready;
       var sub = await reg.pushManager.getSubscription();
       if (!sub) {
@@ -238,18 +287,37 @@
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN_SHOLAT },
         body: JSON.stringify(sub.toJSON())
       });
-      return res.ok;
-    } catch (e) { console.error('Push subscribe gagal:', e); return false; }
+      if (!res.ok) return { ok: false, reason: 'server' };
+      return { ok: true };
+    } catch (e) {
+      console.error('Push subscribe gagal:', e);
+      return { ok: false, reason: 'subscribe-failed' };
+    }
+  }
+
+  function showPrefStatus(msg, isError) {
+    var statusEl = document.getElementById('prefStatus');
+    if (!statusEl) return;
+    statusEl.textContent = msg;
+    statusEl.className = isError
+      ? 'px-4 py-3 text-[11px] bg-amber-50 text-amber-700'
+      : 'px-4 py-2 text-[11px] text-[#607072]';
   }
 
   async function togglePref(btn) {
     if (!SHOLAT_LOGGED_IN) return;
     var key = btn.getAttribute('data-pref');
     var turningOn = btn.textContent.trim() === 'Mati';
-    var statusEl = document.getElementById('prefStatus');
     if (turningOn) {
-      var ok = await ensurePushSholat();
-      if (!ok) { statusEl.textContent = 'Aktifkan izin notifikasi dulu agar pengingat bisa terkirim.'; return; }
+      btn.disabled = true;
+      btn.textContent = '…';
+      var r = await ensurePushSholat();
+      btn.disabled = false;
+      if (!r.ok) {
+        btn.textContent = 'Mati';
+        showPrefStatus(PREF_MESSAGES[r.reason] || PREF_MESSAGES['subscribe-failed'], true);
+        return;
+      }
     }
     btn.textContent = turningOn ? 'Aktif' : 'Mati';
     btn.classList.toggle('bg-[#1D4D4F]', turningOn);
@@ -266,19 +334,30 @@
       });
       if (!res.ok) {
         var d = await res.json().catch(function () { return {}; });
-        statusEl.textContent = (d && d.error) || 'Gagal menyimpan pengingat.';
+        showPrefStatus((d && d.error) || 'Gagal menyimpan pengingat.', true);
         btn.textContent = turningOn ? 'Mati' : 'Aktif';
         btn.classList.toggle('bg-[#1D4D4F]', !turningOn);
         btn.classList.toggle('text-white', !turningOn);
         btn.classList.toggle('bg-[#F1F5F4]', turningOn);
         btn.classList.toggle('text-[#607072]', turningOn);
       } else {
-        statusEl.textContent = turningOn ? 'Pengingat diaktifkan.' : 'Pengingat dimatikan.';
+        showPrefStatus(turningOn ? 'Pengingat diaktifkan.' : 'Pengingat dimatikan.', false);
       }
     } catch (e) {
-      statusEl.textContent = 'Gagal menyimpan pengingat.';
+      showPrefStatus('Gagal menyimpan pengingat.', true);
     }
   }
+
+  // Petunjuk dini (tanpa menunggu ketuk): bila izin sudah diblokir atau
+  // perangkat belum memenuhi syarat, tampilkan alasannya di bawah toggle.
+  (function prefHintOnLoad() {
+    if (!SHOLAT_LOGGED_IN) return;
+    if (!('Notification' in window)) { showPrefStatus(PREF_MESSAGES['unsupported'], true); return; }
+    var info = pushSupportInfo();
+    if (info.inApp) { showPrefStatus(PREF_MESSAGES['in-app'], true); return; }
+    if (info.isIOS && !info.isStandalone) { showPrefStatus(PREF_MESSAGES['ios-not-installed'], true); return; }
+    if (Notification.permission === 'denied') { showPrefStatus(PREF_MESSAGES['denied'], true); return; }
+  })();
 
   updateNextPrayer();
   setInterval(updateNextPrayer, 30000);
