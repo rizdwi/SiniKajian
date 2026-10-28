@@ -503,6 +503,58 @@ class KajianController extends Controller
     }
 
     /**
+     * Suara adzan via proxy edge (2026-10-29): HP user gagal memutar
+     * MP3 langsung dari Supabase (jaringan ke supabase.co diblokir
+     * atau diulur), padahal server (sin1) mencapai Supabase dengan
+     * baik — pola yang sama dengan thumb. Header Range diteruskan
+     * ke Supabase agar pemutar iOS (AVPlayer, memakai Range) tetap
+     * bisa streaming; respons 206 dikembalikan apa adanya. Nama
+     * file di-allowlist (24 suara) agar route ini tidak bisa dipakai
+     * mengambil objek lain dari bucket.
+     */
+    public function adzan(string $file): \Illuminate\Http\Response
+    {
+        $allowed = ['a9', 'a1', 'a2', 'a3', 'a4', 'a7',
+            'm-ali-mullah', 'm-basnawi', 'm-naif', 'm-majid', 'm-maghribi', 'm-hamd',
+            'm-hashim', 'm-hussain', 'm-emad', 'm-khoja', 'm-saeed', 'm-suhail', 'm-taufiq',
+            'q-hijaz-kar', 'q-sika', 'q-husaini', 'q-jaharka', 'q-maya'];
+        if (!in_array($file, $allowed, true)) {
+            abort(404);
+        }
+        $base = rtrim(config('services.supabase.url') ?: 'https://hhcopgprjdjvgfcuqdyf.supabase.co', '/');
+        $src = $base . '/storage/v1/object/public/adzan/' . $file . '.mp3';
+        $headers = [];
+        $range = request()->header('Range');
+        if ($range) {
+            $headers['Range'] = $range;
+        }
+        try {
+            $res = Http::timeout(20)->withHeaders($headers)->get($src);
+        } catch (\Throwable $e) {
+            abort(502);
+        }
+        if (!$res->successful()) {
+            abort(in_array($res->status(), [400, 404], true) ? 404 : 502);
+        }
+        $body = $res->body();
+        if ($body === '' || $body === null) {
+            abort(502);
+        }
+        $status = $res->status() === 206 ? 206 : 200;
+        $response = response($body, $status, ['Content-Type' => 'audio/mpeg']);
+        $response->headers->set('Accept-Ranges', 'bytes');
+        if ($res->header('Content-Range')) {
+            $response->headers->set('Content-Range', $res->header('Content-Range'));
+        }
+        if ($res->header('Content-Length')) {
+            $response->headers->set('Content-Length', $res->header('Content-Length'));
+        }
+        $response->headers->set('Cache-Control', 'public, max-age=86400, immutable');
+        $response->headers->set('Vercel-CDN-Cache-Control', 's-maxage=31536000, stale-while-revalidate=86400');
+        return $response;
+    }
+
+    /**
      * Tampilkan peta interaktif sebaran majelis ilmu.
      */
     /**

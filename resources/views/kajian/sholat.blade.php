@@ -400,7 +400,11 @@
   // padahal curl dari VM 200 + Range 206 — diduga jaringan pengguna
   // memblokir/mengulur CDN luar. File yang sama kini disajikan dari
   // Supabase, jalur yang sama dengan flyer kajian.
-  var ADZAN_BASE = 'https://hhcopgprjdjvgfcuqdyf.supabase.co/storage/v1/object/public/adzan/';
+  // UPDATE 2026-10-29: HP user TETAP gagal memutar langsung dari
+  // supabase.co (diduga jalur yang sama diblokir) — suara kini
+  // lewat proxy domain sendiri /api/adzan/ (KajianController::adzan,
+  // pola thumb + Range forwarding untuk pemutar iOS).
+  var ADZAN_BASE = '/api/adzan/';
   var ADZAN_VOICES = [
     { id: 'a9', group: 'Aladhan', name: 'Mishary Rashid Alafasy', note: 'Nada klasik — paling dikenal', url: ADZAN_BASE + 'a9.mp3' },
     { id: 'a1', group: 'Aladhan', name: 'Ahmad al-Nafees', note: 'Aladhan', url: ADZAN_BASE + 'a1.mp3' },
@@ -501,6 +505,10 @@
     var audio = adzanAudioEl();
     if (adzanPlayingId === id && !audio.paused) { adzanStop(); return; }
     adzanStop();
+    // Reset elemen sebelum ganti src: bila play sebelumnya gagal,
+    // elemen bisa macet di src lama (set src yang sama = no-op di
+    // sebagian browser) sehingga percobaan ulang gagal instan.
+    try { audio.removeAttribute('src'); audio.load(); } catch (e) {}
     audio.src = v.url;
     adzanPlayingId = id;
     var btn = document.getElementById('adzanPreviewBtn');
@@ -537,6 +545,7 @@
       var v = adzanVoiceById(adzanVoiceId());
       var audio = adzanAudioEl();
       adzanStop();
+      try { audio.removeAttribute('src'); audio.load(); } catch (e) {}
       audio.src = v.url;
       adzanPlayingId = v.id;
       audio.play().catch(function () {});

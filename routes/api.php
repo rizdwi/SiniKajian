@@ -23,6 +23,17 @@ Route::get('/thumbs/{id}-{w}.webp', [KajianController::class, 'thumb'])
     ->where(['id' => '[0-9]+', 'w' => '[0-9]+'])
     ->name('api.kajian.thumb');
 
+// Suara adzan via edge Vercel (2026-10-29): proxy MP3 Supabase agar
+// diputar dari domain yang sama dengan situs — HP user TERBUKTI gagal
+// memutar langsung dari supabase.co (jaringan memblokir/mengulur),
+// padahal server (sin1) mencapai Supabase dengan baik, persis pola
+// thumb. Tanpa throttle: pemutar memakai banyak request Range per
+// menit, throttle akan memutus playback. Allowlist nama file di
+// controller mencegah route ini dipakai mengambil objek lain.
+Route::get('/adzan/{file}.mp3', [KajianController::class, 'adzan'])
+    ->where(['file' => '[a-z0-9-]+'])
+    ->name('api.kajian.adzan');
+
 // Beacon pageview untuk menu admin Traffic (catat path saja, tanpa PII).
 Route::post('/traffic/hit', [\App\Http\Controllers\TrafficController::class, 'hit']);
 
