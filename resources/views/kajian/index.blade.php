@@ -10,6 +10,7 @@
     <div>
       <p class="text-xs text-[#607072] dark:text-[#9BA8A9] font-medium">Assalamu'alaikum, {{ Auth::check() ? Auth::user()->name : 'Tamu' }}</p>
       <h1 class="text-xl font-extrabold text-[#1D4D4F] tracking-tight mt-0.5">Yuk, kita ngaji.</h1>
+      <p class="text-[11px] text-[#607072] dark:text-[#9BA8A9] mt-0.5">Jadwal kajian Sunnah terdekat &amp; paling update — dari flyer resmi majelis.</p>
       <button type="button" onclick="openLocationModal()" class="inline-flex items-center gap-1 text-[11px] font-semibold text-[#1D4D4F] bg-[#E6F4F1] hover:bg-[#D1EAE5] px-2.5 py-0.5 rounded-full mt-1.5 transition">
         <svg class="w-3 h-3 text-[#1D4D4F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
         <span id="currentLocationName">Mendeteksi Lokasi...</span>
@@ -130,6 +131,13 @@
       <button onclick="setRadiusFilter(15)" class="radius-chip px-3.5 py-1.5 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] whitespace-nowrap shrink-0" data-radius="15">15 km</button>
       <button onclick="setRadiusFilter(25)" class="radius-chip px-3.5 py-1.5 rounded-xl border border-[#1D4D4F] bg-[#E6F4F1] text-[#1D4D4F] font-bold whitespace-nowrap shrink-0" data-radius="25">25 km</button>
       <button onclick="setRadiusFilter(999)" class="radius-chip px-3.5 py-1.5 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] whitespace-nowrap shrink-0" data-radius="999">Semua</button>
+    </div>
+
+    <!-- Quick Chips: Urutkan (Segmen No.3 — Terdekat dari saya, 2026-10-28) -->
+    <div class="flex items-center gap-2 text-xs text-[#607072] dark:text-[#9BA8A9] pt-0.5 overflow-x-auto no-scrollbar">
+      <span class="text-[11px] font-medium text-[#607072] dark:text-[#9BA8A9] whitespace-nowrap shrink-0">Urutkan:</span>
+      <button onclick="setSortMode('tanggal')" class="sort-chip px-3.5 py-1.5 rounded-xl border border-[#1D4D4F] bg-[#E6F4F1] text-[#1D4D4F] font-bold whitespace-nowrap shrink-0" data-sort="tanggal">Tanggal</button>
+      <button onclick="setSortMode('jarak')" class="sort-chip px-3.5 py-1.5 rounded-xl border border-[#E5ECEB] dark:border-[#1E2E2F] bg-white dark:bg-[#162526] font-medium hover:border-[#1D4D4F] whitespace-nowrap shrink-0" data-sort="jarak">Terdekat</button>
     </div>
 
     <!-- Baris aksi: Kalender, Favorit, Jumlah -->
@@ -860,6 +868,7 @@
   var activeDay = 'Semua';
   var activeAudience = 'Semua';
   var activeFavUstadz = false; // filter hanya ustadz favorit
+  var sortMode = 'tanggal'; // 'tanggal' (tanggal → jarak) atau 'jarak' (jarak → tanggal) — Segmen No.3, 2026-10-28
   var viewMode = 'list'; // 'list' atau 'agenda'
   var currentDetailEvent = null;
 
@@ -876,13 +885,24 @@
     if (!name) return;
     name = name.trim();
     let list = getFavUstadz();
-    if (list.includes(name)) {
-      list = list.filter(n => n !== name);
-    } else {
+    const nowFav = !list.includes(name);
+    if (nowFav) {
       list.push(name);
+    } else {
+      list = list.filter(n => n !== name);
     }
     try { localStorage.setItem('majelisku_fav_ustadz', JSON.stringify(list)); } catch (e) {}
     renderKajianFeed();
+    // Sinkronkan ke server (follow ustadz + notif kajian baru) bila login.
+    // Tamu tetap jalan lokal-only — tidak diblokir.
+    try {
+      var csrf = document.querySelector('meta[name="csrf-token"]');
+      fetch('/ustadz/follow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf ? csrf.getAttribute('content') : '' },
+        body: JSON.stringify({ ustadz: name, follow: nowFav })
+      }).catch(function () {});
+    } catch (e) {}
   }
 
   function toggleFavUstadzFilter() {
@@ -1399,17 +1419,24 @@
       return { ...item, distance: dist };
     });
 
-    // Urutkan berdasarkan tanggal terdekat, lalu jarak terdekat
+    // Urutkan: 'tanggal' = tanggal terdekat lalu jarak; 'jarak' = jarak
+    // terdekat lalu tanggal (Segmen No.3 — Terdekat dari saya, 2026-10-28).
     processed.sort((a, b) => {
       const dateA = a.event_date || '9999-12-31';
       const dateB = b.event_date || '9999-12-31';
-      if (dateA !== dateB) return dateA.localeCompare(dateB);
-      // Jika tanggal sama, urutkan berdasarkan jarak terdekat
       const distA = (a.distance === null || a.distance === undefined) ? 999999 : a.distance;
       const distB = (b.distance === null || b.distance === undefined) ? 999999 : b.distance;
+      const timeCmp = (a.time || '').localeCompare(b.time || '');
+      if (sortMode === 'jarak') {
+        if (distA !== distB) return distA - distB;
+        if (dateA !== dateB) return dateA.localeCompare(dateB);
+        return timeCmp;
+      }
+      if (dateA !== dateB) return dateA.localeCompare(dateB);
+      // Jika tanggal sama, urutkan berdasarkan jarak terdekat
       if (distA !== distB) return distA - distB;
       // Jika jarak sama, urutkan berdasarkan waktu
-      return (a.time || '').localeCompare(b.time || '');
+      return timeCmp;
     });
 
     // Filter
@@ -2022,6 +2049,20 @@
         btn.classList.remove('border-emerald-700', 'bg-emerald-50', 'text-emerald-800', 'font-bold');
         btn.classList.add('bg-white', 'text-slate-500', 'border-slate-200');
       }
+    });
+    renderKajianFeed();
+  }
+
+  function setSortMode(mode) {
+    sortMode = mode;
+    document.querySelectorAll('.sort-chip').forEach(btn => {
+      var active = btn.getAttribute('data-sort') === mode;
+      btn.classList.toggle('border-[#1D4D4F]', active);
+      btn.classList.toggle('bg-[#E6F4F1]', active);
+      btn.classList.toggle('text-[#1D4D4F]', active);
+      btn.classList.toggle('font-bold', active);
+      btn.classList.toggle('bg-white', !active);
+      btn.classList.toggle('font-medium', !active);
     });
     renderKajianFeed();
   }

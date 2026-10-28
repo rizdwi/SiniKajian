@@ -73,6 +73,8 @@ class PushController extends Controller
             'url' => 'nullable|string|max:500',
             'kajian_id' => 'nullable|integer',
             'masjid' => 'nullable|string|max:200',
+            'ustadz' => 'nullable|string|max:200',
+            'topic' => 'nullable|string|in:adzan,dzikir,puasa',
         ]);
 
         $svc = new \App\Services\SupabaseUserService();
@@ -101,6 +103,33 @@ class PushController extends Controller
                 }));
             } else {
                 $subs = []; // tidak ada pengikut → tidak ada notif
+            }
+        }
+
+        // Jika ustadz diberikan, hanya kirim ke user yang mengikuti ustadz itu
+        $ustadz = $request->input('ustadz');
+        if ($ustadz && $svc->enabled()) {
+            $followerUserIds = $svc->getUstadzFollowerUserIds((string) $ustadz);
+            if (!empty($followerUserIds)) {
+                $subs = array_values(array_filter($subs, function ($sub) use ($followerUserIds) {
+                    return isset($sub['user_id']) && in_array((int) $sub['user_id'], $followerUserIds, true);
+                }));
+            } else {
+                $subs = []; // tidak ada pengikut → tidak ada notif
+            }
+        }
+
+        // Jika topik pengingat ibadah diberikan (adzan|dzikir|puasa),
+        // hanya kirim ke user yang opt-in topik itu (Segmen No.2).
+        $topic = $request->input('topic');
+        if ($topic && $svc->enabled()) {
+            $optInUserIds = $svc->getOptInUserIds((string) $topic);
+            if (!empty($optInUserIds)) {
+                $subs = array_values(array_filter($subs, function ($sub) use ($optInUserIds) {
+                    return isset($sub['user_id']) && in_array((int) $sub['user_id'], $optInUserIds, true);
+                }));
+            } else {
+                $subs = []; // tidak ada yang opt-in → tidak ada notif
             }
         }
 

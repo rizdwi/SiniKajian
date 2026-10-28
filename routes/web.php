@@ -16,6 +16,8 @@ Route::get('/kajian/{kajian}', [KajianController::class, 'show'])->name('kajian.
 Route::get('/ustadz/{name}', [KajianController::class, 'ustadz'])->name('kajian.ustadz');
 Route::get('/peta', [KajianController::class, 'map'])->name('kajian.map');
 Route::get('/kiblat', [KajianController::class, 'qibla'])->name('kajian.qibla');
+Route::get('/sholat', [KajianController::class, 'sholat'])->name('kajian.sholat');
+Route::get('/api/sholat', [KajianController::class, 'apiSholat'])->middleware('throttle:30,1')->name('api.sholat');
 Route::get('/tersimpan', [KajianController::class, 'saved'])->name('kajian.saved');
 
 // Beacon pageview user login (grup web: identitas dari sesi server, bukan
@@ -29,6 +31,8 @@ Route::post('/api/bookmarks/sync', [KajianController::class, 'syncBookmarks'])->
 Route::post('/kajian/{id}/kehadiran', [KajianController::class, 'logAttendance'])->middleware('throttle:20,1')->name('kajian.attendance');
 Route::post('/kehadiran/bersihkan', [KajianController::class, 'clearAttendances'])->middleware('throttle:10,1')->name('attendance.clear');
 Route::post('/majelis/follow', [KajianController::class, 'toggleFollowMajelis'])->middleware('throttle:30,1')->name('majelis.follow');
+Route::post('/ustadz/follow', [KajianController::class, 'toggleFollowUstadz'])->middleware('throttle:30,1')->name('ustadz.follow');
+Route::post('/api/notif-prefs', [KajianController::class, 'saveNotifPrefs'])->middleware('throttle:30,1')->name('api.notif-prefs');
 
 // Autentikasi Pengguna & Kredensial
 Route::redirect('/login', '/masuk');

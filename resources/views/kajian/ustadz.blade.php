@@ -8,11 +8,15 @@
       <div class="w-14 h-14 rounded-full bg-amber-400 text-[#1D4D4F] flex items-center justify-center font-black text-xl shrink-0">
         {{ mb_strtoupper(mb_substr(preg_replace('/^Ustadz\s+/i', '', $ustadzName), 0, 1)) }}
       </div>
-      <div class="min-w-0">
+      <div class="min-w-0 flex-1">
         <h1 class="text-lg font-black truncate">{{ $ustadzName }}</h1>
-        <p class="text-xs text-white/70">{{ $kajians->count() }} kajian mendatang</p>
+        <p class="text-xs text-white/70">{{ $kajians->count() }} kajian mendatang @if($followerCount > 0)• {{ $followerCount }} pengikut @endif</p>
       </div>
+      <button id="followUstadzBtn" onclick="toggleFollowUstadzPage()" class="px-4 py-2 rounded-full text-xs font-bold shrink-0 transition {{ $isFollowing ? 'bg-amber-400 text-[#1D4D4F]' : 'bg-white/15 text-white border border-white/40 hover:bg-white/25' }}">
+        {{ $isFollowing ? '✓ Mengikuti' : '+ Ikuti' }}
+      </button>
     </div>
+    <p class="text-[11px] text-white/60 mt-3">Ikuti ustadz ini untuk mendapat notifikasi saat ada kajian barunya.</p>
   </div>
 
   <!-- Daftar Kajian -->
@@ -56,4 +60,34 @@
   </div>
 </div>
 
+@endsection
+
+@section('scripts')
+<script>
+  var USTADZ_PAGE_NAME = @json($ustadzName);
+  var USTADZ_PAGE_FOLLOWING = {{ $isFollowing ? 'true' : 'false' }};
+  async function toggleFollowUstadzPage() {
+    var btn = document.getElementById('followUstadzBtn');
+    var csrf = document.querySelector('meta[name="csrf-token"]');
+    try {
+      var res = await fetch('/ustadz/follow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf ? csrf.getAttribute('content') : '' },
+        body: JSON.stringify({ ustadz: USTADZ_PAGE_NAME, follow: !USTADZ_PAGE_FOLLOWING })
+      });
+      if (!res.ok) return;
+      var d = await res.json();
+      USTADZ_PAGE_FOLLOWING = !!d.followed;
+      btn.textContent = d.followed ? '✓ Mengikuti' : '+ Ikuti';
+      btn.className = 'px-4 py-2 rounded-full text-xs font-bold shrink-0 transition ' + (d.followed ? 'bg-amber-400 text-[#1D4D4F]' : 'bg-white/15 text-white border border-white/40 hover:bg-white/25');
+      // Sinkronkan bintang favorit lokal (filter beranda) dengan follow server.
+      try {
+        var favs = JSON.parse(localStorage.getItem('majelisku_fav_ustadz') || '[]');
+        if (d.followed && !favs.includes(USTADZ_PAGE_NAME)) favs.push(USTADZ_PAGE_NAME);
+        if (!d.followed) favs = favs.filter(function (n) { return n !== USTADZ_PAGE_NAME; });
+        localStorage.setItem('majelisku_fav_ustadz', JSON.stringify(favs));
+      } catch (e) {}
+    } catch (e) {}
+  }
+</script>
 @endsection

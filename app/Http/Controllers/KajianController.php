@@ -526,7 +526,40 @@ class KajianController extends Controller
         return view('kajian.ustadz', [
             'ustadzName' => $name,
             'kajians' => $kajians,
+            'isFollowing' => $this->isFollowingUstadz($name),
+            'followerCount' => $this->countUstadzFollowers($name),
         ]);
+    }
+
+    /** Apakah user sesi ini mengikuti ustadz tersebut (lokal/session). */
+    private function isFollowingUstadz(string $name): bool
+    {
+        if (\Illuminate\Support\Facades\Schema::hasTable('ustadz_follows')) {
+            $userId = $this->appUserId();
+            $query = \App\Models\UstadzFollow::where('ustadz', $name);
+            if ($userId) {
+                $query->where('user_id', $userId);
+            } else {
+                $query->where('session_token', request()->session()->getId());
+            }
+            if ($query->exists()) {
+                return true;
+            }
+        }
+        return in_array($name, session()->get('followed_ustadz', []), true);
+    }
+
+    /** Jumlah pengikut ustadz (Supabase bila aktif, fallback lokal). */
+    private function countUstadzFollowers(string $name): int
+    {
+        $svc = new \App\Services\SupabaseUserService();
+        if ($svc->enabled()) {
+            return count($svc->getUstadzFollowerUserIds($name));
+        }
+        if (\Illuminate\Support\Facades\Schema::hasTable('ustadz_follows')) {
+            return \App\Models\UstadzFollow::where('ustadz', $name)->count();
+        }
+        return 0;
     }
 
     public function map(): View
@@ -561,6 +594,246 @@ class KajianController extends Controller
     public function qibla(): View
     {
         return view('kajian.qibla');
+    }
+
+    /**
+     * Jadwal sholat hari ini (Segmen No.2, 2026-10-28).
+     * Sumber: Aladhan API (gratis, tanpa key), metode 20 (Kemenag RI).
+     * Lokasi: query ?lat&lon (dari geo engine) atau ?city; default
+     * Bandung — sama dengan titik default beranda. Hasil di-cache 6 jam.
+     */
+    public function sholat(Request $request): View
+    {
+        $lat = $request->query('lat') !== null ? (float) $request->query('lat') : self::DEFAULT_LAT;
+        $lon = $request->query('lon') !== null ? (float) $request->query('lon') : self::DEFAULT_LON;
+        $city = trim((string) $request->query('city', 'Bandung'));
+
+        $data = $this->fetchPrayerTimings($lat, $lon, $city);
+
+        $prefs = null;
+        $appId = $this->appUserId();
+        if ($appId) {
+            $svc = new \App\Services\SupabaseUserService();
+            $prefs = $svc->enabled() ? $svc->getNotificationPrefs($appId) : null;
+        }
+
+        return view('kajian.sholat', [
+            'timings' => $data['timings'] ?? [],
+            'hijri' => $data['hijri'] ?? null,
+            'gregorian' => $data['gregorian'] ?? null,
+            'city' => $city,
+            'lat' => $lat,
+            'lon' => $lon,
+            'prefs' => $prefs,
+            'isLoggedIn' => (bool) $appId,
+        ]);
+    }
+
+    /**
+     * JSON jadwal sholat — dipakai halaman /sholat saat GPS perangkat
+     * tersedia (geo engine) agar waktu menyesuaikan lokasi akurat user
+     * tanpa reload penuh.
+     */
+    public function apiSholat(Request $request): JsonResponse
+    {
+        $lat = $request->query('lat') !== null ? (float) $request->query('lat') : self::DEFAULT_LAT;
+        $lon = $request->query('lon') !== null ? (float) $request->query('lon') : self::DEFAULT_LON;
+        $city = trim((string) $request->query('city', 'Bandung'));
+
+        if ($lat < -90 || $lat > 90 || $lon < -180 || $lon > 180) {
+            return response()->json(['error' => 'Koordinat tidak valid.'], 422);
+        }
+
+        // ?date=YYYY-MM-DD opsional (maks. 2 hari ke depan — untuk
+        // countdown Subuh besok saat semua sholat hari ini sudah lewat).
+        $date = Carbon::now('Asia/Jakarta')->format('d-m-Y');
+        if (is_string($request->query('date')) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $request->query('date'))) {
+            $req = Carbon::parse($request->query('date'), 'Asia/Jakarta');
+            $diff = Carbon::now('Asia/Jakarta')->startOfDay()->diffInDays($req->startOfDay(), false);
+            if ($diff >= 0 && $diff <= 2) {
+                $date = $req->format('d-m-Y');
+            }
+        }
+
+        return response()->json($this->fetchPrayerTimings($lat, $lon, $city, $date));
+    }
+
+    /**
+     * Ambil jadwal sholat dari Aladhan (cache 6 jam per lokasi+tanggal).
+     * Fallback: timingsByCity bila koordinat gagal.
+     */
+    private function fetchPrayerTimings(float $lat, float $lon, string $city, ?string $date = null): array
+    {
+        $date = $date ?: Carbon::now('Asia/Jakarta')->format('d-m-Y');
+        $key = 'sholat:' . $date . ':' . round($lat, 2) . ':' . round($lon, 2);
+
+        return Cache::remember($key, 6 * 3600, function () use ($lat, $lon, $city, $date) {
+            $empty = ['timings' => [], 'hijri' => null, 'gregorian' => null];
+            try {
+                $res = Http::timeout(8)->get("https://api.aladhan.com/v1/timings/{$date}", [
+                    'latitude' => $lat,
+                    'longitude' => $lon,
+                    'method' => 20,
+                    'timezonestring' => 'Asia/Jakarta',
+                ]);
+                $json = $res->successful() ? $res->json() : null;
+                if (empty($json['data']['timings'])) {
+                    $res = Http::timeout(8)->get("https://api.aladhan.com/v1/timingsByCity/{$date}", [
+                        'city' => $city,
+                        'country' => 'Indonesia',
+                        'method' => 20,
+                        'timezonestring' => 'Asia/Jakarta',
+                    ]);
+                    $json = $res->successful() ? $res->json() : null;
+                }
+                if (empty($json['data']['timings'])) {
+                    return $empty;
+                }
+                $t = $json['data']['timings'];
+                $clean = function ($v) {
+                    return substr(trim((string) $v), 0, 5);
+                };
+                $hijri = $json['data']['date']['hijri'] ?? null;
+                $greg = $json['data']['date']['gregorian'] ?? null;
+                return [
+                    'timings' => [
+                        'Imsak' => $clean($t['Imsak'] ?? ''),
+                        'Subuh' => $clean($t['Fajr'] ?? ''),
+                        'Terbit' => $clean($t['Sunrise'] ?? ''),
+                        'Dzuhur' => $clean($t['Dhuhr'] ?? ''),
+                        'Ashar' => $clean($t['Asr'] ?? ''),
+                        'Maghrib' => $clean($t['Maghrib'] ?? ''),
+                        'Isya' => $clean($t['Isha'] ?? ''),
+                    ],
+                    'hijri' => $hijri ? (($hijri['day'] ?? '') . ' ' . ($hijri['month']['en'] ?? '') . ' ' . ($hijri['year'] ?? '') . ' H') : null,
+                    'gregorian' => $greg ? (($greg['day'] ?? '') . ' ' . ($greg['month']['en'] ?? '') . ' ' . ($greg['year'] ?? '')) : null,
+                ];
+            } catch (\Throwable $e) {
+                \Log::warning('Aladhan fetch gagal: ' . $e->getMessage());
+                return $empty;
+            }
+        });
+    }
+
+    /**
+     * Simpan preferensi pengingat ibadah (adzan/dzikir/puasa) user login.
+     * Disimpan di Supabase notification_prefs (SQL pendamping); bila
+     * tabel belum ada, kembalikan 503 agar UI menjelaskan ke user.
+     */
+    public function saveNotifPrefs(Request $request): JsonResponse
+    {
+        $appId = $this->appUserId();
+        if (!$appId) {
+            return response()->json(['error' => 'Masuk dulu untuk mengaktifkan pengingat.'], 401);
+        }
+
+        $data = $request->validate([
+            'adzan' => 'sometimes|boolean',
+            'dzikir' => 'sometimes|boolean',
+            'puasa' => 'sometimes|boolean',
+            'city' => 'nullable|string|max:100',
+            'lat' => 'nullable|numeric|between:-90,90',
+            'lon' => 'nullable|numeric|between:-180,180',
+        ]);
+
+        $svc = new \App\Services\SupabaseUserService();
+        if (!$svc->enabled()) {
+            return response()->json(['error' => 'Layanan tidak tersedia.'], 503);
+        }
+
+        $existing = $svc->getNotificationPrefs($appId) ?? [];
+        $payload = [
+            'user_id' => $appId,
+            'adzan' => (bool) ($data['adzan'] ?? $existing['adzan'] ?? false),
+            'dzikir' => (bool) ($data['dzikir'] ?? $existing['dzikir'] ?? false),
+            'puasa' => (bool) ($data['puasa'] ?? $existing['puasa'] ?? false),
+            'city' => $data['city'] ?? $existing['city'] ?? 'Bandung',
+            'lat' => isset($data['lat']) ? (float) $data['lat'] : (isset($existing['lat']) ? (float) $existing['lat'] : self::DEFAULT_LAT),
+            'lon' => isset($data['lon']) ? (float) $data['lon'] : (isset($existing['lon']) ? (float) $existing['lon'] : self::DEFAULT_LON),
+        ];
+
+        if (!$svc->upsertNotificationPrefs($payload)) {
+            return response()->json(['error' => 'Gagal menyimpan — tabel pengingat belum disiapkan.'], 503);
+        }
+
+        return response()->json(['status' => 'success', 'prefs' => $payload]);
+    }
+
+    /**
+     * Ikuti / berhenti mengikuti ustadz (Segmen No.5, 2026-10-28).
+     * Cermin toggleFollowMajelis: tabel lokal + session fallback +
+     * sinkronisasi Supabase ustadz_follows bila user login.
+     */
+    public function toggleFollowUstadz(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $ustadz = trim($request->input('ustadz', ''));
+        if (empty($ustadz)) {
+            return response()->json(['error' => 'Nama ustadz diperlukan.'], 422);
+        }
+
+        $userId = $this->appUserId();
+        $sessionToken = $request->session()->getId();
+        // Bila klien mengirim state yang diinginkan (follow: true/false),
+        // patuhi itu — idempotent lintas perangkat. Bila tidak, toggle.
+        $wantFollow = $request->has('follow') ? $request->boolean('follow') : null;
+        $followed = false;
+
+        if (\Illuminate\Support\Facades\Schema::hasTable('ustadz_follows')) {
+            $query = \App\Models\UstadzFollow::where('ustadz', $ustadz);
+            if ($userId) {
+                $query->where('user_id', $userId);
+            } else {
+                $query->where('session_token', $sessionToken);
+            }
+            $existing = $query->first();
+
+            if ($wantFollow === null) {
+                $followed = !$existing;
+            } else {
+                $followed = $wantFollow;
+            }
+
+            if ($followed && !$existing) {
+                \App\Models\UstadzFollow::create([
+                    'user_id' => $userId,
+                    'session_token' => $sessionToken,
+                    'ustadz' => $ustadz,
+                ]);
+            } elseif (!$followed && $existing) {
+                $existing->delete();
+            }
+        }
+
+        // Simpan juga ke Session untuk Vercel serverless fallback
+        $sessionFollows = session()->get('followed_ustadz', []);
+        if ($followed) {
+            if (!in_array($ustadz, $sessionFollows)) {
+                $sessionFollows[] = $ustadz;
+            }
+        } else {
+            $sessionFollows = array_values(array_diff($sessionFollows, [$ustadz]));
+        }
+        session()->put('followed_ustadz', $sessionFollows);
+
+        // Sinkronisasi Supabase jika aktif (hanya user login — butuh user_id stabil)
+        $svc = new \App\Services\SupabaseUserService();
+        if ($svc->enabled() && $userId) {
+            try {
+                if ($followed) {
+                    $svc->upsertUstadzFollow(['user_id' => $userId, 'ustadz' => $ustadz]);
+                } else {
+                    $svc->deleteUstadzFollow($userId, $ustadz);
+                }
+            } catch (\Exception $e) {
+                \Log::warning('Supabase follow ustadz gagal: ' . $e->getMessage());
+            }
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'followed' => $followed,
+            'ustadz' => $ustadz,
+        ]);
     }
 
     /**

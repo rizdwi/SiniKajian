@@ -406,4 +406,141 @@ class SupabaseUserService
             return [];
         }
     }
+
+    /**
+     * Ambil daftar user_id yang mengikuti ustadz tertentu.
+     * (Segmen No.5 — follow ustadz, 2026-10-28.)
+     */
+    public function getUstadzFollowerUserIds(string $ustadz): array
+    {
+        if (!$this->enabled()) return [];
+
+        try {
+            $res = Http::withHeaders($this->headers())
+                ->timeout(15)
+                ->get("{$this->url}/rest/v1/ustadz_follows", [
+                    'select' => 'user_id',
+                    'ustadz' => 'eq.' . $ustadz,
+                ]);
+
+            $rows = $res->json() ?? [];
+            return array_values(array_unique(array_map(fn ($r) => (int) ($r['user_id'] ?? 0), $rows)));
+        } catch (\Exception $e) {
+            Log::warning('Supabase getUstadzFollowerUserIds gagal: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Simpan follow ustadz ke Supabase (upsert; abaikan duplikat).
+     * Bila tabel belum ada (SQL pendamping belum dijalankan user),
+     * gagal senyap — fallback lokal SQLite tetap berjalan.
+     */
+    public function upsertUstadzFollow(array $data): bool
+    {
+        if (!$this->enabled()) return false;
+
+        try {
+            $res = Http::withHeaders(array_merge($this->headers(), ['Prefer' => 'resolution=ignore-duplicates']))
+                ->timeout(10)
+                ->post("{$this->url}/rest/v1/ustadz_follows", $data);
+
+            return $res->successful();
+        } catch (\Exception $e) {
+            Log::warning('Supabase upsertUstadzFollow gagal: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Hapus follow ustadz di Supabase. Filter WAJIB di query string
+     * (body DELETE diabaikan PostgREST — bug C2, audit 2026-10-21).
+     */
+    public function deleteUstadzFollow(int $userId, string $ustadz): bool
+    {
+        if (!$this->enabled()) return false;
+
+        try {
+            $res = Http::withHeaders($this->headers())
+                ->timeout(10)
+                ->delete("{$this->url}/rest/v1/ustadz_follows?user_id=eq.{$userId}&ustadz=eq." . urlencode($ustadz));
+
+            return $res->successful();
+        } catch (\Exception $e) {
+            Log::warning('Supabase deleteUstadzFollow gagal: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Preferensi notifikasi ibadah per user (Segmen No.2 — pengingat
+     * adzan/dzikir/puasa, 2026-10-28). Upsert by user_id.
+     */
+    public function upsertNotificationPrefs(array $data): bool
+    {
+        if (!$this->enabled()) return false;
+
+        try {
+            $res = Http::withHeaders(array_merge($this->headers(), ['Prefer' => 'resolution=merge-duplicates']))
+                ->timeout(10)
+                ->post("{$this->url}/rest/v1/notification_prefs", $data);
+
+            return $res->successful();
+        } catch (\Exception $e) {
+            Log::warning('Supabase upsertNotificationPrefs gagal: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function getNotificationPrefs(int $userId): ?array
+    {
+        if (!$this->enabled()) return null;
+
+        try {
+            $res = Http::withHeaders($this->headers())
+                ->timeout(10)
+                ->get("{$this->url}/rest/v1/notification_prefs", [
+                    'select' => 'user_id,adzan,dzikir,puasa,city,lat,lon',
+                    'user_id' => 'eq.' . $userId,
+                    'limit' => 1,
+                ]);
+
+            $rows = $res->json() ?? [];
+            return $rows[0] ?? null;
+        } catch (\Exception $e) {
+            Log::warning('Supabase getNotificationPrefs gagal: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Semua preferensi ibadah yang opt-in untuk satu topik
+     * (adzan|dzikir|puasa) — dipakai cron pengingat + filter push.
+     */
+    public function getOptInPrefs(string $topic): array
+    {
+        if (!$this->enabled()) return [];
+        if (!in_array($topic, ['adzan', 'dzikir', 'puasa'], true)) return [];
+
+        try {
+            $res = Http::withHeaders($this->headers())
+                ->timeout(15)
+                ->get("{$this->url}/rest/v1/notification_prefs", [
+                    'select' => 'user_id,adzan,dzikir,puasa,city,lat,lon',
+                    $topic => 'is.true',
+                ]);
+
+            return $res->json() ?? [];
+        } catch (\Exception $e) {
+            Log::warning('Supabase getOptInPrefs gagal: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /** Daftar user_id yang opt-in satu topik pengingat ibadah. */
+    public function getOptInUserIds(string $topic): array
+    {
+        $rows = $this->getOptInPrefs($topic);
+        return array_values(array_unique(array_map(fn ($r) => (int) ($r['user_id'] ?? 0), $rows)));
+    }
 }

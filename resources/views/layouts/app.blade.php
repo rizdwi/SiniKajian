@@ -22,7 +22,7 @@
   </script>
   <title>@yield('title', 'Majelisku | Temukan Majelis Ilmu Terdekat')</title>
   
-  <meta name="description" content="@yield('meta_description', 'Aplikasi pencari majelis ilmu kajian sunnah terdekat, jadwal sholat astronomis presisi, dan penunjuk arah kiblat.')">
+  <meta name="description" content="@yield('meta_description', 'Jadwal kajian Sunnah terdekat dan paling update, lengkap dengan jadwal sholat, pengingat adzan, dan penunjuk arah kiblat. Ikuti ustadz favoritmu.')">
   <meta name="theme-color" content="#1D4D4F">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -193,9 +193,9 @@
     @endauth
   </main>
 
-  <!-- Bottom Navigation Bar Native PWA (4 Destinasi sesuai Desain Figma) -->
+  <!-- Bottom Navigation Bar Native PWA (5 Destinasi: Sholat ditambahkan 2026-10-28, Segmen No.2) -->
   <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#0F1B1C]/95 backdrop-blur-md border-t border-[#E5ECEB] dark:border-[#1E2E2F] safe-bottom shadow-lg" aria-label="Navigasi Utama">
-    <div class="max-w-md mx-auto grid grid-cols-4 h-16">
+    <div class="max-w-md mx-auto grid grid-cols-5 h-16">
       
       <!-- Tab 1: Dashboard / Beranda -->
       <a href="{{ route('kajian.index') }}" class="flex flex-col items-center justify-center py-1 touch-btn {{ request()->routeIs('kajian.index') ? 'text-[#1D4D4F] font-bold' : 'text-[#607072] hover:text-[#1D4D4F]' }}" aria-label="Dashboard">
@@ -214,7 +214,15 @@
         <span class="text-[11px] font-medium tracking-tight">Terdekat</span>
       </a>
 
-      <!-- Tab 3: Arah Kiblat -->
+      <!-- Tab 3: Jadwal Sholat -->
+      <a href="{{ route('kajian.sholat') }}" class="flex flex-col items-center justify-center py-1 touch-btn {{ request()->routeIs('kajian.sholat') ? 'text-[#1D4D4F] font-bold' : 'text-[#607072] hover:text-[#1D4D4F]' }}" aria-label="Jadwal Sholat">
+        <svg class="w-6 h-6 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="{{ request()->routeIs('kajian.sholat') ? '2' : '1.8' }}" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+        </svg>
+        <span class="text-[11px] font-medium tracking-tight">Sholat</span>
+      </a>
+
+      <!-- Tab 4: Arah Kiblat -->
       <a href="{{ route('kajian.qibla') }}" class="flex flex-col items-center justify-center py-1 touch-btn {{ request()->routeIs('kajian.qibla') ? 'text-[#1D4D4F] font-bold' : 'text-[#607072] hover:text-[#1D4D4F]' }}" aria-label="Arah Kiblat">
         <svg class="w-6 h-6 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="9" stroke-width="{{ request()->routeIs('kajian.qibla') ? '2' : '1.8' }}"></circle>
@@ -223,7 +231,7 @@
         <span class="text-[11px] font-medium tracking-tight">Kiblat</span>
       </a>
 
-      <!-- Tab 4: Profil -->
+      <!-- Tab 5: Profil -->
       <a href="{{ route('profile') }}" class="flex flex-col items-center justify-center py-1 touch-btn {{ request()->routeIs('profile') || request()->routeIs('kajian.saved') ? 'text-[#1D4D4F] font-bold' : 'text-[#607072] hover:text-[#1D4D4F]' }}" aria-label="Profil">
         <svg class="w-6 h-6 mb-0.5" fill="{{ request()->routeIs('profile') || request()->routeIs('kajian.saved') ? 'currentColor' : 'none' }}" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="{{ request()->routeIs('profile') ? '2' : '1.8' }}" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
