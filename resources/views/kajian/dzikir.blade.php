@@ -74,7 +74,7 @@
         </div>
       @endforeach
     </div>
-    <p class="dzikir-hint">Geser kanan untuk lanjut &bull; kiri untuk kembali</p>
+    <p class="dzikir-hint">Geser kanan = selesai &amp; tercatat &bull; kiri = kembali</p>
   </div>
 
   <!-- 5. Deck kartu swipe: dzikir petang -->
@@ -91,10 +91,16 @@
         </div>
       @endforeach
     </div>
-    <p class="dzikir-hint">Geser kanan untuk lanjut &bull; kiri untuk kembali</p>
+    <p class="dzikir-hint">Geser kanan = selesai &amp; tercatat &bull; kiri = kembali</p>
   </div>
 
-  <!-- 6. Kembali -->
+  <!-- 6. Riwayat bacaan -->
+  <details class="rounded-2xl bg-white border border-[#E5ECEB] px-4 py-3">
+    <summary class="text-sm font-bold text-[#1D4D4F] cursor-pointer">Riwayat bacaan</summary>
+    <div id="dzikirHistory" class="mt-2"></div>
+  </details>
+
+  <!-- 7. Kembali -->
   <div class="flex gap-2">
     <a href="{{ route('kajian.sholat') }}" class="flex-1 block text-center rounded-2xl bg-white border border-[#E5ECEB] p-3 text-sm font-bold text-[#1D4D4F]">← Jadwal Sholat</a>
     <a href="{{ route('kajian.index') }}" class="flex-1 block text-center rounded-2xl bg-amber-400 text-[#1D4D4F] p-3 text-sm font-bold">Lanjut ngaji →</a>
@@ -207,6 +213,8 @@
   function tinderFly(waktu, dir) {
     var st = DECK[waktu];
     if (!st) return;
+    // Geser kanan = selesai: point tercatat otomatis + masuk riwayat.
+    if (dir === 'next') dzikirSwipeComplete(waktu, st.i);
     var top = st.slides[st.i];
     if (!top) return;
     if (dir === 'prev' && st.i <= 0) { tinderLayout(waktu); return; }
@@ -290,6 +298,102 @@
 
   function dzikirSave(s) {
     try { localStorage.setItem(DZIKIR_KEY, JSON.stringify(s)); } catch (e) {}
+    // Ringkasan untuk kartu "Baca Dzikir" di halaman /sholat.
+    try {
+      var done = 0, total = 0;
+      ['pagi', 'petang'].forEach(function (waktu) {
+        document.querySelectorAll('.dzikir-item[data-waktu="' + waktu + '"]').forEach(function (card) {
+          var idx = parseInt(card.getAttribute('data-idx'), 10);
+          var target = dzikirTarget(waktu, idx, parseInt(card.getAttribute('data-target'), 10));
+          total++;
+          if (parseInt((s[waktu] || {})[idx] || 0, 10) >= target) done++;
+        });
+      });
+      localStorage.setItem('majelisku_dzikir_summary_v1', JSON.stringify({ date: s.date, done: done, total: total }));
+    } catch (e2) {}
+  }
+
+  /* ===== Riwayat bacaan dzikir (per hari, 30 hari terakhir) ===== */
+  var DZIKIR_HIST_KEY = 'majelisku_dzikir_history_v1';
+  var DZIKIR_BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+  function dzikirHistLoad() {
+    try { return JSON.parse(localStorage.getItem(DZIKIR_HIST_KEY) || '{}'); }
+    catch (e) { return {}; }
+  }
+
+  function dzikirHistSave(h) {
+    try { localStorage.setItem(DZIKIR_HIST_KEY, JSON.stringify(h)); } catch (e) {}
+  }
+
+  function dzikirEscapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function dzikirDayLabel(day) {
+    var p = day.split('-');
+    return p[2] + ' ' + DZIKIR_BULAN[parseInt(p[1], 10) - 1] + ' ' + p[0];
+  }
+
+  // Catat satu bacaan selesai ke riwayat (dipanggil tepat saat transisi ke selesai).
+  function dzikirPushHistory(waktu, idx, target, card) {
+    var judul = '';
+    var h3 = card.querySelector('h3');
+    if (h3) judul = h3.textContent.trim();
+    var now = new Date();
+    var time = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2);
+    var h = dzikirHistLoad();
+    var day = dzikirTodayStr();
+    h[day] = h[day] || [];
+    h[day].push({ waktu: waktu, judul: judul, target: target, time: time });
+    var days = Object.keys(h).sort();
+    while (days.length > 30) { delete h[days.shift()]; }
+    dzikirHistSave(h);
+    dzikirRenderHistory();
+  }
+
+  function dzikirRenderHistory() {
+    var wrap = document.getElementById('dzikirHistory');
+    if (!wrap) return;
+    var h = dzikirHistLoad();
+    var days = Object.keys(h).sort().reverse();
+    if (!days.length) {
+      wrap.innerHTML = '<p class="text-xs text-[#8a979b]">Belum ada riwayat bacaan.</p>';
+      return;
+    }
+    var html = '';
+    days.forEach(function (day) {
+      var entries = (h[day] || []).slice().reverse();
+      if (!entries.length) return;
+      html += '<p class="text-xs font-bold text-[#1D4D4F] mt-3 mb-1">' + dzikirDayLabel(day) + ' &bull; ' + entries.length + ' bacaan</p>';
+      html += '<ul class="space-y-1">';
+      entries.forEach(function (en) {
+        var tag = en.waktu === 'pagi' ? '☀️' : '🌙';
+        html += '<li class="text-xs text-[#1C2224] flex justify-between gap-2">'
+          + '<span>' + tag + ' ' + dzikirEscapeHtml(en.judul) + '</span>'
+          + '<span class="text-[#607072] shrink-0">' + dzikirEscapeHtml(en.time || '') + ' &bull; ' + en.target + 'x</span></li>';
+      });
+      html += '</ul>';
+    });
+    wrap.innerHTML = html || '<p class="text-xs text-[#8a979b]">Belum ada riwayat bacaan.</p>';
+  }
+
+  // Selesaikan kartu karena di-swipe kanan: point tercatat otomatis + masuk riwayat.
+  function dzikirSwipeComplete(waktu, idx) {
+    var st = DECK[waktu];
+    if (!st) return;
+    var card = st.slides[idx].querySelector('.dzikir-item');
+    if (!card) return;
+    var target = dzikirTarget(waktu, idx, parseInt(card.getAttribute('data-target'), 10));
+    var count = parseInt(DZIKIR_STATE[waktu][idx] || 0, 10);
+    if (count >= target) return; // sudah selesai sebelumnya: jangan catat dobel
+    DZIKIR_STATE[waktu][idx] = target;
+    dzikirSave(DZIKIR_STATE);
+    dzikirRenderCard(waktu, idx);
+    dzikirRenderAll();
+    dzikirPushHistory(waktu, idx, target, card);
   }
 
   var DZIKIR_STATE = dzikirLoad();
@@ -352,7 +456,9 @@
     var waktu = card.getAttribute('data-waktu');
     var idx = parseInt(card.getAttribute('data-idx'), 10);
     var target = dzikirTarget(waktu, idx, parseInt(card.getAttribute('data-target'), 10));
-    var count = parseInt(DZIKIR_STATE[waktu][idx] || 0, 10);
+    var prevCount = parseInt(DZIKIR_STATE[waktu][idx] || 0, 10);
+    var wasDone = prevCount >= target;
+    var count = prevCount;
     if (count >= target) {
       count = 0;
     } else {
@@ -362,6 +468,7 @@
     dzikirSave(DZIKIR_STATE);
     dzikirRenderCard(waktu, idx);
     dzikirRenderAll();
+    if (!wasDone && count >= target) dzikirPushHistory(waktu, idx, target, card);
     tinderAdvanceIfDone(waktu, idx);
   }
 
@@ -410,6 +517,7 @@
   (function dzikirInit() {
     tinderInit('pagi');
     tinderInit('petang');
+    dzikirRenderHistory();
     var h = new Date().getHours();
     setDzikirTab((h >= 4 && h < 12) ? 'pagi' : 'petang');
     window.addEventListener('resize', function () {

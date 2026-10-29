@@ -79,7 +79,6 @@
           <span class="text-[11px] font-bold text-[#1C2224] leading-tight">Puasa Senin & Kamis</span>
           <button data-pref="puasa" onclick="togglePref(this)" class="pref-btn px-2.5 py-1 rounded-full text-[11px] font-bold transition shrink-0 {{ ($prefs['puasa'] ?? false) ? 'bg-[#1D4D4F] text-white' : 'bg-[#F1F5F4] text-[#607072]' }}">{{ ($prefs['puasa'] ?? false) ? 'Aktif' : 'Mati' }}</button>
         </div>
-        <a href="{{ route('kajian.dzikir') }}" class="block mt-2.5 text-[11px] font-bold text-[#1D4D4F]">Baca dzikir pagi & petang →</a>
       </div>
       @else
       <div class="col-span-2 rounded-3xl bg-white border border-[#E5ECEB] shadow-2xs p-4">
@@ -87,6 +86,15 @@
         <a href="{{ route('login') }}" class="inline-block mt-3 px-4 py-2 rounded-xl bg-[#1D4D4F] text-white text-xs font-bold">Masuk / Daftar</a>
       </div>
       @endif
+      <!-- Baca Dzikir: kartu khusus full-width (motif disamakan dengan kartu Pengingat Ibadah) -->
+      <a href="{{ route('kajian.dzikir') }}" class="col-span-2 rounded-3xl bg-white border border-[#E5ECEB] shadow-2xs p-3.5 flex items-center gap-3">
+        <div class="text-2xl leading-none shrink-0">📿</div>
+        <div class="flex-1 min-w-0">
+          <h4 class="text-sm font-bold text-[#1C2224]">Baca Dzikir Pagi &amp; Petang</h4>
+          <p id="dzikirCardProgress" class="text-[11px] text-[#607072] mt-0.5">Dzikir harian sesuai sunnah &bull; ketuk untuk mulai</p>
+        </div>
+        <div class="w-10 h-10 rounded-full bg-[#1D4D4F] text-white flex items-center justify-center text-lg font-bold shrink-0">&rarr;</div>
+      </a>
       <!-- Suara Adzan -->
       <div class="rounded-3xl bg-white border border-[#E5ECEB] shadow-2xs p-3.5">
         <div class="text-2xl leading-none">🔊</div>
@@ -651,5 +659,20 @@
         .catch(function () {});
     }
   });
+  // Progres dzikir hari ini pada kartu "Baca Dzikir" (dari ringkasan localStorage halaman /dzikir).
+  (function dzikirCardProgress() {
+    var el = document.getElementById('dzikirCardProgress');
+    if (!el) return;
+    try {
+      var s = JSON.parse(localStorage.getItem('majelisku_dzikir_summary_v1') || 'null');
+      var d = new Date();
+      var today = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+      if (s && s.date === today) {
+        el.textContent = s.done >= s.total
+          ? 'Alhamdulillah, ' + s.total + ' bacaan selesai hari ini ✓'
+          : 'Hari ini: ' + s.done + ' dari ' + s.total + ' selesai • ketuk untuk lanjut';
+      }
+    } catch (e) {}
+  })();
 </script>
 @endsection
