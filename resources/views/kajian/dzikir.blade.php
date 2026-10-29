@@ -6,11 +6,25 @@
 
 @section('styles')
 <style>
-  /* Deck kartu swipe dzikir: satu kartu per layar, geser kiri/kanan */
-  .dzikir-viewport { overflow: hidden; touch-action: pan-y; }
-  .dzikir-track { display: flex; transition: transform .32s cubic-bezier(.2,.7,.3,1); will-change: transform; }
-  .dzikir-track.dragging { transition: none; }
-  .dzikir-slide { flex: 0 0 100%; min-width: 0; box-sizing: border-box; padding: 0 2px; }
+  /* Deck kartu ala Tinder: tumpukan kartu mengambang, seret kanan=lanjut, kiri=kembali */
+  .tinder-viewport {
+    position: relative; touch-action: pan-y; transition: height .3s ease;
+    -webkit-user-select: none; user-select: none;
+  }
+  .tinder-card {
+    position: absolute; left: 4px; right: 4px; top: 0; touch-action: pan-y;
+    transition: transform .38s cubic-bezier(.2,.7,.3,1), opacity .38s ease;
+    will-change: transform;
+  }
+  .tinder-card.dragging { transition: none; }
+  .tinder-card .dzikir-item { box-shadow: 0 14px 34px rgba(29,77,79,.16); }
+  .tinder-stamp {
+    position: absolute; top: 16px; padding: 6px 14px; border-radius: 10px;
+    font-weight: 900; font-size: 20px; letter-spacing: 2px; opacity: 0;
+    border: 3px solid; pointer-events: none; z-index: 5; background: rgba(255,255,255,.88);
+  }
+  .tinder-stamp.next { right: 18px; color: #1D4D4F; border-color: #1D4D4F; transform: rotate(10deg); }
+  .tinder-stamp.prev { left: 18px; color: #b45309; border-color: #b45309; transform: rotate(-10deg); }
   .dzikir-navbtn {
     width: 44px; height: 44px; border-radius: 9999px; flex-shrink: 0;
     background: #fff; border: 1px solid #E5ECEB; color: #1D4D4F;
@@ -53,16 +67,14 @@
       <span class="dzikir-pos text-sm font-bold text-[#607072]">1 / {{ count($pagi) }}</span>
       <button type="button" class="dzikir-navbtn dzikir-next" aria-label="Berikutnya">›</button>
     </div>
-    <div class="dzikir-viewport">
-      <div class="dzikir-track">
-        @foreach($pagi as $i => $item)
-          <div class="dzikir-slide">
-            @include('kajian.partials.dzikir-item', ['item' => $item, 'waktu' => 'pagi', 'idx' => $i])
-          </div>
-        @endforeach
-      </div>
+    <div class="tinder-viewport">
+      @foreach($pagi as $i => $item)
+        <div class="tinder-card">
+          @include('kajian.partials.dzikir-item', ['item' => $item, 'waktu' => 'pagi', 'idx' => $i])
+        </div>
+      @endforeach
     </div>
-    <p class="dzikir-hint">Geser kiri / kanan untuk pindah kartu</p>
+    <p class="dzikir-hint">Geser kanan untuk lanjut &bull; kiri untuk kembali</p>
   </div>
 
   <!-- 5. Deck kartu swipe: dzikir petang -->
@@ -72,16 +84,14 @@
       <span class="dzikir-pos text-sm font-bold text-[#607072]">1 / {{ count($petang) }}</span>
       <button type="button" class="dzikir-navbtn dzikir-next" aria-label="Berikutnya">›</button>
     </div>
-    <div class="dzikir-viewport">
-      <div class="dzikir-track">
-        @foreach($petang as $i => $item)
-          <div class="dzikir-slide">
-            @include('kajian.partials.dzikir-item', ['item' => $item, 'waktu' => 'petang', 'idx' => $i])
-          </div>
-        @endforeach
-      </div>
+    <div class="tinder-viewport">
+      @foreach($petang as $i => $item)
+        <div class="tinder-card">
+          @include('kajian.partials.dzikir-item', ['item' => $item, 'waktu' => 'petang', 'idx' => $i])
+        </div>
+      @endforeach
     </div>
-    <p class="dzikir-hint">Geser kiri / kanan untuk pindah kartu</p>
+    <p class="dzikir-hint">Geser kanan untuk lanjut &bull; kiri untuk kembali</p>
   </div>
 
   <!-- 6. Kembali -->
@@ -98,116 +108,166 @@
   var DZIKIR_TAB = 'pagi';
   var DZIKIR_TOTALS = { pagi: {{ count($pagi) }}, petang: {{ count($petang) }} };
 
-  /* ===== Deck kartu swipe (satu kartu per layar, geser kiri/kanan) ===== */
+  /* ===== Deck kartu ala Tinder: tumpukan mengambang, kanan=lanjut, kiri=kembali ===== */
   var DECK = {};
 
-  function deckMeasure(waktu) {
+  function tinderLayout(waktu, instantAll) {
     var st = DECK[waktu];
     if (!st) return;
-    st.w = st.deck.querySelector('.dzikir-viewport').clientWidth || 0;
+    st.slides.forEach(function (slide, idx) {
+      var diff = idx - st.i;
+      var instant = instantAll || slide.dataset.instant === '1';
+      if (instant) slide.style.transition = 'none';
+      slide.classList.remove('dragging');
+      slide.querySelectorAll('.tinder-stamp').forEach(function (s) { s.style.opacity = '0'; });
+      if (diff === 0) {
+        slide.style.transform = '';
+        slide.style.opacity = '1'; slide.style.visibility = '';
+        slide.style.pointerEvents = ''; slide.style.zIndex = 30;
+      } else if (diff === 1 || diff === 2) {
+        var sc = diff === 1 ? 0.95 : 0.9, y = diff * 16;
+        slide.style.transform = 'translateY(' + y + 'px) scale(' + sc + ')';
+        slide.style.opacity = diff === 1 ? '0.85' : '0.6'; slide.style.visibility = '';
+        slide.style.pointerEvents = 'none'; slide.style.zIndex = 30 - diff;
+      } else {
+        slide.style.transform = 'translateY(48px) scale(0.86)';
+        slide.style.opacity = '0'; slide.style.visibility = 'hidden';
+        slide.style.pointerEvents = 'none'; slide.style.zIndex = 1;
+      }
+      if (instant) { void slide.offsetWidth; slide.style.transition = ''; delete slide.dataset.instant; }
+    });
+    var pos = st.deck.querySelector('.dzikir-pos');
+    if (pos) pos.textContent = (st.i + 1) + ' / ' + st.n;
+    var pv = st.deck.querySelector('.dzikir-prev'), nx = st.deck.querySelector('.dzikir-next');
+    if (pv) pv.disabled = st.i <= 0;
+    if (nx) nx.disabled = st.i >= st.n - 1;
+    var top = st.slides[st.i];
+    if (top) st.viewport.style.height = top.offsetHeight + 'px';
   }
 
-  function deckUpdate(waktu, instant) {
-    var st = DECK[waktu];
-    if (!st) return;
-    if (instant) st.track.style.transition = 'none';
-    st.track.style.transform = 'translateX(' + (-st.i * st.w + st.dragX) + 'px)';
-    if (instant) { void st.track.offsetWidth; st.track.style.transition = ''; }
-    st.deck.querySelector('.dzikir-pos').textContent = (st.i + 1) + ' / ' + st.n;
-    st.deck.querySelector('.dzikir-prev').disabled = st.i <= 0;
-    st.deck.querySelector('.dzikir-next').disabled = st.i >= st.n - 1;
-  }
-
-  function deckGo(waktu, i) {
-    var st = DECK[waktu];
-    if (!st) return;
-    st.i = Math.max(0, Math.min(st.n - 1, i));
-    deckUpdate(waktu);
-  }
-
-  function deckFirstIncomplete(waktu) {
+  function tinderFirstIncomplete(waktu) {
     var st = DECK[waktu];
     if (!st) return 0;
     for (var i = 0; i < st.n; i++) {
-      var target = dzikirTarget(waktu, i, parseInt(st.slides[i].querySelector('.dzikir-item').getAttribute('data-target'), 10));
+      var card = st.slides[i].querySelector('.dzikir-item');
+      var target = dzikirTarget(waktu, i, parseInt(card.getAttribute('data-target'), 10));
       if (parseInt(DZIKIR_STATE[waktu][i] || 0, 10) < target) return i;
     }
     return 0;
   }
 
-  function deckDown(waktu, e) {
+  function tinderDown(waktu, e) {
     var st = DECK[waktu];
-    if (!st || e.target.closest('button, a')) return; // biarkan tombol diklik normal
-    st.dragging = true; st.pid = e.pointerId; st.startX = e.clientX; st.dragX = 0; st.moved = false;
-    st.track.classList.add('dragging');
+    if (!st) return;
+    var top = st.slides[st.i];
+    if (!top || !top.contains(e.target)) return;
+    if (e.target.closest('button, a')) return; // biarkan tombol diklik normal
+    st.drag = { id: e.pointerId, x0: e.clientX, y0: e.clientY, dx: 0, moved: false };
+    st.suppress = false;
+    top.classList.add('dragging');
   }
 
-  function deckMove(waktu, e) {
+  function tinderMove(waktu, e) {
     var st = DECK[waktu];
-    if (!st || !st.dragging || e.pointerId !== st.pid) return;
-    var dx = e.clientX - st.startX;
-    if (Math.abs(dx) > 12) st.moved = true;
-    if (!st.moved) return;
-    var base = -st.i * st.w;
-    var x = base + dx;
-    var max = 0, min = -(st.n - 1) * st.w;
-    if (x > max) x = max + (x - max) * 0.35; // resistance di ujung
-    if (x < min) x = min + (x - min) * 0.35;
-    st.dragX = x - base;
-    deckUpdate(waktu);
+    var dr = st && st.drag;
+    if (!dr || e.pointerId !== dr.id) return;
+    var dx = e.clientX - dr.x0, dy = e.clientY - dr.y0;
+    if (!dr.moved && Math.abs(dx) + Math.abs(dy) < 10) return;
+    dr.moved = true; dr.dx = dx; st.suppress = true;
+    var top = st.slides[st.i];
+    top.style.transform = 'translate(' + Math.round(dx) + 'px,' + Math.round(dy * 0.25) + 'px) rotate(' + (dx / 16).toFixed(2) + 'deg)';
+    var sN = top.querySelector('.tinder-stamp.next'), sP = top.querySelector('.tinder-stamp.prev');
+    if (sN) sN.style.opacity = dx > 0 ? Math.min(1, Math.max(0, (dx - 40) / 80)) : 0;
+    if (sP) sP.style.opacity = dx < 0 ? Math.min(1, Math.max(0, (-dx - 40) / 80)) : 0;
+    // kartu di belakang ikut membesar halus saat kartu atas diseret
+    var p = Math.min(1, Math.abs(dx) / 110);
+    [1, 2].forEach(function (d) {
+      var c = st.slides[st.i + d];
+      if (!c) return;
+      var sc = (d === 1 ? 0.95 : 0.9) + 0.05 * p, y = d * 16 * (1 - p);
+      c.style.transform = 'translateY(' + y.toFixed(1) + 'px) scale(' + sc.toFixed(3) + ')';
+    });
   }
 
-  function deckUp(waktu, e) {
+  function tinderUp(waktu, e) {
     var st = DECK[waktu];
-    if (!st || !st.dragging || (e.pointerId !== undefined && e.pointerId !== st.pid)) return;
-    st.dragging = false;
-    st.track.classList.remove('dragging');
-    var dx = st.dragX;
-    st.dragX = 0;
-    var thr = Math.min(120, st.w * 0.25);
-    if (dx < -thr && st.i < st.n - 1) st.i++;
-    else if (dx > thr && st.i > 0) st.i--;
-    deckUpdate(waktu);
+    var dr = st && st.drag;
+    if (!dr || (e.pointerId !== undefined && e.pointerId !== dr.id)) return;
+    st.drag = null;
+    var top = st.slides[st.i];
+    if (top) top.classList.remove('dragging');
+    var dx = dr.dx;
+    if (dx > 110) { tinderFly(waktu, 'next'); return; }
+    if (dx < -110) {
+      if (st.i > 0) { tinderFly(waktu, 'prev'); return; }
+    }
+    tinderLayout(waktu); // snap back
   }
 
-  function deckInit(waktu) {
+  function tinderFly(waktu, dir) {
+    var st = DECK[waktu];
+    if (!st) return;
+    var top = st.slides[st.i];
+    if (!top) return;
+    if (dir === 'prev' && st.i <= 0) { tinderLayout(waktu); return; }
+    if (dir === 'next' && st.i >= st.n - 1) { tinderLayout(waktu); return; }
+    top.classList.remove('dragging');
+    st.drag = null;
+    top.dataset.flying = '1';
+    var x = dir === 'next' ? Math.max(window.innerWidth, 600) : -Math.max(window.innerWidth, 600);
+    top.style.transform = 'translate(' + x + 'px, 60px) rotate(' + (dir === 'next' ? 30 : -30) + 'deg)';
+    setTimeout(function () {
+      delete top.dataset.flying;
+      top.dataset.instant = '1'; // pindah tumpukan tanpa animasi yang terlihat
+      st.i = dir === 'next' ? st.i + 1 : st.i - 1;
+      tinderLayout(waktu);
+    }, 300);
+  }
+
+  function tinderInit(waktu) {
     var deck = document.getElementById(waktu === 'pagi' ? 'deckPagi' : 'deckPetang');
     if (!deck) return;
     var st = {
       deck: deck,
-      track: deck.querySelector('.dzikir-track'),
-      slides: deck.querySelectorAll('.dzikir-slide'),
-      i: 0, w: 0, dragX: 0, dragging: false, pid: null, startX: 0, moved: false
+      viewport: deck.querySelector('.tinder-viewport'),
+      slides: deck.querySelectorAll('.tinder-card'),
+      i: 0, drag: null, suppress: false
     };
     st.n = st.slides.length;
     DECK[waktu] = st;
-    deckMeasure(waktu);
-    deckUpdate(waktu, true);
-    var vp = deck.querySelector('.dzikir-viewport');
-    vp.addEventListener('pointerdown', function (e) { deckDown(waktu, e); });
-    vp.addEventListener('pointermove', function (e) { deckMove(waktu, e); });
-    vp.addEventListener('pointerup', function (e) { deckUp(waktu, e); });
-    vp.addEventListener('pointercancel', function (e) { deckUp(waktu, e); });
-    // Klik yang terjadi setelah drag diabaikan sekali (agar tombol tak kepencet)
+    // stempel ala Tinder di tiap kartu
+    st.slides.forEach(function (slide) {
+      if (slide.querySelector('.tinder-stamp')) return;
+      var a = document.createElement('div'); a.className = 'tinder-stamp next'; a.textContent = 'LANJUT';
+      var b = document.createElement('div'); b.className = 'tinder-stamp prev'; b.textContent = 'KEMBALI';
+      slide.appendChild(a); slide.appendChild(b);
+    });
+    var vp = st.viewport;
+    vp.addEventListener('pointerdown', function (e) { tinderDown(waktu, e); });
+    vp.addEventListener('pointermove', function (e) { tinderMove(waktu, e); });
+    vp.addEventListener('pointerup', function (e) { tinderUp(waktu, e); });
+    vp.addEventListener('pointercancel', function (e) { tinderUp(waktu, e); });
+    // klik yang terjadi tepat setelah drag diabaikan sekali
     vp.addEventListener('click', function (e) {
-      if (st.moved) { e.stopPropagation(); e.preventDefault(); st.moved = false; }
+      if (st.suppress) { e.stopPropagation(); e.preventDefault(); st.suppress = false; }
     }, true);
-    deck.querySelector('.dzikir-prev').addEventListener('click', function () { deckGo(waktu, st.i - 1); });
-    deck.querySelector('.dzikir-next').addEventListener('click', function () { deckGo(waktu, st.i + 1); });
+    deck.querySelector('.dzikir-prev').addEventListener('click', function () { tinderFly(waktu, 'prev'); });
+    deck.querySelector('.dzikir-next').addEventListener('click', function () { tinderFly(waktu, 'next'); });
+    tinderLayout(waktu, true);
   }
 
-  function deckAdvanceIfDone(waktu, idx) {
+  function tinderAdvanceIfDone(waktu, idx) {
     var st = DECK[waktu];
-    if (!st || st.i !== idx) return;
-    var target = dzikirTarget(waktu, idx, parseInt(st.slides[idx].querySelector('.dzikir-item').getAttribute('data-target'), 10));
-    if (parseInt(DZIKIR_STATE[waktu][idx] || 0, 10) >= target && st.i < st.n - 1) {
+    if (!st || st.i !== idx || st.i >= st.n - 1) return;
+    var card = st.slides[idx].querySelector('.dzikir-item');
+    var target = dzikirTarget(waktu, idx, parseInt(card.getAttribute('data-target'), 10));
+    if (parseInt(DZIKIR_STATE[waktu][idx] || 0, 10) >= target) {
       setTimeout(function () {
-        // pastikan masih di kartu yang sama & masih selesai
-        if (DECK[waktu].i === idx &&
-            parseInt(DZIKIR_STATE[waktu][idx] || 0, 10) >=
-            dzikirTarget(waktu, idx, parseInt(st.slides[idx].querySelector('.dzikir-item').getAttribute('data-target'), 10))) {
-          deckGo(waktu, idx + 1);
-        }
+        var s2 = DECK[waktu];
+        if (!s2 || s2.i !== idx || s2.i >= s2.n - 1) return;
+        var c2 = s2.slides[idx].querySelector('.dzikir-item');
+        var t2 = dzikirTarget(waktu, idx, parseInt(c2.getAttribute('data-target'), 10));
+        if (parseInt(DZIKIR_STATE[waktu][idx] || 0, 10) >= t2) tinderFly(waktu, 'next');
       }, 650);
     }
   }
@@ -302,7 +362,7 @@
     dzikirSave(DZIKIR_STATE);
     dzikirRenderCard(waktu, idx);
     dzikirRenderAll();
-    deckAdvanceIfDone(waktu, idx);
+    tinderAdvanceIfDone(waktu, idx);
   }
 
   function dzikirResetCard(btn) {
@@ -334,11 +394,10 @@
     var tabPetang = document.getElementById('tabPetang');
     tabPagi.className = 'flex-1 py-2.5 rounded-xl text-sm font-bold transition ' + (waktu === 'pagi' ? 'bg-[#1D4D4F] text-white' : 'bg-[#F1F5F4] text-[#607072]');
     tabPetang.className = 'flex-1 py-2.5 rounded-xl text-sm font-bold transition ' + (waktu === 'petang' ? 'bg-[#1D4D4F] text-white' : 'bg-[#F1F5F4] text-[#607072]');
-    // Deck yang baru ditampilkan harus diukur ulang (lebar 0 saat hidden)
-    deckMeasure(waktu);
-    deckUpdate(waktu, true);
-    // Lanjut dari kartu pertama yang belum selesai
-    deckGo(waktu, deckFirstIncomplete(waktu));
+    // Deck yang baru ditampilkan di-layout ulang + lanjut dari kartu
+    // pertama yang belum selesai
+    var st = DECK[waktu];
+    if (st) { st.i = tinderFirstIncomplete(waktu); tinderLayout(waktu, true); }
     dzikirRenderAll();
   }
 
@@ -349,20 +408,20 @@
   }
 
   (function dzikirInit() {
-    deckInit('pagi');
-    deckInit('petang');
+    tinderInit('pagi');
+    tinderInit('petang');
     var h = new Date().getHours();
     setDzikirTab((h >= 4 && h < 12) ? 'pagi' : 'petang');
     window.addEventListener('resize', function () {
-      deckMeasure('pagi'); deckMeasure('petang');
-      deckUpdate('pagi', true); deckUpdate('petang', true);
+      tinderLayout('pagi', true); tinderLayout('petang', true);
+    });
+    window.addEventListener('load', function () {
+      tinderLayout('pagi', true); tinderLayout('petang', true);
     });
     // Panah kiri/kanan untuk pindah kartu (desktop)
     document.addEventListener('keydown', function (e) {
       if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-      var st = DECK[DZIKIR_TAB];
-      if (!st) return;
-      deckGo(DZIKIR_TAB, st.i + (e.key === 'ArrowRight' ? 1 : -1));
+      tinderFly(DZIKIR_TAB, e.key === 'ArrowRight' ? 'next' : 'prev');
     });
   })();
 </script>
