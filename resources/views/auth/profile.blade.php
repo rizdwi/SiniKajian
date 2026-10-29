@@ -441,7 +441,6 @@
       <div class="grid grid-cols-2 gap-2">
         <button onclick="setCityLocation('Jakarta Selatan', -6.2615, 106.8106)" class="p-2.5 text-left bg-white border border-[#E5ECEB] hover:border-[#1D4D4F] rounded-xl font-medium text-[#1C2224] text-xs transition">Jakarta Selatan</button>
         <button onclick="setCityLocation('Jakarta Pusat', -6.1805, 106.8284)" class="p-2.5 text-left bg-white border border-[#E5ECEB] hover:border-[#1D4D4F] rounded-xl font-medium text-[#1C2224] text-xs transition">Jakarta Pusat</button>
-        <button onclick="setCityLocation('Bandung Kota', -6.9175, 107.6191)" class="p-2.5 text-left bg-white border border-[#E5ECEB] hover:border-[#1D4D4F] rounded-xl font-medium text-[#1C2224] text-xs transition">Bandung</button>
         <button onclick="setCityLocation('Bekasi', -6.2383, 106.9756)" class="p-2.5 text-left bg-white border border-[#E5ECEB] hover:border-[#1D4D4F] rounded-xl font-medium text-[#1C2224] text-xs transition">Bekasi</button>
         <button onclick="setCityLocation('Bogor', -6.5971, 106.8060)" class="p-2.5 text-left bg-white border border-[#E5ECEB] hover:border-[#1D4D4F] rounded-xl font-medium text-[#1C2224] text-xs transition">Bogor</button>
         <button onclick="setCityLocation('Surabaya', -7.2575, 112.7521)" class="p-2.5 text-left bg-white border border-[#E5ECEB] hover:border-[#1D4D4F] rounded-xl font-medium text-[#1C2224] text-xs transition">Surabaya</button>

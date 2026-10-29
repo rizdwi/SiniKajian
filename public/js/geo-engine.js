@@ -117,16 +117,18 @@
   }
 
   const SiniKajianGeo = {
+    // TANPA lokasi default: sebelum ada cache/GPS/pilihan manual,
+    // lat/lon null — tidak ada kota yang dipalsukan sebagai lokasi user.
     current: {
-      lat: -6.9175,
-      lon: 107.6191,
+      lat: null,
+      lon: null,
       name: 'Mendeteksi Lokasi...',
       city: '',
       province: '',
       accuracy: 0,
       isGps: false,
-      qiblaAzimuth: 295.2,
-      kaabaDistance: 7924
+      qiblaAzimuth: null,
+      kaabaDistance: null
     },
     watchId: null,
     manualAt: 0,
@@ -162,8 +164,10 @@
         console.warn('Gagal membaca cache lokasi:', e);
       }
 
-      this.current.qiblaAzimuth = calculateQiblaAzimuth(this.current.lat, this.current.lon);
-      this.current.kaabaDistance = Math.round(haversine(this.current.lat, this.current.lon, KAABA_COORDS.lat, KAABA_COORDS.lon));
+      if (this.current.lat && this.current.lon) {
+        this.current.qiblaAzimuth = calculateQiblaAzimuth(this.current.lat, this.current.lon);
+        this.current.kaabaDistance = Math.round(haversine(this.current.lat, this.current.lon, KAABA_COORDS.lat, KAABA_COORDS.lon));
+      }
 
       // 2. LANGSUNG nyalakan geolokasi GPS otomatis di background begitu app dibuka
       this.startAutoGps();

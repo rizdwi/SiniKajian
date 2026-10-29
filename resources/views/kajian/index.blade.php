@@ -669,7 +669,6 @@
         <button onclick="setCityLocation('Bekasi', -6.2383, 106.9756)" class="p-2.5 text-left bg-white border border-slate-200 hover:border-emerald-700 rounded-xl font-medium text-slate-800">Bekasi</button>
         <button onclick="setCityLocation('Bogor', -6.5971, 106.8060)" class="p-2.5 text-left bg-white border border-slate-200 hover:border-emerald-700 rounded-xl font-medium text-slate-800">Bogor</button>
         <button onclick="setCityLocation('Karawang', -6.3040, 107.3075)" class="p-2.5 text-left bg-white border border-slate-200 hover:border-emerald-700 rounded-xl font-medium text-slate-800">Karawang</button>
-        <button onclick="setCityLocation('Bandung', -6.9175, 107.6191)" class="p-2.5 text-left bg-white border border-slate-200 hover:border-emerald-700 rounded-xl font-medium text-slate-800">Bandung</button>
       </div>
     </div>
   </div>
@@ -821,9 +820,10 @@
       }
     } catch(e) {}
     if (typeof window.SiniKajianGeo !== 'undefined') {
-      return window.SiniKajianGeo.getCoords();
+      var g = window.SiniKajianGeo.getCoords();
+      if (g && g.lat && g.lon) return g;
     }
-    return { lat: -6.9175, lon: 107.6191, name: 'Mendeteksi Lokasi...' };
+    return { lat: null, lon: null, name: 'Mendeteksi Lokasi...' };
   })();
 
   // State Filter Aktif
@@ -1290,6 +1290,7 @@
   // 6 waktu tidak lagi tampil di dashboard (ada di halaman /sholat).
   function updatePrayerDisplay() {
     if (!document.getElementById('nextPrayerName')) return;
+    if (!userCoords || !userCoords.lat || !userCoords.lon) return;
     const now = new Date();
     const times = calculatePrayerTimes(now, userCoords.lat, userCoords.lon);
 

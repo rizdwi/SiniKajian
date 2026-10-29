@@ -28,8 +28,8 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
       </div>
       <div class="min-w-0">
-        <h3 id="sholatLocationName" class="text-xs font-bold text-[#1C2224] truncate">{{ $city }}</h3>
-        <p id="sholatCoordinates" class="text-[10px] text-[#607072] truncate">{{ number_format($lat, 4) }}, {{ number_format($lon, 4) }}</p>
+        <h3 id="sholatLocationName" class="text-xs font-bold text-[#1C2224] truncate">{{ $city ?? 'Lokasi belum dipilih' }}</h3>
+        <p id="sholatCoordinates" class="text-[10px] text-[#607072] truncate">{{ ($lat !== null && $lon !== null) ? number_format($lat, 4) . ', ' . number_format($lon, 4) : 'Ketuk GPS Saya untuk memuat jadwal' }}</p>
       </div>
     </div>
     <button onclick="refreshSholatGps()" class="text-xs font-bold text-[#1D4D4F] hover:underline px-2 py-1 shrink-0">GPS Saya</button>
@@ -123,7 +123,7 @@
           <span class="text-sm font-bold text-[#1D4D4F]">{{ $time ?: '—' }}</span>
         </div>
       @empty
-        <p class="p-4 text-sm text-[#607072]">Jadwal sholat tidak dapat dimuat. Periksa koneksi lalu segarkan halaman.</p>
+        <p class="p-4 text-sm text-[#607072]">@if($city === null) Lokasi belum dipilih — ketuk GPS Saya di atas untuk memuat jadwal sesuai lokasi Anda. @else Jadwal sholat tidak dapat dimuat. Periksa koneksi lalu segarkan halaman. @endif</p>
       @endforelse
     </div>
   </div>
@@ -149,8 +149,9 @@
 <script>
   var SHOLAT_TIMINGS = @json($timings);
   var SHOLAT_CITY = @json($city);
-  var SHOLAT_LAT = {{ $lat }};
-  var SHOLAT_LON = {{ $lon }};
+  var SHOLAT_LAT = @json($lat);
+  var SHOLAT_LON = @json($lon);
+  var SHOLAT_NO_LOCATION = 'Lokasi belum dipilih';
   var SHOLAT_LOGGED_IN = {{ $isLoggedIn ? 'true' : 'false' }};
   var CSRF_TOKEN_SHOLAT = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
   var VAPID_PUBLIC_KEY_SHOLAT = '{{ config("services.vapid.public_key") }}';
@@ -222,7 +223,7 @@
       fetch('/api/sholat?lat=' + lat + '&lon=' + lon)
         .then(function (r) { return r.json(); })
         .then(function (d) { if (d.timings) renderTimings(d.timings); if (!name && d.city) locEl.textContent = d.city; })
-        .catch(function () { locEl.textContent = SHOLAT_CITY; });
+        .catch(function () { locEl.textContent = SHOLAT_CITY || SHOLAT_NO_LOCATION; });
     }
     try {
       if (window.SiniKajianGeo) {
@@ -232,7 +233,7 @@
         setTimeout(function () {
           var c2 = window.SiniKajianGeo.getCoords();
           if (c2 && c2.lat && c2.lon) apply(c2.lat, c2.lon, c2.name);
-          else locEl.textContent = SHOLAT_CITY;
+          else locEl.textContent = SHOLAT_CITY || SHOLAT_NO_LOCATION;
         }, 2500);
         return;
       }
@@ -241,12 +242,48 @@
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(function (pos) {
           apply(pos.coords.latitude, pos.coords.longitude, 'Lokasi GPS Saya');
-        }, function () { locEl.textContent = SHOLAT_CITY; }, { timeout: 8000 });
+        }, function () { locEl.textContent = SHOLAT_CITY || SHOLAT_NO_LOCATION; }, { timeout: 8000 });
       } else {
-        locEl.textContent = SHOLAT_CITY;
+        locEl.textContent = SHOLAT_CITY || SHOLAT_NO_LOCATION;
       }
     }
   }
+
+  // Pulihkan lokasi tersimpan (cache geo engine) saat halaman dibuka,
+  // agar pill tidak kembali ke satu kota karangan tiap reload. Bila
+  // server sudah merender lokasi eksplisit (dari ?lat&lon), jangan
+  // ditimpa. Bila belum ada lokasi tersimpan, biarkan status
+  // "Lokasi belum dipilih" sampai user mengetuk GPS Saya; pembaruan
+  // GPS background juga diterapkan lewat event sk:location-updated.
+  var SHOLAT_SERVER_LOC = (SHOLAT_LAT !== null && SHOLAT_LON !== null);
+  function restoreSholatLocation(lat, lon, name) {
+    SHOLAT_LAT = lat; SHOLAT_LON = lon;
+    document.getElementById('sholatCoordinates').textContent = lat.toFixed(4) + ', ' + lon.toFixed(4);
+    if (name) { SHOLAT_CITY = name; document.getElementById('sholatLocationName').textContent = name; }
+    fetch('/api/sholat?lat=' + lat + '&lon=' + lon)
+      .then(function (r) { return r.json(); })
+      .then(function (d) { if (d.timings) renderTimings(d.timings); if (!name && d.city) document.getElementById('sholatLocationName').textContent = d.city; })
+      .catch(function () {});
+  }
+  (function restoreSholatOnLoad() {
+    if (SHOLAT_SERVER_LOC) return;
+    try {
+      var cached = JSON.parse(localStorage.getItem('sk_geo_state') || 'null');
+      if (cached && cached.lat && cached.lon) { restoreSholatLocation(Number(cached.lat), Number(cached.lon), cached.name || cached.city || null); return; }
+    } catch (e) {}
+    if (window.SiniKajianGeo) {
+      try {
+        var c = window.SiniKajianGeo.getCoords();
+        if (c && c.lat && c.lon) { restoreSholatLocation(c.lat, c.lon, c.name); return; }
+      } catch (e) {}
+    }
+  })();
+  window.addEventListener('sk:location-updated', function (e) {
+    if (SHOLAT_SERVER_LOC) return;
+    if (!e.detail || !e.detail.lat || !e.detail.lon) return;
+    if (!document.getElementById('sholatLocationName')) return;
+    restoreSholatLocation(e.detail.lat, e.detail.lon, e.detail.name);
+  });
 
   function urlBase64ToUint8ArraySholat(base64String) {
     var padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -342,6 +379,10 @@
     if (!SHOLAT_LOGGED_IN) return;
     var key = btn.getAttribute('data-pref');
     var turningOn = btn.textContent.trim() === 'Mati';
+    if (turningOn && (SHOLAT_LAT === null || SHOLAT_LON === null)) {
+      showPrefStatus('Ketuk GPS Saya dulu agar pengingat memakai lokasi Anda.', true);
+      return;
+    }
     if (turningOn) {
       btn.disabled = true;
       btn.textContent = '…';

@@ -35,13 +35,11 @@ class KajianController extends Controller
     }
 
     /**
-     * Titik lokasi default (Bandung) — SAMA dengan fallback JS di
-     * index.blade.php saat belum ada lokasi tersimpan / GPS. Dipakai
-     * serverFirstCards agar urutan kartu server = urutan render pertama JS.
+     * TIDAK ADA titik lokasi default: tanpa lokasi user (cache/GPS/
+     * pilihan manual), server tidak memalsukan satu kota pun sebagai
+     * lokasi. Kartu pertama beranda diurut tanggal saja; halaman
+     * /sholat menampilkan status "Lokasi belum dipilih".
      */
-    private const DEFAULT_LAT = -6.9175;
-    private const DEFAULT_LON = 107.6191;
-    private const DEFAULT_RADIUS_KM = 25;
 
     /**
      * Baca satu field dari item koleksi (stdClass Supabase atau model Eloquent).
@@ -113,10 +111,10 @@ class KajianController extends Controller
     }
 
     /**
-     * 12 kartu pertama tampilan default beranda (radius 25 km dari titik
-     * default, urut tanggal -> jarak -> jam — sama persis dengan
-     * renderKajianFeed() di JS). Dihitung dari koleksi yang SUDAH diambil
-     * (tanpa query tambahan — nol beban server ekstra).
+     * 12 kartu pertama tampilan default beranda (urut tanggal -> jam;
+     * jarak null sampai lokasi user diketahui — JS mengurut ulang
+     * pakai jarak asli begitu lokasi ada). Dihitung dari koleksi yang
+     * SUDAH diambil (tanpa query tambahan — nol beban server ekstra).
      */
     private function serverFirstCards($collection): array
     {
@@ -127,14 +125,11 @@ class KajianController extends Controller
             if (!$lat || !$lon) {
                 continue;
             }
-            $dist = $this->haversineKm(self::DEFAULT_LAT, self::DEFAULT_LON, $lat, $lon);
-            if ($dist > self::DEFAULT_RADIUS_KM) {
-                continue;
-            }
+            // Tanpa lokasi user, jarak tidak dihitung (null -> Blade
+            // menampilkan '— km'); JS mengurut ulang pakai jarak asli
+            // begitu lokasi diketahui.
             $slim = $this->slimKajianItem($item);
-            // Presisi penuh untuk urut (JS mengurut dengan jarak presisi
-            // penuh juga); pembulatan 1 desimal hanya saat tampil di Blade.
-            $slim['distance'] = $dist;
+            $slim['distance'] = null;
             $items[] = $slim;
         }
         usort($items, function ($a, $b) {
@@ -651,16 +646,20 @@ class KajianController extends Controller
     /**
      * Jadwal sholat hari ini (Segmen No.2, 2026-10-28).
      * Sumber: Aladhan API (gratis, tanpa key), metode 20 (Kemenag RI).
-     * Lokasi: query ?lat&lon (dari geo engine) atau ?city; default
-     * Bandung — sama dengan titik default beranda. Hasil di-cache 6 jam.
+     * Lokasi: query ?lat&lon (dari geo engine) atau ?city. Tanpa
+     * parameter lokasi, halaman dirender tanpa jadwal + status
+     * "Lokasi belum dipilih" — JS memulihkan lokasi tersimpan/GPS
+     * lalu memuat jadwal lewat /api/sholat. Hasil di-cache 6 jam.
      */
     public function sholat(Request $request): View
     {
-        $lat = $request->query('lat') !== null ? (float) $request->query('lat') : self::DEFAULT_LAT;
-        $lon = $request->query('lon') !== null ? (float) $request->query('lon') : self::DEFAULT_LON;
-        $city = trim((string) $request->query('city', 'Bandung'));
+        $lat = $request->query('lat') !== null ? (float) $request->query('lat') : null;
+        $lon = $request->query('lon') !== null ? (float) $request->query('lon') : null;
+        $city = $request->query('city') !== null ? trim((string) $request->query('city')) : null;
 
-        $data = $this->fetchPrayerTimings($lat, $lon, $city);
+        $data = ($lat !== null && $lon !== null)
+            ? $this->fetchPrayerTimings($lat, $lon, $city ?? '')
+            : ['timings' => [], 'hijri' => null, 'gregorian' => null];
 
         $prefs = null;
         $appId = $this->appUserId();
@@ -701,9 +700,13 @@ class KajianController extends Controller
      */
     public function apiSholat(Request $request): JsonResponse
     {
-        $lat = $request->query('lat') !== null ? (float) $request->query('lat') : self::DEFAULT_LAT;
-        $lon = $request->query('lon') !== null ? (float) $request->query('lon') : self::DEFAULT_LON;
-        $city = trim((string) $request->query('city', 'Bandung'));
+        $lat = $request->query('lat') !== null ? (float) $request->query('lat') : null;
+        $lon = $request->query('lon') !== null ? (float) $request->query('lon') : null;
+        $city = $request->query('city') !== null ? trim((string) $request->query('city')) : '';
+
+        if ($lat === null || $lon === null) {
+            return response()->json(['error' => 'Lokasi belum dipilih. Ketuk GPS Saya.'], 422);
+        }
 
         if ($lat < -90 || $lat > 90 || $lon < -180 || $lon > 180) {
             return response()->json(['error' => 'Koordinat tidak valid.'], 422);
@@ -812,10 +815,20 @@ class KajianController extends Controller
             'adzan' => (bool) ($data['adzan'] ?? $existing['adzan'] ?? false),
             'dzikir' => (bool) ($data['dzikir'] ?? $existing['dzikir'] ?? false),
             'puasa' => (bool) ($data['puasa'] ?? $existing['puasa'] ?? false),
-            'city' => $data['city'] ?? $existing['city'] ?? 'Bandung',
-            'lat' => isset($data['lat']) ? (float) $data['lat'] : (isset($existing['lat']) ? (float) $existing['lat'] : self::DEFAULT_LAT),
-            'lon' => isset($data['lon']) ? (float) $data['lon'] : (isset($existing['lon']) ? (float) $existing['lon'] : self::DEFAULT_LON),
         ];
+        // Lokasi hanya disimpan bila diketahui (dari request atau baris
+        // lama). Tanpa lokasi, kunci dihilangkan — tidak ada kota
+        // karangan yang tersimpan sebagai lokasi user.
+        $city = $data['city'] ?? $existing['city'] ?? null;
+        if (is_string($city) && trim($city) !== '') {
+            $payload['city'] = trim($city);
+        }
+        if (isset($data['lat']) || isset($existing['lat'])) {
+            $payload['lat'] = (float) ($data['lat'] ?? $existing['lat']);
+        }
+        if (isset($data['lon']) || isset($existing['lon'])) {
+            $payload['lon'] = (float) ($data['lon'] ?? $existing['lon']);
+        }
 
         if (!$svc->upsertNotificationPrefs($payload)) {
             return response()->json(['error' => 'Gagal menyimpan pengingat di server. Coba lagi sebentar lagi.'], 503);

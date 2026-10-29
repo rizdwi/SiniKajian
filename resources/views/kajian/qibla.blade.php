@@ -187,8 +187,8 @@
 </div>
 
 <script>
-  var currentLat = -6.8851;
-  var currentLon = 107.6136;
+  var currentLat = null;
+  var currentLon = null;
   var qiblaAzimuth = 295.2;
   var currentHeading = 0;
   var isDragging = false;
@@ -266,17 +266,24 @@
         lat: cached?.lat || currentLat,
         lon: cached?.lon || currentLon,
         name: cached?.name || 'Lokasi Saya',
-        qiblaAzimuth: 295.2,
-        kaabaDistance: 7924,
+        qiblaAzimuth: cached?.qiblaAzimuth || null,
+        kaabaDistance: cached?.kaabaDistance || null,
         isGps: false
       });
     }
   }
 
   function applyLocationData(data) {
+    if (!data || !data.lat || !data.lon) {
+      document.getElementById('qiblaLocationName').textContent = 'Lokasi belum dipilih';
+      document.getElementById('qiblaCoordinates').textContent = '—';
+      document.getElementById('qiblaAngleText').textContent = '—';
+      document.getElementById('distKaabaText').textContent = '—';
+      return;
+    }
     currentLat = data.lat;
     currentLon = data.lon;
-    qiblaAzimuth = data.qiblaAzimuth || 295.2;
+    qiblaAzimuth = data.qiblaAzimuth || 0;
 
     document.getElementById('qiblaLocationName').textContent = data.name || 'Lokasi Terdeteksi';
     
@@ -284,8 +291,8 @@
     const lonStr = `${Math.abs(currentLon).toFixed(4)}° ${currentLon < 0 ? 'BB' : 'BT'}`;
     document.getElementById('qiblaCoordinates').textContent = `${latStr}, ${lonStr}`;
 
-    const dist = data.kaabaDistance || 7924;
-    document.getElementById('distKaabaText').textContent = dist.toLocaleString('id-ID') + ' km';
+    const dist = data.kaabaDistance;
+    document.getElementById('distKaabaText').textContent = (dist ? dist.toLocaleString('id-ID') + ' km' : '—');
 
     document.getElementById('qiblaAngleText').textContent = qiblaAzimuth.toFixed(1).replace('.', ',') + '°';
 
@@ -577,7 +584,7 @@
 
   function promptChangeLocation() {
     const currentName = document.getElementById('qiblaLocationName').textContent || 'Lokasi belum dipilih';
-    const city = prompt('Masukkan nama kota atau daerah Anda (contoh: Bandung, Jakarta, Surabaya, Yogyakarta):', currentName);
+    const city = prompt('Masukkan nama kota atau daerah Anda (contoh: Jakarta, Surabaya, Yogyakarta):', currentName);
     if (!city) return;
 
     const lower = city.toLowerCase();

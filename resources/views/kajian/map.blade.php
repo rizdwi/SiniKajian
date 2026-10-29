@@ -209,18 +209,27 @@
     }
     mapboxgl.accessToken = '{{ config('services.mapbox.token') }}';
 
-    let centerLat = -6.8851;
-    let centerLon = 107.6136;
+    // Tanpa lokasi user: tampilkan peta Indonesia (bukan satu kota).
+    let centerLat = -2.5;
+    let centerLon = 118;
+    let centerZoom = 5;
+    let hasUserCoords = false;
 
     if (window.SiniKajianGeo) {
       const coords = window.SiniKajianGeo.getCoords();
-      centerLat = coords.lat;
-      centerLon = coords.lon;
+      if (coords && coords.lat && coords.lon) {
+        centerLat = coords.lat;
+        centerLon = coords.lon;
+        centerZoom = 12;
+        hasUserCoords = true;
+      }
     } else {
       const savedLoc = JSON.parse(localStorage.getItem('sinikajian_coords') || localStorage.getItem('sk_user_loc') || 'null');
       if (savedLoc && savedLoc.lat && savedLoc.lon) {
         centerLat = savedLoc.lat;
         centerLon = savedLoc.lon;
+        centerZoom = 12;
+        hasUserCoords = true;
       }
     }
 
@@ -232,7 +241,7 @@
       container: 'fullMap',
       style: 'mapbox://styles/mapbox/streets-v12',
       center: [parseFloat(centerLon), parseFloat(centerLat)],
-      zoom: 12,
+      zoom: centerZoom,
       attributionControl: false
     });
     window.__skMapInstance = mapInstance;
@@ -241,7 +250,7 @@
     mapInstance.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
 
     mapInstance.on('load', () => {
-      setUserLocationMarker(centerLat, centerLon);
+      if (hasUserCoords) setUserLocationMarker(centerLat, centerLon);
       renderMapMarkers(rawEvents);
     });
   }

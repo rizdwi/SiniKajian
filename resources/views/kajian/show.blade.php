@@ -275,6 +275,7 @@
   function updateCalculatedDistance() {
     if (window.SiniKajianGeo) {
       const coords = window.SiniKajianGeo.getCoords();
+      if (!coords || !coords.lat || !coords.lon) return;
       const dist = window.SiniKajianGeo.calculateDistance(coords.lat, coords.lon, KAJIAN_LAT, KAJIAN_LON);
       const el = document.getElementById('detailDistanceBadge');
       if (el) {

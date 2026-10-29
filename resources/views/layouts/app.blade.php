@@ -327,7 +327,7 @@
   </script>
 
   <!-- Zero-Click Auto Geolocation & Sensor Engine -->
-  <script src="{{ asset('js/geo-engine.js') }}?v=20261025a" defer></script>
+  <script src="{{ asset('js/geo-engine.js') }}?v=20261029b" defer></script>
 
   @yield('scripts')
 
