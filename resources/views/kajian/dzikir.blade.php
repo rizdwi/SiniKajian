@@ -4,6 +4,26 @@
 
 @section('meta_description', 'Dzikir pagi dan petang sesuai sunnah dari buku Ustadz Yazid bin Abdul Qadir Jawas — lengkap dengan teks Arab, latin, arti, dalil, dan penghitung.')
 
+@section('styles')
+<style>
+  /* Deck kartu swipe dzikir: satu kartu per layar, geser kiri/kanan */
+  .dzikir-viewport { overflow: hidden; touch-action: pan-y; }
+  .dzikir-track { display: flex; transition: transform .32s cubic-bezier(.2,.7,.3,1); will-change: transform; }
+  .dzikir-track.dragging { transition: none; }
+  .dzikir-slide { flex: 0 0 100%; min-width: 0; box-sizing: border-box; padding: 0 2px; }
+  .dzikir-navbtn {
+    width: 44px; height: 44px; border-radius: 9999px; flex-shrink: 0;
+    background: #fff; border: 1px solid #E5ECEB; color: #1D4D4F;
+    font-size: 22px; font-weight: 800; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 3px rgba(29,77,79,.08);
+  }
+  .dzikir-navbtn:active { background: #E8F5F3; }
+  .dzikir-navbtn:disabled { opacity: .3; cursor: default; }
+  .dzikir-hint { text-align: center; font-size: 11px; color: #8a979b; margin-top: 8px; }
+</style>
+@endsection
+
 @section('content')
 <div class="max-w-md mx-auto space-y-3.5 pb-24 pt-1">
 
@@ -26,18 +46,42 @@
     <button onclick="resetDzikirToday()" class="text-xs font-bold text-[#607072] hover:underline shrink-0">Reset hari ini ↺</button>
   </div>
 
-  <!-- 4. Daftar dzikir pagi -->
-  <div id="dzikirPagi" class="space-y-3.5">
-    @foreach($pagi as $i => $item)
-      @include('kajian.partials.dzikir-item', ['item' => $item, 'waktu' => 'pagi', 'idx' => $i])
-    @endforeach
+  <!-- 4. Deck kartu swipe: dzikir pagi -->
+  <div id="deckPagi" class="dzikir-deck" data-waktu="pagi">
+    <div class="flex items-center justify-between mb-2">
+      <button type="button" class="dzikir-navbtn dzikir-prev" aria-label="Sebelumnya">‹</button>
+      <span class="dzikir-pos text-sm font-bold text-[#607072]">1 / {{ count($pagi) }}</span>
+      <button type="button" class="dzikir-navbtn dzikir-next" aria-label="Berikutnya">›</button>
+    </div>
+    <div class="dzikir-viewport">
+      <div class="dzikir-track">
+        @foreach($pagi as $i => $item)
+          <div class="dzikir-slide">
+            @include('kajian.partials.dzikir-item', ['item' => $item, 'waktu' => 'pagi', 'idx' => $i])
+          </div>
+        @endforeach
+      </div>
+    </div>
+    <p class="dzikir-hint">Geser kiri / kanan untuk pindah kartu</p>
   </div>
 
-  <!-- 5. Daftar dzikir petang -->
-  <div id="dzikirPetang" class="space-y-3.5" style="display:none">
-    @foreach($petang as $i => $item)
-      @include('kajian.partials.dzikir-item', ['item' => $item, 'waktu' => 'petang', 'idx' => $i])
-    @endforeach
+  <!-- 5. Deck kartu swipe: dzikir petang -->
+  <div id="deckPetang" class="dzikir-deck" data-waktu="petang" style="display:none">
+    <div class="flex items-center justify-between mb-2">
+      <button type="button" class="dzikir-navbtn dzikir-prev" aria-label="Sebelumnya">‹</button>
+      <span class="dzikir-pos text-sm font-bold text-[#607072]">1 / {{ count($petang) }}</span>
+      <button type="button" class="dzikir-navbtn dzikir-next" aria-label="Berikutnya">›</button>
+    </div>
+    <div class="dzikir-viewport">
+      <div class="dzikir-track">
+        @foreach($petang as $i => $item)
+          <div class="dzikir-slide">
+            @include('kajian.partials.dzikir-item', ['item' => $item, 'waktu' => 'petang', 'idx' => $i])
+          </div>
+        @endforeach
+      </div>
+    </div>
+    <p class="dzikir-hint">Geser kiri / kanan untuk pindah kartu</p>
   </div>
 
   <!-- 6. Kembali -->
@@ -53,6 +97,120 @@
   var DZIKIR_KEY = 'majelisku_dzikir_v1';
   var DZIKIR_TAB = 'pagi';
   var DZIKIR_TOTALS = { pagi: {{ count($pagi) }}, petang: {{ count($petang) }} };
+
+  /* ===== Deck kartu swipe (satu kartu per layar, geser kiri/kanan) ===== */
+  var DECK = {};
+
+  function deckMeasure(waktu) {
+    var st = DECK[waktu];
+    if (!st) return;
+    st.w = st.deck.querySelector('.dzikir-viewport').clientWidth || 0;
+  }
+
+  function deckUpdate(waktu, instant) {
+    var st = DECK[waktu];
+    if (!st) return;
+    if (instant) st.track.style.transition = 'none';
+    st.track.style.transform = 'translateX(' + (-st.i * st.w + st.dragX) + 'px)';
+    if (instant) { void st.track.offsetWidth; st.track.style.transition = ''; }
+    st.deck.querySelector('.dzikir-pos').textContent = (st.i + 1) + ' / ' + st.n;
+    st.deck.querySelector('.dzikir-prev').disabled = st.i <= 0;
+    st.deck.querySelector('.dzikir-next').disabled = st.i >= st.n - 1;
+  }
+
+  function deckGo(waktu, i) {
+    var st = DECK[waktu];
+    if (!st) return;
+    st.i = Math.max(0, Math.min(st.n - 1, i));
+    deckUpdate(waktu);
+  }
+
+  function deckFirstIncomplete(waktu) {
+    var st = DECK[waktu];
+    if (!st) return 0;
+    for (var i = 0; i < st.n; i++) {
+      var target = dzikirTarget(waktu, i, parseInt(st.slides[i].querySelector('.dzikir-item').getAttribute('data-target'), 10));
+      if (parseInt(DZIKIR_STATE[waktu][i] || 0, 10) < target) return i;
+    }
+    return 0;
+  }
+
+  function deckDown(waktu, e) {
+    var st = DECK[waktu];
+    if (!st || e.target.closest('button, a')) return; // biarkan tombol diklik normal
+    st.dragging = true; st.pid = e.pointerId; st.startX = e.clientX; st.dragX = 0; st.moved = false;
+    st.track.classList.add('dragging');
+  }
+
+  function deckMove(waktu, e) {
+    var st = DECK[waktu];
+    if (!st || !st.dragging || e.pointerId !== st.pid) return;
+    var dx = e.clientX - st.startX;
+    if (Math.abs(dx) > 12) st.moved = true;
+    if (!st.moved) return;
+    var base = -st.i * st.w;
+    var x = base + dx;
+    var max = 0, min = -(st.n - 1) * st.w;
+    if (x > max) x = max + (x - max) * 0.35; // resistance di ujung
+    if (x < min) x = min + (x - min) * 0.35;
+    st.dragX = x - base;
+    deckUpdate(waktu);
+  }
+
+  function deckUp(waktu, e) {
+    var st = DECK[waktu];
+    if (!st || !st.dragging || (e.pointerId !== undefined && e.pointerId !== st.pid)) return;
+    st.dragging = false;
+    st.track.classList.remove('dragging');
+    var dx = st.dragX;
+    st.dragX = 0;
+    var thr = Math.min(120, st.w * 0.25);
+    if (dx < -thr && st.i < st.n - 1) st.i++;
+    else if (dx > thr && st.i > 0) st.i--;
+    deckUpdate(waktu);
+  }
+
+  function deckInit(waktu) {
+    var deck = document.getElementById(waktu === 'pagi' ? 'deckPagi' : 'deckPetang');
+    if (!deck) return;
+    var st = {
+      deck: deck,
+      track: deck.querySelector('.dzikir-track'),
+      slides: deck.querySelectorAll('.dzikir-slide'),
+      i: 0, w: 0, dragX: 0, dragging: false, pid: null, startX: 0, moved: false
+    };
+    st.n = st.slides.length;
+    DECK[waktu] = st;
+    deckMeasure(waktu);
+    deckUpdate(waktu, true);
+    var vp = deck.querySelector('.dzikir-viewport');
+    vp.addEventListener('pointerdown', function (e) { deckDown(waktu, e); });
+    vp.addEventListener('pointermove', function (e) { deckMove(waktu, e); });
+    vp.addEventListener('pointerup', function (e) { deckUp(waktu, e); });
+    vp.addEventListener('pointercancel', function (e) { deckUp(waktu, e); });
+    // Klik yang terjadi setelah drag diabaikan sekali (agar tombol tak kepencet)
+    vp.addEventListener('click', function (e) {
+      if (st.moved) { e.stopPropagation(); e.preventDefault(); st.moved = false; }
+    }, true);
+    deck.querySelector('.dzikir-prev').addEventListener('click', function () { deckGo(waktu, st.i - 1); });
+    deck.querySelector('.dzikir-next').addEventListener('click', function () { deckGo(waktu, st.i + 1); });
+  }
+
+  function deckAdvanceIfDone(waktu, idx) {
+    var st = DECK[waktu];
+    if (!st || st.i !== idx) return;
+    var target = dzikirTarget(waktu, idx, parseInt(st.slides[idx].querySelector('.dzikir-item').getAttribute('data-target'), 10));
+    if (parseInt(DZIKIR_STATE[waktu][idx] || 0, 10) >= target && st.i < st.n - 1) {
+      setTimeout(function () {
+        // pastikan masih di kartu yang sama & masih selesai
+        if (DECK[waktu].i === idx &&
+            parseInt(DZIKIR_STATE[waktu][idx] || 0, 10) >=
+            dzikirTarget(waktu, idx, parseInt(st.slides[idx].querySelector('.dzikir-item').getAttribute('data-target'), 10))) {
+          deckGo(waktu, idx + 1);
+        }
+      }, 650);
+    }
+  }
 
   function dzikirTodayStr() {
     var d = new Date();
@@ -144,6 +302,7 @@
     dzikirSave(DZIKIR_STATE);
     dzikirRenderCard(waktu, idx);
     dzikirRenderAll();
+    deckAdvanceIfDone(waktu, idx);
   }
 
   function dzikirResetCard(btn) {
@@ -169,12 +328,17 @@
 
   function setDzikirTab(waktu) {
     DZIKIR_TAB = waktu;
-    document.getElementById('dzikirPagi').style.display = waktu === 'pagi' ? '' : 'none';
-    document.getElementById('dzikirPetang').style.display = waktu === 'petang' ? '' : 'none';
+    document.getElementById('deckPagi').style.display = waktu === 'pagi' ? '' : 'none';
+    document.getElementById('deckPetang').style.display = waktu === 'petang' ? '' : 'none';
     var tabPagi = document.getElementById('tabPagi');
     var tabPetang = document.getElementById('tabPetang');
     tabPagi.className = 'flex-1 py-2.5 rounded-xl text-sm font-bold transition ' + (waktu === 'pagi' ? 'bg-[#1D4D4F] text-white' : 'bg-[#F1F5F4] text-[#607072]');
     tabPetang.className = 'flex-1 py-2.5 rounded-xl text-sm font-bold transition ' + (waktu === 'petang' ? 'bg-[#1D4D4F] text-white' : 'bg-[#F1F5F4] text-[#607072]');
+    // Deck yang baru ditampilkan harus diukur ulang (lebar 0 saat hidden)
+    deckMeasure(waktu);
+    deckUpdate(waktu, true);
+    // Lanjut dari kartu pertama yang belum selesai
+    deckGo(waktu, deckFirstIncomplete(waktu));
     dzikirRenderAll();
   }
 
@@ -185,8 +349,21 @@
   }
 
   (function dzikirInit() {
+    deckInit('pagi');
+    deckInit('petang');
     var h = new Date().getHours();
     setDzikirTab((h >= 4 && h < 12) ? 'pagi' : 'petang');
+    window.addEventListener('resize', function () {
+      deckMeasure('pagi'); deckMeasure('petang');
+      deckUpdate('pagi', true); deckUpdate('petang', true);
+    });
+    // Panah kiri/kanan untuk pindah kartu (desktop)
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      var st = DECK[DZIKIR_TAB];
+      if (!st) return;
+      deckGo(DZIKIR_TAB, st.i + (e.key === 'ArrowRight' ? 1 : -1));
+    });
   })();
 </script>
 @endsection
