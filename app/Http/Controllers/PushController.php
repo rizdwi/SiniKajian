@@ -26,8 +26,15 @@ class PushController extends Controller
 
         // ID app_users yang stabil via email (bukan Auth::id() SQLite yang
         // berubah antar instance Vercel) agar subscription terhubung ke
-        // bookmark & follow user yang sama.
-        $userId = Auth::check() ? ($svc->currentAppUserId() ?? Auth::id()) : null;
+        // bookmark & follow user yang sama. findOrCreate bisa melempar saat
+        // Supabase tidak terjangkau — jangan biarkan jadi 500.
+        $userId = null;
+        try {
+            $userId = Auth::check() ? ($svc->currentAppUserId() ?? Auth::id()) : null;
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Push subscribe userId gagal: ' . $e->getMessage());
+            $userId = Auth::check() ? Auth::id() : null;
+        }
 
         // Upsert ke Supabase push_subscriptions
         $svc->upsertPushSubscription([

@@ -34,6 +34,10 @@ Route::post('/kehadiran/bersihkan', [KajianController::class, 'clearAttendances'
 Route::post('/majelis/follow', [KajianController::class, 'toggleFollowMajelis'])->middleware('throttle:30,1')->name('majelis.follow');
 Route::post('/ustadz/follow', [KajianController::class, 'toggleFollowUstadz'])->middleware('throttle:30,1')->name('ustadz.follow');
 Route::post('/api/notif-prefs', [KajianController::class, 'saveNotifPrefs'])->middleware('throttle:30,1')->name('api.notif-prefs');
+// Token CSRF segar untuk retry sekali bila tab sudah lama terbuka (419).
+Route::get('/api/csrf-token', function () {
+    return response()->json(['token' => csrf_token()]);
+})->middleware('throttle:30,1')->name('api.csrf-token');
 
 // Autentikasi Pengguna & Kredensial
 Route::redirect('/login', '/masuk');
@@ -174,6 +178,6 @@ Route::post('/webhook/sync-kajian', function (\Illuminate\Http\Request $request)
 });
 
 // Web Push Notifications
-Route::post('/api/push/subscribe', [App\Http\Controllers\PushController::class, 'subscribe'])->middleware('throttle:10,1');
+Route::post('/api/push/subscribe', [App\Http\Controllers\PushController::class, 'subscribe'])->middleware('throttle:30,1');
 Route::post('/api/push/unsubscribe', [App\Http\Controllers\PushController::class, 'unsubscribe'])->middleware('throttle:10,1');
 Route::post('/api/push/send', [App\Http\Controllers\PushController::class, 'send'])->middleware('throttle:60,1');

@@ -325,8 +325,55 @@
     'denied': 'Izin notifikasi untuk Majelisku sedang diblokir di browser ini. Ketuk ikon gembok di address bar, pilih Izin situs, ubah Notifikasi menjadi Izinkan, lalu muat ulang halaman dan coba lagi.',
     'dismissed': 'Izin notifikasi belum diberikan. Ketuk lagi tombol pengingat, lalu pilih "Izinkan" saat browser bertanya.',
     'subscribe-failed': 'Gagal mendaftarkan perangkat untuk notifikasi. Periksa koneksi, lalu coba lagi. Bila tetap gagal, tutup dan buka lagi Majelisku.',
-    'server': 'Gagal menyimpan pengingat di server. Coba lagi sebentar lagi.'
+    'server': 'Gagal menyimpan pengingat di server. Coba lagi sebentar lagi.',
+    'session-expired': 'Sesi berakhir — halaman dimuat ulang sekali, silakan ketuk lagi tombolnya.'
   };
+
+  // POST JSON dengan retry sekali bila token CSRF basi (419): tab yang sudah
+  // lama terbuka / sesi berganti menyimpan token lama di meta tag.
+  async function postJSONSholat(url, body) {
+    var headers = function () {
+      return { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN_SHOLAT };
+    };
+    var res = await fetch(url, { method: 'POST', headers: headers(), body: JSON.stringify(body) });
+    if (res.status === 419) {
+      try {
+        var tr = await fetch('/api/csrf-token', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        if (tr.ok) {
+          var tj = await tr.json();
+          if (tj && tj.token) {
+            CSRF_TOKEN_SHOLAT = tj.token;
+            var meta = document.querySelector('meta[name="csrf-token"]');
+            if (meta) meta.setAttribute('content', tj.token);
+            res = await fetch(url, { method: 'POST', headers: headers(), body: JSON.stringify(body) });
+          }
+        }
+      } catch (e2) { /* abaikan, res tetap 419 pertama */ }
+    }
+    return res;
+  }
+
+  function revertPrefButton(btn, turningOn) {
+    btn.textContent = turningOn ? 'Mati' : 'Aktif';
+    btn.classList.toggle('bg-[#1D4D4F]', !turningOn);
+    btn.classList.toggle('text-white', !turningOn);
+    btn.classList.toggle('bg-[#F1F5F4]', turningOn);
+    btn.classList.toggle('text-[#607072]', turningOn);
+  }
+
+  function handleSessionExpired() {
+    // 419 yang bertahan berarti sesi benar-benar mati: muat ulang SEKALI
+    // agar halaman + token segar. Dibatasi via sessionStorage.
+    try {
+      if (!sessionStorage.getItem('sk_csrf_reloaded')) {
+        sessionStorage.setItem('sk_csrf_reloaded', '1');
+        location.reload();
+        return true;
+      }
+    } catch (e3) { /* storage tak tersedia: tampilkan pesan saja */ }
+    showPrefStatus(PREF_MESSAGES['session-expired'], true);
+    return true;
+  }
 
   async function ensurePushSholat() {
     // return {ok:true} atau {ok:false, reason:'...'}
@@ -353,11 +400,8 @@
       if (!sub) {
         sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8ArraySholat(VAPID_PUBLIC_KEY_SHOLAT) });
       }
-      var res = await fetch('/api/push/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN_SHOLAT },
-        body: JSON.stringify(sub.toJSON())
-      });
+      var res = await postJSONSholat('/api/push/subscribe', sub.toJSON());
+      if (res.status === 419) return { ok: false, reason: 'session-expired' };
       if (!res.ok) return { ok: false, reason: 'server' };
       return { ok: true };
     } catch (e) {
@@ -390,6 +434,7 @@
       btn.disabled = false;
       if (!r.ok) {
         btn.textContent = 'Mati';
+        if (r.reason === 'session-expired') { handleSessionExpired(); return; }
         showPrefStatus(PREF_MESSAGES[r.reason] || PREF_MESSAGES['subscribe-failed'], true);
         return;
       }
@@ -402,23 +447,19 @@
     try {
       var body = { city: SHOLAT_CITY, lat: SHOLAT_LAT, lon: SHOLAT_LON };
       body[key] = turningOn;
-      var res = await fetch('/api/notif-prefs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN_SHOLAT },
-        body: JSON.stringify(body)
-      });
+      var res = await postJSONSholat('/api/notif-prefs', body);
+      if (res.status === 419) { revertPrefButton(btn, turningOn); handleSessionExpired(); return; }
       if (!res.ok) {
         var d = await res.json().catch(function () { return {}; });
-        showPrefStatus((d && d.error) || 'Gagal menyimpan pengingat.', true);
-        btn.textContent = turningOn ? 'Mati' : 'Aktif';
-        btn.classList.toggle('bg-[#1D4D4F]', !turningOn);
-        btn.classList.toggle('text-white', !turningOn);
-        btn.classList.toggle('bg-[#F1F5F4]', turningOn);
-        btn.classList.toggle('text-[#607072]', turningOn);
+        showPrefStatus((d && d.error) || ('Gagal menyimpan pengingat (' + res.status + ').'), true);
+        revertPrefButton(btn, turningOn);
       } else {
         showPrefStatus(turningOn ? 'Pengingat diaktifkan.' : 'Pengingat dimatikan.', false);
       }
     } catch (e) {
+      // Sebelumnya tombol tidak dikembalikan di sini sehingga UI bisa
+      // menampilkan "Aktif" padahal server tidak menyimpan apa-apa.
+      revertPrefButton(btn, turningOn);
       showPrefStatus('Gagal menyimpan pengingat.', true);
     }
   }
