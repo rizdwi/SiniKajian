@@ -483,53 +483,30 @@
     var target = dzikirTarget(waktu, idx, parseInt(item.getAttribute('data-target'), 10));
     var cur = parseInt(DZIKIR_STATE[waktu][idx] || 0, 10);
 
+    // Langsung penuhi target poin (misal x3 langsung beri 3 poin penuh tanpa perlu swipe/klik 3x)
     if (cur < target) {
-      // Point bertambah otomatis!
-      cur++;
-      DZIKIR_STATE[waktu][idx] = cur;
-      dzikirPointsAdd(1);
+      var addedPts = target - cur;
+      DZIKIR_STATE[waktu][idx] = target;
+      dzikirPointsAdd(addedPts);
       dzikirSave(DZIKIR_STATE);
       dzikirRenderCard(waktu, idx);
       dzikirRenderAll();
-      showPointToast(waktu, '+1 Poin (' + cur + '/' + target + ')');
-
-      if (cur >= target) {
-        dzikirPushHistory(waktu, idx, target, item);
-        // Bila tuntas, animasikan kartu meluncur ke kanan lalu pindah ke kartu berikutnya
-        activeCard.classList.add('animating');
-        activeCard.style.transform = 'translate(' + Math.max(window.innerWidth, 500) + 'px, 20px) rotate(20deg)';
-        activeCard.style.opacity = '0';
-        setTimeout(function () {
-          if (st.i < st.n - 1) {
-            st.i++;
-            floatLayout(waktu);
-          } else {
-            floatLayout(waktu);
-          }
-        }, 220);
-        return;
-      } else {
-        // Belum mencapai target: membal kembali ke tengah secara elastis
-        activeCard.classList.add('animating');
-        activeCard.style.transform = 'translate(0, 0) rotate(0)';
-        setTimeout(function () { activeCard.classList.remove('animating'); }, 260);
-      }
-    } else {
-      // Sudah selesai: geser kanan pindah ke kartu berikutnya
-      if (st.i < st.n - 1) {
-        activeCard.classList.add('animating');
-        activeCard.style.transform = 'translate(' + Math.max(window.innerWidth, 500) + 'px, 20px) rotate(20deg)';
-        activeCard.style.opacity = '0';
-        setTimeout(function () {
-          st.i++;
-          floatLayout(waktu);
-        }, 220);
-      } else {
-        activeCard.classList.add('animating');
-        activeCard.style.transform = 'translate(0, 0) rotate(0)';
-        setTimeout(function () { activeCard.classList.remove('animating'); }, 260);
-      }
+      showPointToast(waktu, '+' + addedPts + ' Poin (' + target + '/' + target + ' ✓)');
+      dzikirPushHistory(waktu, idx, target, item);
     }
+
+    // Luncurkan kartu ke kanan dan buka kartu berikutnya
+    activeCard.classList.add('animating');
+    activeCard.style.transform = 'translate(' + Math.max(window.innerWidth, 500) + 'px, 20px) rotate(20deg)';
+    activeCard.style.opacity = '0';
+    setTimeout(function () {
+      if (st.i < st.n - 1) {
+        st.i++;
+        floatLayout(waktu);
+      } else {
+        floatLayout(waktu);
+      }
+    }, 220);
   }
 
   function handleSwipeLeft(waktu) {
@@ -596,7 +573,14 @@
 
       var sR = cur.querySelector('.stamp-right');
       var sL = cur.querySelector('.stamp-left');
-      if (sR) sR.style.opacity = dx > 15 ? Math.min(1, (dx - 15) / 50) : 0;
+      if (sR) {
+        var itemEl = cur.querySelector('.dzikir-item');
+        var tgt = itemEl ? dzikirTarget(waktu, st.i, parseInt(itemEl.getAttribute('data-target'), 10)) : 1;
+        var currentVal = parseInt(DZIKIR_STATE[waktu][st.i] || 0, 10);
+        var rem = Math.max(1, tgt - currentVal);
+        sR.textContent = currentVal < tgt ? '+' + rem + ' POIN ✓' : 'LANJUT →';
+        sR.style.opacity = dx > 15 ? Math.min(1, (dx - 15) / 50) : 0;
+      }
       if (sL) sL.style.opacity = dx < -15 ? Math.min(1, (-dx - 15) / 50) : 0;
     });
 
