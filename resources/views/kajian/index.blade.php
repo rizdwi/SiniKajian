@@ -80,9 +80,6 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
-      <button type="button" onclick="document.getElementById('filterChipsSection').scrollIntoView({behavior:'smooth',block:'center'})" title="Filter" aria-label="Filter" class="w-11 h-11 rounded-2xl bg-white dark:bg-[#162526] border border-[#E5ECEB] dark:border-[#1E2E2F] text-[#1D4D4F] flex items-center justify-center shrink-0 shadow-xs touch-btn transition">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
-      </button>
       <button id="viewModeToggle" onclick="openCalendarModal()" class="w-11 h-11 rounded-2xl bg-white dark:bg-[#162526] border border-[#E5ECEB] dark:border-[#1E2E2F] text-[#1D4D4F] flex items-center justify-center shrink-0 shadow-xs touch-btn transition" title="Buka kalender">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>

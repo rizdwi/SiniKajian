@@ -2,7 +2,7 @@
 
 @section('title', 'Jadwal Sholat - Majelisku')
 
-@section('meta_description', 'Jadwal sholat hari ini sesuai lokasi Anda — Subuh, Dzuhur, Ashar, Maghrib, Isya — lengkap dengan pengingat adzan, dzikir pagi petang, dan puasa Senin-Kamis.')
+@section('meta_description', 'Jadwal sholat hari ini sesuai lokasi Anda — Subuh, Dzuhur, Ashar, Maghrib, Isya — lengkap dengan pengingat dzikir pagi petang dan puasa Senin-Kamis.')
 
 @section('content')
 <div class="max-w-md mx-auto space-y-3.5 pb-24 pt-1">
@@ -35,7 +35,7 @@
     <button onclick="refreshSholatGps()" class="text-xs font-bold text-[#1D4D4F] hover:underline px-2 py-1 shrink-0">GPS Saya</button>
   </div>
 
-  <!-- Hero Card Sholat (desain mockup 2026-10-29) -->
+  <!-- Hero Card Sholat: Ringkasan & 5 Waktu Sholat Terpadu -->
   <div class="relative rounded-[28px] bg-gradient-to-br from-[#1D4D4F] to-[#0F292A] text-white p-5 shadow-md overflow-hidden">
     <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image:radial-gradient(circle at 85% 15%, rgba(255,255,255,0.5) 0, transparent 45%), radial-gradient(circle at 90% 85%, rgba(252,211,77,0.5) 0, transparent 40%);"></div>
     <div class="relative">
@@ -49,91 +49,75 @@
         </div>
         <div class="text-[64px] leading-none shrink-0 opacity-90">🕌</div>
       </div>
-      <button type="button" onclick="document.getElementById('prayerListSection').scrollIntoView({behavior:'smooth',block:'start'})" class="inline-flex items-center gap-1 mt-4 px-4 py-2 rounded-full bg-white text-[#1D4D4F] text-xs font-extrabold shadow touch-btn transition">Lihat Semua Jadwal Sholat</button>
+
+      <!-- Jadwal Sholat 5 Waktu (Card Gabung di Bagian Atas) -->
+      <div class="mt-5 pt-4 border-t border-white/15">
+        <div id="prayerCardsGrid" class="grid grid-cols-5 gap-1.5 text-center">
+          @foreach(['Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya'] as $pName)
+            <div data-prayer="{{ $pName }}" class="prayer-card flex flex-col items-center justify-center py-2 px-1 rounded-2xl bg-white/10 backdrop-blur-xs transition">
+              <span class="prayer-label text-[10px] font-bold text-white/70">{{ $pName }}</span>
+              <span class="prayer-val text-xs font-black text-white mt-1">{{ $timings[$pName] ?? '—' }}</span>
+            </div>
+          @endforeach
+        </div>
+        @if(!empty($timings['Imsak']) || !empty($timings['Terbit']))
+        <div class="flex items-center justify-between text-[10px] text-white/65 mt-2.5 px-1 font-medium">
+          <span id="imsakTimeText">Imsak: {{ $timings['Imsak'] ?? '—' }}</span>
+          <span id="terbitTimeText">Terbit: {{ $timings['Terbit'] ?? '—' }}</span>
+        </div>
+        @endif
+      </div>
     </div>
   </div>
 
-  <!-- Akses & Pengingat (desain mockup 2026-10-29: grid 2 kolom) -->
+  <!-- Akses & Pengingat: Grid 2 Kolom (Kiri: Alert Pengingat, Kanan: Card Baca Dzikir) -->
   <div>
-    <h3 class="text-sm font-bold text-[#1C2224] px-1 mb-2">Akses & Pengingat</h3>
+    <h3 class="text-sm font-bold text-[#1C2224] px-1 mb-2">Akses &amp; Pengingat</h3>
     <div class="grid grid-cols-2 gap-3">
       @if($isLoggedIn)
-      <!-- Pengingat Ibadah: adzan -->
-      <div class="rounded-3xl bg-white border border-[#E5ECEB] shadow-2xs p-3.5">
-        <div class="text-2xl leading-none">🔔</div>
-        <h4 class="text-sm font-bold text-[#1C2224] mt-2">Pengingat Ibadah</h4>
-        <div class="flex items-center justify-between gap-2 mt-2.5">
-          <span class="text-[11px] font-bold text-[#1C2224] leading-tight">Adzan 5 Waktu</span>
-          <button data-pref="adzan" onclick="togglePref(this)" class="pref-btn px-2.5 py-1 rounded-full text-[11px] font-bold transition shrink-0 {{ ($prefs['adzan'] ?? false) ? 'bg-[#1D4D4F] text-white' : 'bg-[#F1F5F4] text-[#607072]' }}">{{ ($prefs['adzan'] ?? false) ? 'Aktif' : 'Mati' }}</button>
-        </div>
-      </div>
-      <!-- Dzikir & Puasa -->
-      <div class="rounded-3xl bg-white border border-[#E5ECEB] shadow-2xs p-3.5">
-        <div class="text-2xl leading-none">📿</div>
-        <h4 class="text-sm font-bold text-[#1C2224] mt-2">Dzikir & Puasa</h4>
-        <div class="flex items-center justify-between gap-2 mt-2.5">
-          <span class="text-[11px] font-bold text-[#1C2224] leading-tight">Dzikir Pagi & Petang</span>
-          <button data-pref="dzikir" onclick="togglePref(this)" class="pref-btn px-2.5 py-1 rounded-full text-[11px] font-bold transition shrink-0 {{ ($prefs['dzikir'] ?? false) ? 'bg-[#1D4D4F] text-white' : 'bg-[#F1F5F4] text-[#607072]' }}">{{ ($prefs['dzikir'] ?? false) ? 'Aktif' : 'Mati' }}</button>
-        </div>
-        <div class="flex items-center justify-between gap-2 mt-2">
-          <span class="text-[11px] font-bold text-[#1C2224] leading-tight">Puasa Senin & Kamis</span>
-          <button data-pref="puasa" onclick="togglePref(this)" class="pref-btn px-2.5 py-1 rounded-full text-[11px] font-bold transition shrink-0 {{ ($prefs['puasa'] ?? false) ? 'bg-[#1D4D4F] text-white' : 'bg-[#F1F5F4] text-[#607072]' }}">{{ ($prefs['puasa'] ?? false) ? 'Aktif' : 'Mati' }}</button>
+      <!-- Card Kiri: Alert Pengingat Ibadah -->
+      <div class="rounded-3xl bg-white border border-[#E5ECEB] shadow-2xs p-3.5 flex flex-col justify-between">
+        <div>
+          <div class="text-2xl leading-none">🔔</div>
+          <h4 class="text-sm font-bold text-[#1C2224] mt-2">Pengingat Ibadah</h4>
+          <div class="space-y-2 mt-2.5">
+            <div class="flex items-center justify-between gap-1.5">
+              <span class="text-[11px] font-bold text-[#1C2224] leading-tight">Dzikir Pagi &amp; Petang</span>
+              <button data-pref="dzikir" onclick="togglePref(this)" class="pref-btn px-2.5 py-1 rounded-full text-[11px] font-bold transition shrink-0 {{ ($prefs['dzikir'] ?? false) ? 'bg-[#1D4D4F] text-white' : 'bg-[#F1F5F4] text-[#607072]' }}">{{ ($prefs['dzikir'] ?? false) ? 'Aktif' : 'Mati' }}</button>
+            </div>
+            <div class="flex items-center justify-between gap-1.5">
+              <span class="text-[11px] font-bold text-[#1C2224] leading-tight">Puasa Senin &amp; Kamis</span>
+              <button data-pref="puasa" onclick="togglePref(this)" class="pref-btn px-2.5 py-1 rounded-full text-[11px] font-bold transition shrink-0 {{ ($prefs['puasa'] ?? false) ? 'bg-[#1D4D4F] text-white' : 'bg-[#F1F5F4] text-[#607072]' }}">{{ ($prefs['puasa'] ?? false) ? 'Aktif' : 'Mati' }}</button>
+            </div>
+          </div>
         </div>
       </div>
       @else
-      <div class="col-span-2 rounded-3xl bg-white border border-[#E5ECEB] shadow-2xs p-4">
-        <p class="text-sm text-[#607072]">Masuk dulu untuk mengaktifkan pengingat adzan, dzikir, dan puasa di perangkat Anda.</p>
-        <a href="{{ route('login') }}" class="inline-block mt-3 px-4 py-2 rounded-xl bg-[#1D4D4F] text-white text-xs font-bold">Masuk / Daftar</a>
+      <!-- Card Kiri: Tamu / Belum Login -->
+      <div class="rounded-3xl bg-white border border-[#E5ECEB] shadow-2xs p-3.5 flex flex-col justify-between">
+        <div>
+          <div class="text-2xl leading-none">🔔</div>
+          <h4 class="text-sm font-bold text-[#1C2224] mt-2">Pengingat Ibadah</h4>
+          <p class="text-[11px] text-[#607072] mt-1.5 leading-snug">Masuk untuk mengaktifkan pengingat dzikir dan puasa.</p>
+        </div>
+        <a href="{{ route('login') }}" class="inline-block mt-3 px-3.5 py-1.5 rounded-full bg-[#1D4D4F] text-white text-[11px] font-bold text-center w-fit">Masuk</a>
       </div>
       @endif
-      <!-- Baca Dzikir: kartu khusus full-width (motif disamakan dengan kartu Pengingat Ibadah) -->
-      <a href="{{ route('kajian.dzikir') }}" class="col-span-2 rounded-3xl bg-white border border-[#E5ECEB] shadow-2xs p-3.5 flex items-center gap-3">
-        <div class="text-2xl leading-none shrink-0">📿</div>
-        <div class="flex-1 min-w-0">
-          <h4 class="text-sm font-bold text-[#1C2224]">Baca Dzikir Pagi &amp; Petang</h4>
-          <p id="dzikirCardProgress" class="text-[11px] text-[#607072] mt-0.5">Dzikir harian sesuai sunnah &bull; ketuk untuk mulai</p>
+
+      <!-- Card Kanan: Baca Dzikir -->
+      <a href="{{ route('kajian.dzikir') }}" class="rounded-3xl bg-white border border-[#E5ECEB] shadow-2xs p-3.5 flex flex-col justify-between hover:border-[#1D4D4F]/40 active:scale-[0.98] transition">
+        <div>
+          <div class="text-2xl leading-none">📿</div>
+          <h4 class="text-sm font-bold text-[#1C2224] mt-2">Baca Dzikir</h4>
+          <p id="dzikirCardProgress" class="text-[11px] text-[#607072] mt-1 leading-snug">Dzikir pagi &amp; petang sesuai sunnah &bull; ketuk untuk mulai</p>
         </div>
-        <div class="w-10 h-10 rounded-full bg-[#1D4D4F] text-white flex items-center justify-center text-lg font-bold shrink-0">&rarr;</div>
-      </a>
-      <!-- Suara Adzan -->
-      <div class="rounded-3xl bg-white border border-[#E5ECEB] shadow-2xs p-3.5">
-        <div class="text-2xl leading-none">🔊</div>
-        <h4 class="text-sm font-bold text-[#1C2224] mt-2">Suara Adzan</h4>
-        <label for="adzanVoiceSelect" class="block text-[11px] font-bold text-[#607072] mt-2.5 mb-1.5">Pilih muazin</label>
-        <div class="flex gap-1.5">
-          <select id="adzanVoiceSelect" onchange="selectAdzanVoice(this.value)" class="flex-1 min-w-0 border border-[#E5ECEB] rounded-xl px-2 py-2 text-xs font-bold text-[#1C2224] bg-white"></select>
-          <button id="adzanPreviewBtn" onclick="previewAdzanSelected()" class="w-10 h-10 rounded-xl bg-[#E8F5F3] text-[#1D4D4F] flex items-center justify-center shrink-0 text-sm font-bold">▶</button>
+        <div class="inline-flex items-center gap-1 mt-3 px-3 py-1.5 rounded-full bg-[#1D4D4F] text-white text-[11px] font-bold w-fit">
+          <span>Mulai Baca</span>
+          <span>&rarr;</span>
         </div>
-        <p id="adzanVoiceStatus" class="pt-1.5 text-[11px] text-[#607072] leading-snug"></p>
-      </div>
-      <!-- CTA kuning -->
-      <a href="{{ route('kajian.index') }}" class="block rounded-3xl bg-amber-400 text-[#1D4D4F] p-3.5 shadow-2xs">
-        <div class="flex items-start justify-between gap-2">
-          <p class="text-sm font-black leading-snug">Selesai sholat, lanjut ngaji →</p>
-          <span class="text-xl leading-none shrink-0">💬</span>
-        </div>
-        <p class="text-[11px] font-medium mt-1 leading-snug">Lihat kajian Sunnah terdekat di lokasi Anda hari ini.</p>
       </a>
     </div>
     <p id="prefStatus" class="px-1 py-2 text-[11px] text-[#607072]"></p>
-  </div>
-
-  <!-- Daftar waktu sholat (di bawah grid; dibuka tombol hero) -->
-  <div id="prayerListSection" class="rounded-2xl bg-white border border-[#E5ECEB] shadow-2xs overflow-hidden">
-    <div class="px-4 py-3 border-b border-[#E5ECEB] flex items-center justify-between">
-      <h3 class="text-sm font-bold text-[#1C2224]">Waktu Sholat Hari Ini</h3>
-      <span class="text-[10px] font-medium text-[#607072]">Metode Kemenag RI</span>
-    </div>
-    <div id="prayerList">
-      @forelse($timings as $name => $time)
-        <div data-prayer="{{ $name }}" data-time="{{ $time }}" class="prayer-row flex items-center justify-between px-4 py-3 border-b border-[#F1F5F4] last:border-b-0">
-          <span class="text-sm font-bold text-[#1C2224]">{{ $name }}</span>
-          <span class="text-sm font-bold text-[#1D4D4F]">{{ $time ?: '—' }}</span>
-        </div>
-      @empty
-        <p class="p-4 text-sm text-[#607072]">@if($city === null) Lokasi belum dipilih — ketuk GPS Saya di atas untuk memuat jadwal sesuai lokasi Anda. @else Jadwal sholat tidak dapat dimuat. Periksa koneksi lalu segarkan halaman. @endif</p>
-      @endforelse
-    </div>
   </div>
 
   <!-- Bantuan & Privasi -->
@@ -189,7 +173,7 @@
       timeEl.textContent = SHOLAT_TIMINGS['Subuh'] || '—';
       cdEl.textContent = '—';
       noteEl.textContent = 'Semua sholat hari ini sudah lewat.';
-      markPrayerRows(null);
+      markPrayerCards(null);
       return;
     }
     nameEl.textContent = next;
@@ -198,26 +182,40 @@
     var h = Math.floor(diff / 60), m = diff % 60;
     cdEl.textContent = '−' + h + ' jam ' + (m < 10 ? '0' : '') + m + ' menit lagi';
     noteEl.textContent = 'Waktu ' + next + ' ' + SHOLAT_TIMINGS[next] + ' WIB';
-    markPrayerRows(next);
+    markPrayerCards(next);
   }
 
-  function markPrayerRows(next) {
-    document.querySelectorAll('.prayer-row').forEach(function (row) {
-      var isNext = row.getAttribute('data-prayer') === next;
-      row.classList.toggle('bg-amber-50', isNext);
-      row.querySelector('span:first-child').classList.toggle('text-amber-700', isNext);
+  function markPrayerCards(next) {
+    document.querySelectorAll('#prayerCardsGrid .prayer-card').forEach(function (card) {
+      var isNext = card.getAttribute('data-prayer') === next;
+      var label = card.querySelector('.prayer-label');
+      var val = card.querySelector('.prayer-val');
+      if (isNext) {
+        card.className = 'prayer-card flex flex-col items-center justify-center py-2 px-1 rounded-2xl bg-white text-[#1D4D4F] shadow-sm transition scale-[1.02] font-bold';
+        if (label) label.className = 'prayer-label text-[10px] font-extrabold text-[#1D4D4F]/85';
+        if (val) val.className = 'prayer-val text-xs font-black text-[#1D4D4F] mt-1';
+      } else {
+        card.className = 'prayer-card flex flex-col items-center justify-center py-2 px-1 rounded-2xl bg-white/10 backdrop-blur-xs transition';
+        if (label) label.className = 'prayer-label text-[10px] font-bold text-white/70';
+        if (val) val.className = 'prayer-val text-xs font-black text-white mt-1';
+      }
     });
   }
 
   function renderTimings(timings) {
     SHOLAT_TIMINGS = timings;
-    var list = document.getElementById('prayerList');
-    var order = ['Imsak', 'Subuh', 'Terbit', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya'];
-    list.innerHTML = order.filter(function (n) { return timings[n]; }).map(function (name) {
-      return '<div data-prayer="' + name + '" class="prayer-row flex items-center justify-between px-4 py-3 border-b border-[#F1F5F4] last:border-b-0">'
-        + '<span class="text-sm font-bold text-[#1C2224]">' + name + '</span>'
-        + '<span class="text-sm font-bold text-[#1D4D4F]">' + timings[name] + '</span></div>';
-    }).join('');
+    var order = ['Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya'];
+    order.forEach(function (name) {
+      var card = document.querySelector('#prayerCardsGrid [data-prayer="' + name + '"]');
+      if (card) {
+        var val = card.querySelector('.prayer-val');
+        if (val) val.textContent = timings[name] || '—';
+      }
+    });
+    var imsakEl = document.getElementById('imsakTimeText');
+    if (imsakEl && timings['Imsak']) imsakEl.textContent = 'Imsak: ' + timings['Imsak'];
+    var terbitEl = document.getElementById('terbitTimeText');
+    if (terbitEl && timings['Terbit']) terbitEl.textContent = 'Terbit: ' + timings['Terbit'];
     updateNextPrayer();
   }
 
@@ -482,168 +480,6 @@
     if (info.isIOS && !info.isStandalone) { showPrefStatus(PREF_MESSAGES['ios-not-installed'], true); return; }
     if (Notification.permission === 'denied') { showPrefStatus(PREF_MESSAGES['denied'], true); return; }
   })();
-
-    // --- Pilihan suara adzan (2026-10-29, dropdown + self-hosted).
-  // 24 suara, file MP3 DI-HOST SENDIRI di Supabase Storage (bucket
-  // publik `adzan`). CDN luar (Aladhan + archive.org) TERBUKTI gagal
-  // diputar di HP user & browser (play() reject / error event),
-  // padahal curl dari VM 200 + Range 206 — diduga jaringan pengguna
-  // memblokir/mengulur CDN luar. File yang sama kini disajikan dari
-  // Supabase, jalur yang sama dengan flyer kajian.
-  // UPDATE 2026-10-29: HP user TETAP gagal memutar langsung dari
-  // supabase.co (diduga jalur yang sama diblokir) — suara kini
-  // lewat proxy domain sendiri /api/adzan/ (KajianController::adzan,
-  // pola thumb + Range forwarding untuk pemutar iOS).
-  var ADZAN_BASE = '/api/adzan/';
-  var ADZAN_VOICES = [
-    { id: 'a9', group: 'Aladhan', name: 'Mishary Rashid Alafasy', note: 'Nada klasik — paling dikenal', url: ADZAN_BASE + 'a9.mp3' },
-    { id: 'a1', group: 'Aladhan', name: 'Ahmad al-Nafees', note: 'Aladhan', url: ADZAN_BASE + 'a1.mp3' },
-    { id: 'a2', group: 'Aladhan', name: 'Hafiz Mustafa Özcan', note: 'Muazin Turki', url: ADZAN_BASE + 'a2.mp3' },
-    { id: 'a3', group: 'Aladhan', name: 'Karl Jenkins', note: 'Mass for Peace', url: ADZAN_BASE + 'a3.mp3' },
-    { id: 'a4', group: 'Aladhan', name: 'Mishary Rashid Alafasy', note: 'Versi Dubai One TV', url: ADZAN_BASE + 'a4.mp3' },
-    { id: 'a7', group: 'Aladhan', name: 'Mishary Rashid Alafasy', note: 'Versi lain', url: ADZAN_BASE + 'a7.mp3' },
-    { id: 'm-ali-mullah', group: 'Muazin Masjidil Haram', name: 'Ali Ahmed Mullah', note: 'Masjidil Haram, Makkah', url: ADZAN_BASE + 'm-ali-mullah.mp3' },
-    { id: 'm-basnawi', group: 'Muazin Masjidil Haram', name: 'Ahmed Abdullah Basnawi', note: 'Masjidil Haram, Makkah', url: ADZAN_BASE + 'm-basnawi.mp3' },
-    { id: 'm-naif', group: 'Muazin Masjidil Haram', name: 'Naif Saleh Faydah', note: 'Masjidil Haram, Makkah', url: ADZAN_BASE + 'm-naif.mp3' },
-    { id: 'm-majid', group: 'Muazin Masjidil Haram', name: 'Majid Ibrahim Abbas', note: 'Masjidil Haram, Makkah', url: ADZAN_BASE + 'm-majid.mp3' },
-    { id: 'm-maghribi', group: 'Muazin Masjidil Haram', name: 'Muhammad Maghribi', note: 'Masjidil Haram, Makkah', url: ADZAN_BASE + 'm-maghribi.mp3' },
-    { id: 'm-hamd', group: 'Muazin Masjidil Haram', name: 'Hamd Daghreeree', note: 'Masjidil Haram, Makkah', url: ADZAN_BASE + 'm-hamd.mp3' },
-    { id: 'm-hashim', group: 'Muazin Masjidil Haram', name: 'Hashim Muhammad Saqaf', note: 'Masjidil Haram, Makkah', url: ADZAN_BASE + 'm-hashim.mp3' },
-    { id: 'm-hussain', group: 'Muazin Masjidil Haram', name: 'Hussain Hassan Shahat', note: 'Masjidil Haram, Makkah', url: ADZAN_BASE + 'm-hussain.mp3' },
-    { id: 'm-emad', group: 'Muazin Masjidil Haram', name: 'Emad Ismaeel Baqree', note: 'Masjidil Haram, Makkah', url: ADZAN_BASE + 'm-emad.mp3' },
-    { id: 'm-khoja', group: 'Muazin Masjidil Haram', name: 'Ahmed Yunus Khoja', note: 'Masjidil Haram, Makkah', url: ADZAN_BASE + 'm-khoja.mp3' },
-    { id: 'm-saeed', group: 'Muazin Masjidil Haram', name: 'Saeed Umar Fullatah', note: 'Masjidil Haram, Makkah', url: ADZAN_BASE + 'm-saeed.mp3' },
-    { id: 'm-suhail', group: 'Muazin Masjidil Haram', name: 'Suhail Abdul Malik Hafiz', note: 'Masjidil Haram, Makkah', url: ADZAN_BASE + 'm-suhail.mp3' },
-    { id: 'm-taufiq', group: 'Muazin Masjidil Haram', name: 'Taufiq Abdul Hafeez Koj', note: 'Masjidil Haram, Makkah', url: ADZAN_BASE + 'm-taufiq.mp3' },
-    { id: 'q-hijaz-kar', group: 'Nada & Maqam — Ali Mullah', name: 'Hijaz Kar', note: 'Maqam Hijaz', url: ADZAN_BASE + 'q-hijaz-kar.mp3' },
-    { id: 'q-sika', group: 'Nada & Maqam — Ali Mullah', name: 'Sika', note: 'Maqam Sika', url: ADZAN_BASE + 'q-sika.mp3' },
-    { id: 'q-husaini', group: 'Nada & Maqam — Ali Mullah', name: 'Husaini', note: 'Maqam Husaini', url: ADZAN_BASE + 'q-husaini.mp3' },
-    { id: 'q-jaharka', group: 'Nada & Maqam — Ali Mullah', name: 'Jaharka', note: 'Maqam Jaharka', url: ADZAN_BASE + 'q-jaharka.mp3' },
-    { id: 'q-maya', group: 'Nada & Maqam — Ali Mullah', name: 'Maya', note: 'Maqam Maya', url: ADZAN_BASE + 'q-maya.mp3' }
-  ];
-
-  var ADZAN_VOICE_KEY = 'majelisku_adzan_voice';
-  var ADZAN_DEFAULT = 'a9';
-  var adzanAudio = null;
-  var adzanPlayingId = null;
-
-  function adzanVoiceId() {
-    try {
-      var v = localStorage.getItem(ADZAN_VOICE_KEY);
-      if (v && ADZAN_VOICES.some(function (x) { return x.id === v; })) return v;
-    } catch (e) {}
-    return ADZAN_DEFAULT;
-  }
-
-  function adzanVoiceById(id) {
-    for (var i = 0; i < ADZAN_VOICES.length; i++) {
-      if (ADZAN_VOICES[i].id === id) return ADZAN_VOICES[i];
-    }
-    return ADZAN_VOICES[0];
-  }
-
-  function adzanAudioEl() {
-    if (!adzanAudio) {
-      adzanAudio = new Audio();
-      adzanAudio.preload = 'none';
-      adzanAudio.addEventListener('ended', adzanStop);
-      adzanAudio.addEventListener('error', function () {
-        var st = document.getElementById('adzanVoiceStatus');
-        if (st) st.textContent = 'Suara tidak dapat diputar saat ini. Periksa koneksi lalu coba lagi.';
-        adzanStop();
-      });
-    }
-    return adzanAudio;
-  }
-
-  function adzanStop() {
-    if (adzanAudio) { try { adzanAudio.pause(); } catch (e) {} }
-    adzanPlayingId = null;
-    var btn = document.getElementById('adzanPreviewBtn');
-    if (btn) btn.textContent = '▶';
-  }
-
-  function adzanStatusFor(id) {
-    var v = adzanVoiceById(id);
-    return 'Suara adzan: ' + v.name + ' (' + v.group + '). Tersimpan di perangkat ini.';
-  }
-
-  function renderAdzanSelect() {
-    var sel = document.getElementById('adzanVoiceSelect');
-    if (!sel) return;
-    var cur = adzanVoiceId();
-    var html = '';
-    var lastGroup = '';
-    ADZAN_VOICES.forEach(function (v) {
-      if (v.group !== lastGroup) {
-        if (lastGroup) html += '</optgroup>';
-        html += '<optgroup label="' + v.group + '">';
-        lastGroup = v.group;
-      }
-      html += '<option value="' + v.id + '"' + (v.id === cur ? ' selected' : '') + '>' + v.name + ' — ' + v.note + '</option>';
-    });
-    if (lastGroup) html += '</optgroup>';
-    sel.innerHTML = html;
-    var st = document.getElementById('adzanVoiceStatus');
-    if (st && !st.textContent) st.textContent = adzanStatusFor(cur);
-  }
-
-  function previewAdzanSelected() {
-    var sel = document.getElementById('adzanVoiceSelect');
-    var id = sel ? sel.value : adzanVoiceId();
-    var v = adzanVoiceById(id);
-    var audio = adzanAudioEl();
-    if (adzanPlayingId === id && !audio.paused) { adzanStop(); return; }
-    adzanStop();
-    // Reset elemen sebelum ganti src: bila play sebelumnya gagal,
-    // elemen bisa macet di src lama (set src yang sama = no-op di
-    // sebagian browser) sehingga percobaan ulang gagal instan.
-    try { audio.removeAttribute('src'); audio.load(); } catch (e) {}
-    audio.src = v.url;
-    adzanPlayingId = id;
-    var btn = document.getElementById('adzanPreviewBtn');
-    if (btn) btn.textContent = '⏸';
-    audio.play().catch(function () {
-      var st = document.getElementById('adzanVoiceStatus');
-      if (st) st.textContent = 'Suara tidak dapat diputar saat ini. Periksa koneksi lalu coba lagi.';
-      adzanStop();
-    });
-  }
-
-  function selectAdzanVoice(id) {
-    try { localStorage.setItem(ADZAN_VOICE_KEY, id); } catch (e) {}
-    adzanStop();
-    var st = document.getElementById('adzanVoiceStatus');
-    if (st) st.textContent = adzanStatusFor(id);
-  }
-
-  // Putar adzan saat waktu sholat tiba (halaman terbuka + pengingat
-  // adzan Aktif). Sekali per sholat per hari.
-  function checkAdzanAutoPlay() {
-    var adzanBtn = document.querySelector('[data-pref="adzan"]');
-    if (!adzanBtn || adzanBtn.textContent.trim() !== 'Aktif') return;
-    var now = new Date();
-    var hhmm = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2);
-    var today = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2) + '-' + ('0' + now.getDate()).slice(-2);
-    PRAYER_ORDER.forEach(function (name) {
-      if (SHOLAT_TIMINGS[name] !== hhmm) return;
-      var playedKey = 'majelisku_adzan_played_' + today + '_' + name;
-      try {
-        if (localStorage.getItem(playedKey)) return;
-        localStorage.setItem(playedKey, '1');
-      } catch (e) {}
-      var v = adzanVoiceById(adzanVoiceId());
-      var audio = adzanAudioEl();
-      adzanStop();
-      try { audio.removeAttribute('src'); audio.load(); } catch (e) {}
-      audio.src = v.url;
-      adzanPlayingId = v.id;
-      audio.play().catch(function () {});
-    });
-  }
-
-  renderAdzanSelect();
-  setInterval(checkAdzanAutoPlay, 15000);
 
   updateNextPrayer();
   setInterval(updateNextPrayer, 30000);

@@ -813,7 +813,7 @@ class KajianController extends Controller
         $existing = $svc->getNotificationPrefs($appId) ?? [];
         $payload = [
             'user_id' => $appId,
-            'adzan' => (bool) ($data['adzan'] ?? $existing['adzan'] ?? false),
+            'adzan' => false,
             'dzikir' => (bool) ($data['dzikir'] ?? $existing['dzikir'] ?? false),
             'puasa' => (bool) ($data['puasa'] ?? $existing['puasa'] ?? false),
         ];
