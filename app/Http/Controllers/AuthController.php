@@ -394,14 +394,17 @@ class AuthController extends Controller
             $cutoff = $todayStr;
             // Ambil kajian tersimpan dari Supabase (gunakan Supabase user ID, bukan local ID)
             $supabaseUserId = isset($sbUser) && isset($sbUser['id']) ? $sbUser['id'] : null;
-            $allBookmarks = $supabaseUserId ? $this->getUserBookmarksBySupabaseId($supabaseUserId) : collect();
+            if ($supabaseUserId) {
+                $allBookmarks = $this->getUserBookmarksBySupabaseId($supabaseUserId);
+                $attendances = $this->getUserAttendancesBySupabaseId($supabaseUserId);
+            } else {
+                $allBookmarks = $user->bookmarks()->with('kajian')->get()->pluck('kajian')->filter();
+                $attendances = $user->attendances()->with('kajian')->get();
+            }
             $bookmarkedKajians = $allBookmarks->filter(function ($k) use ($todayStr) {
                 if (empty($k->event_date)) return true;
                 return $k->event_date >= $todayStr;
             });
-
-            // Ambil kehadiran dari Supabase (gunakan Supabase user ID)
-            $attendances = $supabaseUserId ? $this->getUserAttendancesBySupabaseId($supabaseUserId) : collect();
 
             $submittedKajians = $user->submittedKajians()->latest()->get();
 
@@ -546,11 +549,11 @@ class AuthController extends Controller
         // Upload avatar ke Supabase Storage (bucket avatars)
         $avatarUrl = null;
         if ($request->filled('avatar_data') && str_starts_with($request->avatar_data, 'data:image')) {
-            $avatarUrl = $this->uploadAvatarToStorage($request->input('avatar_data'), $user->id);
+            $avatarUrl = $this->uploadAvatarToStorage($request->input('avatar_data'), $user->id) ?: $request->input('avatar_data');
         } elseif ($request->hasFile('avatar') && $request->file('avatar')->isValid()) {
             $file = $request->file('avatar');
             $dataUri = 'data:' . $file->getMimeType() . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
-            $avatarUrl = $this->uploadAvatarToStorage($dataUri, $user->id);
+            $avatarUrl = $this->uploadAvatarToStorage($dataUri, $user->id) ?: $dataUri;
         }
         if ($avatarUrl) {
             $user->avatar = $avatarUrl;

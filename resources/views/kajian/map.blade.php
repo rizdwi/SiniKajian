@@ -316,6 +316,25 @@
     }
   }
 
+  function optimizeThumb(url, width = 160) {
+    if (!url) return '';
+    try {
+      const u = new URL(url);
+      if (u.hostname.includes('supabase.co') && u.pathname.includes('/storage/v1/object/public/')) {
+        u.pathname = u.pathname.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
+        const w = width || 160;
+        const h = w <= 240 ? w : Math.round(w * 0.6);
+        u.searchParams.set('width', w);
+        u.searchParams.set('height', h);
+        u.searchParams.set('quality', 60);
+        u.searchParams.set('format', 'webp');
+        u.searchParams.set('resize', 'cover');
+        return u.toString();
+      }
+    } catch (e) {}
+    return url;
+  }
+
   function renderListView(events) {
     const container = document.getElementById('nearMosqueCards');
     const countLabel = document.getElementById('listCountLabel');
@@ -338,9 +357,10 @@
     processed.forEach(item => {
       const distStr = item.distance > 0 ? (item.distance < 1 ? Math.round(item.distance * 1000) + ' m' : item.distance.toFixed(1) + ' km') : 'Terdekat';
       const posterUrl = safeUrl(item.poster_url);
+      const thumbUrl = optimizeThumb(posterUrl, 120);
       const flyer = posterUrl
         ? `<div class="w-14 h-14 rounded-2xl overflow-hidden shrink-0 bg-slate-100 border border-[#E5ECEB]">
-             <img src="${posterUrl}" alt="Foto" loading="lazy" class="w-full h-full object-cover">
+             <img src="${thumbUrl || posterUrl}" alt="Foto" width="56" height="56" loading="lazy" class="w-full h-full object-cover">
            </div>`
         : `<div class="w-14 h-14 rounded-2xl overflow-hidden shrink-0 bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center font-bold text-xs border border-[#E5ECEB]">
              <span>MASJID</span>
@@ -418,7 +438,7 @@
     const drawerFlyerThumb = document.getElementById('drawerFlyerThumb');
     const drawerFlyerImg = document.getElementById('drawerFlyerImg');
     if (item.poster_url) {
-      drawerFlyerImg.src = item.poster_url;
+      drawerFlyerImg.src = optimizeThumb(item.poster_url, 160) || item.poster_url;
       drawerFlyerThumb.classList.remove('hidden');
     } else {
       drawerFlyerThumb.classList.add('hidden');

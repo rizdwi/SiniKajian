@@ -124,7 +124,8 @@
       if (!isset($parts['host']) || !str_contains($parts['host'], 'supabase.co')) return $url;
       if (!isset($parts['path']) || !str_contains($parts['path'], '/storage/v1/object/public/')) return $url;
       $path = str_replace('/storage/v1/object/public/', '/storage/v1/render/image/public/', $parts['path']);
-      return ($parts['scheme'] ?? 'https') . '://' . $parts['host'] . $path . '?width=' . (int) $w . '&quality=60&format=webp&resize=cover';
+      $h = $w <= 240 ? $w : (int) round($w * 0.6);
+      return ($parts['scheme'] ?? 'https') . '://' . $parts['host'] . $path . '?width=' . (int) $w . '&height=' . (int) $h . '&quality=60&format=webp&resize=cover';
     };
     // Thumbnail lewat proxy edge Vercel (LCP fix 2026-10-27): Supabase
     // menyajikan gambar no-cache/DYNAMIC, jadi thumb diarahkan ke
@@ -157,7 +158,7 @@
 
   {{-- Preload gambar LCP: slide pertama carousel (masuk <head> via stack styles) --}}
   @if(!empty($serverSpotlight))
-    @php $skPreloadImg = $skThumb($serverSpotlight[0]['poster_url'] ?? null, 800) ?: 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=800&q=80'; @endphp
+    @php $skPreloadImg = $skThumb($serverSpotlight[0]['poster_url'] ?? null, 500) ?: 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=500&q=70'; @endphp
     @push('styles')
     <link rel="preload" as="image" fetchpriority="high" href="{{ $skPreloadImg }}">
     @endpush
@@ -166,7 +167,7 @@
   <!-- Hero Spotlight: Majelis Pilihan Terdekat (Figma Screen 1: KAJIAN PILIHAN) -->
   <!-- Banner carousel: berdiri sendiri sebagai track horizontal, bisa di-swipe -->
   <section id="heroSpotlightContainer">
-    <div id="spotlightViewport" class="overflow-hidden rounded-3xl" style="touch-action:pan-y;min-height:240px;">
+    <div id="spotlightViewport" class="overflow-hidden rounded-3xl" style="touch-action:pan-y;min-height:240px;height:240px;">
       <div id="spotlightTrack" class="flex will-change-transform" @if(!empty($serverSpotlight)) data-server-rendered="1" @endif>
         @if(!empty($serverSpotlight))
         {{-- Slide server-render (LCP 2026-10-27): 3 slide pertama tampilan default
@@ -176,11 +177,11 @@
              hitungnya; kalau beda, dibangun ulang seperti biasa. --}}
         @foreach($serverSpotlight as $si => $s)
           @php
-            $sThumb = $skThumb($s['poster_url'] ?? null, 800) ?: 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=800&q=80';
+            $sThumb = $skThumb($s['poster_url'] ?? null, 500) ?: 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=500&q=70';
             $sAddr = !empty($s['address']) ? explode(',', $s['address'])[0] : 'Lokasi belum tersedia';
           @endphp
-        <div class="spot-slide relative shrink-0 cursor-pointer overflow-hidden bg-[#153A3B]" style="width:100%;" data-slide-idx="{{ $si }}" data-kajian-id="{{ $s['id'] }}">
-          <img src="{{ $sThumb }}" data-poster="{{ $s['poster_url'] ?? '' }}" alt="Kajian Pilihan" class="w-full h-60 object-cover opacity-90" draggable="false" @if($si === 0) fetchpriority="high" @else loading="lazy" @endif decoding="async" onerror="thumbFallback(this, 800)">
+        <div class="spot-slide relative shrink-0 cursor-pointer overflow-hidden bg-[#153A3B]" style="width:100%;height:240px;" data-slide-idx="{{ $si }}" data-kajian-id="{{ $s['id'] }}">
+          <img src="{{ $sThumb }}" data-poster="{{ $s['poster_url'] ?? '' }}" alt="Kajian Pilihan" width="400" height="240" class="w-full h-60 object-cover opacity-90" draggable="false" @if($si === 0) fetchpriority="high" @else loading="lazy" @endif decoding="async" onerror="thumbFallback(this, 500)">
           <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/20"></div>
           <div class="absolute top-3 inset-x-3 flex items-center justify-between gap-2">
             <span class="px-3 py-1.5 rounded-full text-[10px] font-extrabold tracking-wider uppercase bg-black/70 text-white shadow-xs">⭐ KAJIAN PILIHAN</span>
@@ -287,7 +288,7 @@
           <div class="flex items-start gap-3"@if(!empty($c['is_cancelled'])) style="opacity:0.45;filter:grayscale(0.6);"@endif>
             @if($cThumb)
             <div class="w-[88px] h-[88px] rounded-2xl overflow-hidden shrink-0 bg-slate-100 border border-[#E5ECEB] shadow-xs">
-              <img src="{{ $cThumb }}" data-poster="{{ $c['poster_url'] ?? '' }}" alt="Flyer" class="w-full h-full object-cover" @if($loop->index >= 2) loading="lazy" @endif decoding="async" onerror="thumbFallback(this, 200, true)">
+              <img src="{{ $cThumb }}" data-poster="{{ $c['poster_url'] ?? '' }}" alt="Flyer" width="88" height="88" class="w-full h-full object-cover" @if($loop->index >= 2) loading="lazy" @endif decoding="async" onerror="thumbFallback(this, 200, true)">
             </div>
             @else
             <div class="w-[88px] h-[88px] rounded-2xl overflow-hidden shrink-0 bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center font-bold text-xs border border-[#E5ECEB]">
@@ -1186,7 +1187,10 @@
       const u = new URL(url);
       if (u.hostname.includes('supabase.co') && u.pathname.includes('/storage/v1/object/public/')) {
         u.pathname = u.pathname.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
-        u.searchParams.set('width', width || 200);
+        const w = width || 200;
+        const h = w <= 240 ? w : Math.round(w * 0.6);
+        u.searchParams.set('width', w);
+        u.searchParams.set('height', h);
         u.searchParams.set('quality', 60);
         u.searchParams.set('format', 'webp');
         u.searchParams.set('resize', 'cover');
@@ -1423,8 +1427,8 @@
             <span style="border:4px solid #dc2626;color:#dc2626;font-weight:900;font-size:30px;letter-spacing:4px;padding:6px 22px;border-radius:8px;transform:rotate(-12deg);background:rgba(255,255,255,0.78);text-transform:uppercase;">Dibatalkan</span>
           </div>` : '';
         return `
-        <div class="spot-slide relative shrink-0 cursor-pointer overflow-hidden bg-[#153A3B]" style="width:100%;" data-slide-idx="${i}" data-kajian-id="${item.id}">
-          <img src="${item.poster_url ? supabaseThumb(item.poster_url, 800) : 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=800&q=80'}" data-poster="${item.poster_url || ''}" alt="Kajian Pilihan" class="w-full h-60 object-cover opacity-90" draggable="false" fetchpriority="high" decoding="async" onerror="thumbFallback(this, 800)">
+        <div class="spot-slide relative shrink-0 cursor-pointer overflow-hidden bg-[#153A3B]" style="width:100%;height:240px;" data-slide-idx="${i}" data-kajian-id="${item.id}">
+          <img src="${item.poster_url ? supabaseThumb(item.poster_url, 500) : 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?auto=format&fit=crop&w=500&q=70'}" data-poster="${item.poster_url || ''}" alt="Kajian Pilihan" width="400" height="240" class="w-full h-60 object-cover opacity-90" draggable="false" fetchpriority="high" decoding="async" onerror="thumbFallback(this, 500)">
           <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/20"></div>
           <div class="absolute top-3 inset-x-3 flex items-center justify-between gap-2">
             <span class="px-3 py-1.5 rounded-full text-[10px] font-extrabold tracking-wider uppercase bg-black/70 text-white shadow-xs">⭐ KAJIAN PILIHAN</span>
@@ -1627,7 +1631,7 @@
       const thumbUrl = ev.poster_url ? supabaseThumb(ev.poster_url, 200) : null;
       const flyerThumb = thumbUrl
         ? `<div class="w-[88px] h-[88px] rounded-2xl overflow-hidden shrink-0 bg-slate-100 border border-[#E5ECEB] shadow-xs">
-             <img src="${thumbUrl}" data-poster="${ev.poster_url || ''}" alt="Flyer" class="w-full h-full object-cover"${i < 2 ? '' : ' loading="lazy"'} decoding="async" onerror="thumbFallback(this, 200, true)">
+             <img src="${thumbUrl}" data-poster="${ev.poster_url || ''}" alt="Flyer" width="88" height="88" class="w-full h-full object-cover"${i < 2 ? '' : ' loading="lazy"'} decoding="async" onerror="thumbFallback(this, 200, true)">
            </div>`
         : `<div class="w-[88px] h-[88px] rounded-2xl overflow-hidden shrink-0 bg-[#E6F4F1] text-[#1D4D4F] flex items-center justify-center font-bold text-xs border border-[#E5ECEB]">
              <span>${(ev.category || 'ILMU').substring(0, 4)}</span>

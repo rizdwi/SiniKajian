@@ -226,4 +226,27 @@ class SupabaseKajianService
     {
         return collect($rows)->map(fn($r) => self::toObject($r));
     }
+
+    /**
+     * Optimasi URL flyer Supabase menggunakan endpoint render image.
+     */
+    public static function optimizeImageUrl(?string $url, int $width = 200, int $quality = 60): ?string
+    {
+        if (empty($url)) {
+            return $url;
+        }
+        $parts = parse_url($url);
+        if (!isset($parts['host']) || !str_contains($parts['host'], 'supabase.co')) {
+            return $url;
+        }
+        if (!isset($parts['path']) || !str_contains($parts['path'], '/storage/v1/object/public/')) {
+            return $url;
+        }
+
+        $path = str_replace('/storage/v1/object/public/', '/storage/v1/render/image/public/', $parts['path']);
+        $height = $width <= 240 ? $width : (int) round($width * 0.6);
+
+        return ($parts['scheme'] ?? 'https') . '://' . $parts['host'] . $path
+            . '?width=' . $width . '&height=' . $height . '&quality=' . $quality . '&format=webp&resize=cover';
+    }
 }

@@ -468,15 +468,16 @@ class KajianController extends Controller
             abort(404);
         }
         $width = (int) $w;
-        if ($width < 100) {
-            $width = 100;
+        if ($width < 80) {
+            $width = 80;
         } elseif ($width > 1200) {
             $width = 1200;
         }
+        $height = $width <= 240 ? $width : (int) round($width * 0.6);
 
         $base = rtrim(config('services.supabase.url') ?: 'https://hhcopgprjdjvgfcuqdyf.supabase.co', '/');
         $src = $base . '/storage/v1/render/image/public/flyers/' . $id . '.jpg'
-            . '?width=' . $width . '&quality=60&format=webp&resize=cover';
+            . '?width=' . $width . '&height=' . $height . '&quality=60&format=webp&resize=cover';
 
         try {
             $res = Http::timeout(10)->get($src);

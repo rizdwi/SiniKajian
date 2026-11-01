@@ -51,10 +51,14 @@
   <link rel="manifest" href="{{ asset('manifest.json') }}">
   <meta name="csrf-token" content="{{ csrf_token() }}">
 
-  <!-- Tailwind CSS: build statis (public/css/app.css, dikompilasi dari
-       tailwind.config.js) menggantikan runtime CDN — browser tak lagi
-       mengompilasi utility di setiap halaman (upgrade kecepatan 2026-10-20) -->
-  <link rel="stylesheet" href="{{ asset('css/app.css') }}?v=20261029a">
+  <!-- Supabase CDN Preconnect -->
+  <link rel="preconnect" href="https://hhcopgprjdjvgfcuqdyf.supabase.co">
+
+  <!-- Tailwind CSS: preload + non-blocking stylesheet untuk eliminasi render-blocking request (PageSpeed mobile fix) -->
+  <link rel="preload" href="{{ asset('css/app.css') }}?v=20261029a" as="style">
+  <link rel="stylesheet" href="{{ asset('css/app.css') }}?v=20261029a" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="{{ asset('css/app.css') }}?v=20261029a"></noscript>
+
   <!-- Font self-hosted (2026-10-25): Plus Jakarta Sans dari /fonts, bukan
        Google Fonts — menghapus rantai render-blocking ke fonts.googleapis.com
        (Lighthouse: hemat ~750 md di 4G lambat). Preload agar FCP tidak menunggu. -->

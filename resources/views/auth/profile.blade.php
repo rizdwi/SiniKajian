@@ -28,7 +28,7 @@
     <div class="relative flex items-start justify-between gap-3">
       <div class="min-w-0">
         <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/20 text-white text-[11px] font-bold">📅 Agenda Saya</span>
-        <h1 class="text-[22px] leading-snug font-extrabold mt-2.5">Siap Menuntut Ilmu Hari Ini?</h1>
+        <h1 class="text-[22px] leading-snug font-extrabold mt-2.5">Siap Menuntut Ilmu, {{ $user->name }}?</h1>
         @if(($agendaCount ?? 0) > 0)
         <p class="text-xs text-white/80 mt-1.5 leading-relaxed">Kamu punya {{ $agendaCount }} agenda kajian. Semoga Allah mudahkan langkahmu menuntut ilmu.</p>
         @else
@@ -36,7 +36,15 @@
         @endif
         <a href="{{ route('kajian.index') }}" class="inline-flex items-center gap-1 mt-3.5 px-4 py-2 rounded-full bg-white text-[#1D4D4F] text-xs font-extrabold shadow">Jelajahi Kajian →</a>
       </div>
-      <div class="text-[56px] leading-none shrink-0 opacity-90">📖</div>
+      <div class="shrink-0">
+        @if(!empty($user->avatar))
+          <div class="w-14 h-14 rounded-full overflow-hidden border-2 border-white/40 shadow-sm bg-white/10">
+            <img src="{{ $user->avatar }}" alt="{{ $user->name }}" class="w-full h-full object-cover">
+          </div>
+        @else
+          <div class="text-[56px] leading-none opacity-90">📖</div>
+        @endif
+      </div>
     </div>
   </div>
 

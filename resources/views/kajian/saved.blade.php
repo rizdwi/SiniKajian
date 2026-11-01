@@ -39,7 +39,7 @@
         <div class="flex items-start justify-between gap-3">
           @if($item->poster_url)
             <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden shrink-0 bg-[#F8FAF9] border border-[#E5ECEB] shadow-2xs">
-              <img src="{{ $item->poster_url }}" alt="Flyer" class="w-full h-full object-cover" loading="lazy">
+              <img src="{{ \App\Services\SupabaseKajianService::optimizeImageUrl($item->poster_url, 160) ?: $item->poster_url }}" alt="Flyer" width="80" height="80" class="w-full h-full object-cover" loading="lazy">
             </div>
           @endif
           <div class="flex-1 min-w-0">
@@ -372,6 +372,22 @@
                 matched.forEach(item => {
                   const card = document.createElement('div');
                   const posterUrl = safeUrl(item.poster_url);
+                  const thumbPoster = (function(url) {
+                    if (!url) return '';
+                    try {
+                      const u = new URL(url);
+                      if (u.hostname.includes('supabase.co') && u.pathname.includes('/storage/v1/object/public/')) {
+                        u.pathname = u.pathname.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
+                        u.searchParams.set('width', 160);
+                        u.searchParams.set('height', 160);
+                        u.searchParams.set('quality', 60);
+                        u.searchParams.set('format', 'webp');
+                        u.searchParams.set('resize', 'cover');
+                        return u.toString();
+                      }
+                    } catch (e) {}
+                    return url;
+                  })(posterUrl);
                   const itemLat = parseFloat(item.lat);
                   const itemLon = parseFloat(item.lon);
                   card.className = "saved-kajian-card bg-white rounded-3xl p-4 shadow-xs border border-[#E5ECEB] flex flex-col justify-between transition-all hover:border-[#1D4D4F]/30";
@@ -379,7 +395,7 @@
                     <div class="flex items-start justify-between gap-3">
                       ${posterUrl ? `
                         <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden shrink-0 bg-[#F8FAF9] border border-[#E5ECEB] shadow-2xs">
-                          <img src="${posterUrl}" alt="Flyer" class="w-full h-full object-cover" loading="lazy">
+                          <img src="${thumbPoster || posterUrl}" alt="Flyer" width="80" height="80" class="w-full h-full object-cover" loading="lazy">
                         </div>
                       ` : ''}
                       <div class="flex-1 min-w-0">

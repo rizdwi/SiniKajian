@@ -31,9 +31,13 @@
   <div class="relative w-full rounded-3xl overflow-hidden shadow-sm border border-[#E5ECEB] bg-slate-100 aspect-[4/3] flex flex-col justify-between p-3.5">
     <!-- Background Image -->
     @php
-      $heroImg = $kajian->poster_url ?: ($kajian->flyer_url ?: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80');
+      $rawHero = $kajian->poster_url ?: ($kajian->flyer_url ?: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=75');
+      $heroImg = \App\Services\SupabaseKajianService::optimizeImageUrl($rawHero, 600, 75) ?: $rawHero;
     @endphp
-    <img src="{{ $heroImg }}" alt="{{ $kajian->title }}" class="absolute inset-0 w-full h-full object-cover">
+    @push('styles')
+    <link rel="preload" as="image" href="{{ $heroImg }}" fetchpriority="high">
+    @endpush
+    <img src="{{ $heroImg }}" alt="{{ $kajian->title }}" width="600" height="450" fetchpriority="high" class="absolute inset-0 w-full h-full object-cover">
     
     <!-- Top Overlay Elements -->
     <div class="relative z-10 flex items-center justify-between w-full">
