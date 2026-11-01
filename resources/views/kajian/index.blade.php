@@ -161,6 +161,25 @@
     @endpush
   @endif
 
+  <!-- Pemberitahuan Kajian Terdekat (Jarak <= 3 km, Mulai < 3 Jam) -->
+  <div id="nearKajianAlert" class="hidden rounded-3xl p-4 bg-gradient-to-r from-[#1D4D4F] to-[#123031] text-white shadow-md relative overflow-hidden mb-3 transition-all">
+    <div class="flex items-start gap-3">
+      <span class="text-2xl leading-none shrink-0 mt-0.5">📍</span>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center justify-between gap-1">
+          <span class="text-[10px] font-black tracking-wider uppercase bg-white/20 px-2.5 py-0.5 rounded-full">Kajian Terdekat Hari Ini</span>
+          <button onclick="dismissNearKajianAlert()" class="text-white/70 hover:text-white text-base font-bold px-1.5 leading-none" aria-label="Tutup">&times;</button>
+        </div>
+        <h4 id="nearKajianTitle" class="text-sm font-extrabold text-white mt-1.5 leading-snug line-clamp-1">—</h4>
+        <p id="nearKajianDesc" class="text-xs text-white/90 mt-0.5 leading-snug line-clamp-2">—</p>
+        <div class="flex items-center gap-2 mt-2.5">
+          <button id="nearKajianBtn" type="button" class="px-3.5 py-1.5 rounded-full bg-white text-[#1D4D4F] text-xs font-extrabold shadow-sm active:scale-95 transition">Lihat Detail Kajian &rarr;</button>
+          <span id="nearKajianBadge" class="text-[11px] font-bold text-emerald-300"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Hero Spotlight: Majelis Pilihan Terdekat (Figma Screen 1: KAJIAN PILIHAN) -->
   <!-- Banner carousel: berdiri sendiri sebagai track horizontal, bisa di-swipe -->
   <section id="heroSpotlightContainer">
@@ -1384,6 +1403,57 @@
       return timeCmp;
     });
 
+    // Pemberitahuan jika ada kajian terdekat <= 3km yang akan berlangsung minimal 3 jam sebelumnya
+    (function checkNearestKajianAlert(items) {
+      const alertEl = document.getElementById('nearKajianAlert');
+      if (!alertEl) return;
+      if (sessionStorage.getItem('dismiss_near_kajian') === '1') {
+        alertEl.classList.add('hidden');
+        return;
+      }
+      const t = new Date();
+      const todayStr = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+      const nowMinutes = t.getHours() * 60 + t.getMinutes();
+
+      const near = items.find(k => {
+        if (k.distance === null || k.distance > 3.0) return false;
+        const kDate = String(k.event_date || '').split('T')[0];
+        if (kDate !== todayStr) return false;
+        
+        let timeMatch = String(k.time || '').match(/(\d{1,2})[:.](\d{2})/);
+        let eventMin = null;
+        if (timeMatch) {
+          eventMin = parseInt(timeMatch[1], 10) * 60 + parseInt(timeMatch[2], 10);
+        } else if (String(k.time || '').toLowerCase().includes('maghrib')) {
+          eventMin = 18 * 60;
+        } else if (String(k.time || '').toLowerCase().includes('isya')) {
+          eventMin = 19 * 60 + 15;
+        } else if (String(k.time || '').toLowerCase().includes('subuh')) {
+          eventMin = 5 * 60;
+        } else if (String(k.time || '').toLowerCase().includes('ashar')) {
+          eventMin = 15 * 60 + 30;
+        }
+        if (eventMin === null) return true;
+        const diff = eventMin - nowMinutes;
+        // Berlangsung minimal 3 jam sebelumnya (-30 menit hingga +180 menit)
+        return diff >= -30 && diff <= 180;
+      });
+
+      if (near) {
+        alertEl.classList.remove('hidden');
+        const titleEl = document.getElementById('nearKajianTitle');
+        const descEl = document.getElementById('nearKajianDesc');
+        const btnEl = document.getElementById('nearKajianBtn');
+        const badgeEl = document.getElementById('nearKajianBadge');
+        if (titleEl) titleEl.textContent = near.title || 'Kajian Terdekat';
+        if (descEl) descEl.textContent = (near.masjid ? near.masjid + ' • ' : '') + 'Jarak: ' + near.distance.toFixed(1) + ' km • ' + (near.time || 'Hari ini');
+        if (btnEl) btnEl.onclick = function (e) { e.preventDefault(); openDetailModalWithEvent(near); };
+        if (badgeEl) badgeEl.textContent = near.distance.toFixed(1) + ' km dari Anda';
+      } else {
+        alertEl.classList.add('hidden');
+      }
+    })(processed);
+
     // Filter
     let filtered = processed.filter(item => {
       if (activeCategory !== 'Semua' && item.category !== activeCategory) return false;
@@ -2367,6 +2437,12 @@
       toast.classList.add('opacity-0', '-translate-y-2');
     }, 2200);
   }
+
+  window.dismissNearKajianAlert = function () {
+    try { sessionStorage.setItem('dismiss_near_kajian', '1'); } catch (e) {}
+    const alertEl = document.getElementById('nearKajianAlert');
+    if (alertEl) alertEl.classList.add('hidden');
+  };
 
   // Inisialisasi awal
   pageReady(() => {

@@ -80,7 +80,14 @@
         <div>
           <div class="text-2xl leading-none">🔔</div>
           <h4 class="text-sm font-bold text-[#1C2224] mt-2">Pengingat Ibadah</h4>
-          <div class="space-y-2 mt-2.5">
+          <div class="space-y-2.5 mt-2.5">
+            <div class="flex items-center justify-between gap-1.5">
+              <div class="min-w-0">
+                <span class="text-[11px] font-bold text-[#1C2224] block leading-tight">Adzan 5 Waktu</span>
+                <span class="text-[9px] text-[#607072] block leading-tight">Notifikasi tanpa suara</span>
+              </div>
+              <button data-pref="adzan" onclick="togglePref(this)" class="pref-btn px-2.5 py-1 rounded-full text-[11px] font-bold transition shrink-0 {{ ($prefs['adzan'] ?? false) ? 'bg-[#1D4D4F] text-white' : 'bg-[#F1F5F4] text-[#607072]' }}">{{ ($prefs['adzan'] ?? false) ? 'Aktif' : 'Mati' }}</button>
+            </div>
             <div class="flex items-center justify-between gap-1.5">
               <span class="text-[11px] font-bold text-[#1C2224] leading-tight">Dzikir Pagi &amp; Petang</span>
               <button data-pref="dzikir" onclick="togglePref(this)" class="pref-btn px-2.5 py-1 rounded-full text-[11px] font-bold transition shrink-0 {{ ($prefs['dzikir'] ?? false) ? 'bg-[#1D4D4F] text-white' : 'bg-[#F1F5F4] text-[#607072]' }}">{{ ($prefs['dzikir'] ?? false) ? 'Aktif' : 'Mati' }}</button>
@@ -88,6 +95,13 @@
             <div class="flex items-center justify-between gap-1.5">
               <span class="text-[11px] font-bold text-[#1C2224] leading-tight">Puasa Senin &amp; Kamis</span>
               <button data-pref="puasa" onclick="togglePref(this)" class="pref-btn px-2.5 py-1 rounded-full text-[11px] font-bold transition shrink-0 {{ ($prefs['puasa'] ?? false) ? 'bg-[#1D4D4F] text-white' : 'bg-[#F1F5F4] text-[#607072]' }}">{{ ($prefs['puasa'] ?? false) ? 'Aktif' : 'Mati' }}</button>
+            </div>
+            <div class="flex items-center justify-between gap-1.5">
+              <div class="min-w-0">
+                <span class="text-[11px] font-bold text-[#1C2224] block leading-tight">Kajian Terdekat (&le; 3 km)</span>
+                <span class="text-[9px] text-[#607072] block leading-tight">Min. 3 jam sebelumnya</span>
+              </div>
+              <button data-pref="kajian_dekat" onclick="togglePref(this)" class="pref-btn px-2.5 py-1 rounded-full text-[11px] font-bold transition shrink-0 {{ ($prefs['kajian_dekat'] ?? false) ? 'bg-[#1D4D4F] text-white' : 'bg-[#F1F5F4] text-[#607072]' }}">{{ ($prefs['kajian_dekat'] ?? false) ? 'Aktif' : 'Mati' }}</button>
             </div>
           </div>
         </div>
@@ -98,7 +112,7 @@
         <div>
           <div class="text-2xl leading-none">🔔</div>
           <h4 class="text-sm font-bold text-[#1C2224] mt-2">Pengingat Ibadah</h4>
-          <p class="text-[11px] text-[#607072] mt-1.5 leading-snug">Masuk untuk mengaktifkan pengingat dzikir dan puasa.</p>
+          <p class="text-[11px] text-[#607072] mt-1.5 leading-snug">Masuk untuk mengaktifkan pengingat adzan, dzikir, puasa, dan kajian terdekat (&le; 3 km).</p>
         </div>
         <a href="{{ route('login') }}" class="inline-block mt-3 px-3.5 py-1.5 rounded-full bg-[#1D4D4F] text-white text-[11px] font-bold text-center w-fit">Masuk</a>
       </div>

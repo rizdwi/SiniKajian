@@ -800,6 +800,7 @@ class KajianController extends Controller
             'adzan' => 'sometimes|boolean',
             'dzikir' => 'sometimes|boolean',
             'puasa' => 'sometimes|boolean',
+            'kajian_dekat' => 'sometimes|boolean',
             'city' => 'nullable|string|max:100',
             'lat' => 'nullable|numeric|between:-90,90',
             'lon' => 'nullable|numeric|between:-180,180',
@@ -813,9 +814,10 @@ class KajianController extends Controller
         $existing = $svc->getNotificationPrefs($appId) ?? [];
         $payload = [
             'user_id' => $appId,
-            'adzan' => false,
+            'adzan' => (bool) ($data['adzan'] ?? $existing['adzan'] ?? false),
             'dzikir' => (bool) ($data['dzikir'] ?? $existing['dzikir'] ?? false),
             'puasa' => (bool) ($data['puasa'] ?? $existing['puasa'] ?? false),
+            'kajian_dekat' => (bool) ($data['kajian_dekat'] ?? $existing['kajian_dekat'] ?? false),
         ];
         // Lokasi hanya disimpan bila diketahui (dari request atau baris
         // lama). Tanpa lokasi, kunci dihilangkan — tidak ada kota

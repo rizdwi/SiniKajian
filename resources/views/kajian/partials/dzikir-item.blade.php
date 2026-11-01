@@ -1,4 +1,4 @@
-<div class="dzikir-item rounded-2xl bg-white border border-[#E5ECEB] overflow-hidden" data-waktu="{{ $waktu }}" data-idx="{{ $idx }}" data-target="{{ $item['jumlah'] }}">
+<div class="dzikir-item bg-white overflow-hidden" data-waktu="{{ $waktu }}" data-idx="{{ $idx }}" data-target="{{ $item['jumlah'] }}">
   <div class="px-4 pt-4 pb-3">
     <div class="flex items-start justify-between gap-2">
       <div class="flex items-start gap-2.5 min-w-0">
