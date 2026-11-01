@@ -10,8 +10,9 @@
   <!-- 1. Header -->
   <header class="flex items-center justify-between">
     <div>
-      <h1 class="text-2xl font-extrabold text-[#1D4D4F] tracking-tight">Jadwal Sholat</h1>
+      <h1 class="text-xl font-extrabold text-[#1D4D4F] tracking-tight">Jadwal Sholat</h1>
       <p class="text-xs text-[#607072] mt-0.5">
+        <span id="sholatLocationName" class="font-bold text-[#1D4D4F]">{{ $city ?? 'Lokasi Anda' }}</span> &bull;
         {{ $gregorian ?? \Carbon\Carbon::now('Asia/Jakarta')->translatedFormat('l, d F Y') }}
         @if($hijri) • {{ $hijri }} @endif
       </p>
@@ -20,20 +21,6 @@
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
     </button>
   </header>
-
-  <!-- 2. Lokasi -->
-  <div class="rounded-full bg-[#E8F5F3] border border-[#D1ECE7] px-3 py-2.5 flex items-center justify-between gap-3 shadow-2xs">
-    <div class="flex items-center gap-2.5 min-w-0">
-      <div class="w-8 h-8 rounded-full bg-[#1D4D4F] text-white flex items-center justify-center shrink-0 shadow-2xs">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-      </div>
-      <div class="min-w-0">
-        <h3 id="sholatLocationName" class="text-xs font-bold text-[#1C2224] truncate">{{ $city ?? 'Lokasi belum dipilih' }}</h3>
-        <p id="sholatCoordinates" class="text-[10px] text-[#607072] truncate">{{ ($lat !== null && $lon !== null) ? number_format($lat, 4) . ', ' . number_format($lon, 4) : 'Ketuk GPS Saya untuk memuat jadwal' }}</p>
-      </div>
-    </div>
-    <button onclick="refreshSholatGps()" class="text-xs font-bold text-[#1D4D4F] hover:underline px-2 py-1 shrink-0">GPS Saya</button>
-  </div>
 
   <!-- Hero Card Sholat: Ringkasan & 5 Waktu Sholat Terpadu -->
   <div class="relative rounded-[28px] bg-gradient-to-br from-[#1D4D4F] to-[#0F292A] text-white p-5 shadow-md overflow-hidden">
@@ -238,7 +225,8 @@
     locEl.textContent = 'Mendeteksi lokasi...';
     function apply(lat, lon, name) {
       SHOLAT_LAT = lat; SHOLAT_LON = lon;
-      document.getElementById('sholatCoordinates').textContent = lat.toFixed(4) + ', ' + lon.toFixed(4);
+      var coordEl = document.getElementById('sholatCoordinates');
+      if (coordEl) coordEl.textContent = lat.toFixed(4) + ', ' + lon.toFixed(4);
       if (name) { SHOLAT_CITY = name; locEl.textContent = name; }
       fetch('/api/sholat?lat=' + lat + '&lon=' + lon)
         .then(function (r) { return r.json(); })
@@ -278,7 +266,8 @@
   var SHOLAT_SERVER_LOC = (SHOLAT_LAT !== null && SHOLAT_LON !== null);
   function restoreSholatLocation(lat, lon, name) {
     SHOLAT_LAT = lat; SHOLAT_LON = lon;
-    document.getElementById('sholatCoordinates').textContent = lat.toFixed(4) + ', ' + lon.toFixed(4);
+    var coordEl = document.getElementById('sholatCoordinates');
+    if (coordEl) coordEl.textContent = lat.toFixed(4) + ', ' + lon.toFixed(4);
     if (name) { SHOLAT_CITY = name; document.getElementById('sholatLocationName').textContent = name; }
     fetch('/api/sholat?lat=' + lat + '&lon=' + lon)
       .then(function (r) { return r.json(); })
